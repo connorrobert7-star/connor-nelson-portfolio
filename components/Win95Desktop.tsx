@@ -127,19 +127,42 @@ const loadingCodeBank: Record<string, string[]> = {
     "Connecting to dial-up...",
     "AT&T WorldNet dialing...",
     "CONNECT 56000",
-    "Loading homepage...",
+    "GET https://thesignal.connornelson.com",
+    "Loading The Signal...",
     "Connected.",
   ],
-  notepad: [
-    "C:\\WINDOWS> notepad.exe",
-    "loading editor...",
+  cineswipe: [
+    "C:\\APPS> cineswipe.exe",
+    "initializing display...",
+    "loading frame database...",
+    "connecting to archive...",
+    "CineSwipe ready.",
+  ],
+  news: [
+    "C:\\APPS> signal.exe",
+    "GET https://thesignal.connornelson.com",
+    "fetching stories...",
+    "parsing wire feed...",
+    "The Signal loaded.",
+  ],
+  letterboxd: [
+    "C:\\APPS> letterboxd.exe",
+    "GET https://letterboxd.com/rss/",
+    "parsing film diary...",
+    "loading reviews...",
     "ready.",
   ],
+  notepad: [
+    "C:\\APPS> guestbook.exe",
+    "connecting to database...",
+    "loading messages...",
+    "ready to sign.",
+  ],
   recyclebin: [
-    "C:\\> dir /s RECYCLER",
-    "scanning deleted items...",
-    "0 items found.",
-    "bin is empty.",
+    "C:\\PHOTOS> dir *.jpg /s",
+    "scanning photo archive...",
+    "loading gallery...",
+    "ready.",
   ],
 }
 
@@ -196,17 +219,14 @@ function windowReducer(state: WindowState[], action: Action): WindowState[] {
 // ── Desktop icon definitions ──
 
 const defaultIcons: Omit<IconState, 'x' | 'y'>[] = [
-  { id: 'films', label: 'My Films', icon: '\uD83C\uDFAC', type: 'films' },
   { id: 'about', label: 'About Me', icon: '\uD83D\uDCDD', type: 'about' },
-  { id: 'writing', label: 'Writing', icon: '\uD83D\uDCD6', type: 'writing' },
   { id: 'contact', label: 'Contact', icon: '\uD83D\uDCE7', type: 'contact' },
-  { id: 'demoReel', label: 'Demo Reel', icon: '\uD83D\uDCFC', type: 'demoReel' },
-  { id: 'influences', label: 'Influences', icon: '\uD83C\uDFAD', type: 'influences' },
-  { id: 'process', label: 'Process', icon: '\uD83D\uDD27', type: 'process' },
-  { id: 'minesweeper', label: 'Minesweeper', icon: '\uD83D\uDCA3', type: 'minesweeper' },
+  { id: 'cineswipe', label: 'CineSwipe', icon: '\uD83C\uDFAC', type: 'cineswipe' },
+  { id: 'letterboxd', label: 'Letterboxd', icon: '\uD83C\uDF9E\uFE0F', type: 'letterboxd' },
   { id: 'internet', label: 'Internet', icon: '\uD83C\uDF10', type: 'internet' },
-  { id: 'notepad', label: 'Notepad', icon: '\uD83D\uDCC4', type: 'notepad' },
-  { id: 'recyclebin', label: 'Recycle Bin', icon: '\uD83D\uDDD1\uFE0F', type: 'recyclebin' },
+  { id: 'minesweeper', label: 'Minesweeper', icon: '\uD83D\uDCA3', type: 'minesweeper' },
+  { id: 'notepad', label: 'Guestbook', icon: '\uD83D\uDCDD', type: 'notepad' },
+  { id: 'recyclebin', label: 'My Photos', icon: '\uD83D\uDCF7', type: 'recyclebin' },
 ]
 
 function initIcons(): IconState[] {
@@ -233,9 +253,12 @@ function getWindowConfig(type: string, id: string, label: string, icon: string, 
     influences: { title: 'Influences', size: { width: 350, height: 280 } },
     process: { title: 'Process & Tools', size: { width: 350, height: 280 } },
     minesweeper: { title: 'Minesweeper', size: { width: 280, height: 340 } },
-    internet: { title: 'Internet Explorer', size: { width: 500, height: 400 } },
-    notepad: { title: 'Untitled - Notepad', size: { width: 400, height: 300 } },
-    recyclebin: { title: 'Recycle Bin', size: { width: 300, height: 200 } },
+    cineswipe: { title: 'CineSwipe', size: { width: 320, height: 520 } },
+    news: { title: 'The Signal - News', size: { width: 500, height: 420 } },
+    letterboxd: { title: 'Letterboxd - Recent Watches', size: { width: 380, height: 400 } },
+    internet: { title: 'Internet Explorer - The Signal', size: { width: 620, height: 500 } },
+    notepad: { title: 'Guestbook', size: { width: 520, height: 380 } },
+    recyclebin: { title: 'My Photos', size: { width: 440, height: 380 } },
   }
 
   const cfg = configs[type] || { title: label, size: { width: 400, height: 350 } }
@@ -261,6 +284,846 @@ const connectionRules = [
   { a: 'about', b: 'influences', code: "ref.cite('influences.dat')" },
   { a: 'films', b: 'process', code: "scan --pipeline init" },
 ]
+
+// ── App Components ──
+
+type SignalStory = {
+  id: string
+  headline: string
+  dek: string | null
+  body: string
+  source_url: string
+  source_platform: string
+  category: string
+  audience_size_estimate: number | null
+  documentary_score: number
+  found_at: string
+}
+
+type CineFrame = {
+  id: string
+  film_title: string
+  director: string
+  year: number
+  cinematographer: string
+  aspect_ratio: string
+  cdn_url: string | null
+  thumbnail_url: string | null
+  tags: {
+    lighting: string[]
+    lens: string[]
+    color: string[]
+    emotional_register: string[]
+    composition: string[]
+    era: string[]
+    subject: string[]
+    movement: string[]
+    folder: string[]
+  }
+  camera_model: string | null
+  lens_info: string | null
+  film_stock: string | null
+  film_notes: string | null
+}
+
+// Win95 button style helper
+const w95Btn = (active?: boolean): React.CSSProperties => ({
+  padding: '2px 6px',
+  fontSize: 9,
+  cursor: 'pointer',
+  fontFamily: "'Tahoma', sans-serif",
+  background: active ? '#000080' : '#c0c0c0',
+  color: active ? '#fff' : '#000',
+  borderTop: active ? '1px solid #000' : '1px solid #fff',
+  borderLeft: active ? '1px solid #000' : '1px solid #fff',
+  borderRight: active ? '1px solid #fff' : '1px solid #000',
+  borderBottom: active ? '1px solid #fff' : '1px solid #000',
+})
+
+function SignalNewsApp() {
+  const [stories, setStories] = useState<SignalStory[]>([])
+  const [category, setCategory] = useState('all')
+  const [loading, setLoading] = useState(true)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchResults, setSearchResults] = useState<Array<{ story: SignalStory; explanation: string }> | null>(null)
+  const [searching, setSearching] = useState(false)
+
+  useEffect(() => {
+    setLoading(true)
+    fetch(`/api/stories?category=${category}`)
+      .then(r => r.json())
+      .then(d => setStories(d.stories || []))
+      .catch(() => setStories([]))
+      .finally(() => setLoading(false))
+  }, [category])
+
+  function handleSearch(e: React.FormEvent) {
+    e.preventDefault()
+    if (!searchQuery.trim()) { setSearchResults(null); return }
+    setSearching(true)
+    fetch(`/api/search?q=${encodeURIComponent(searchQuery.trim())}`)
+      .then(r => r.json())
+      .then(d => setSearchResults(d.results))
+      .catch(() => setSearchResults([]))
+      .finally(() => setSearching(false))
+  }
+
+  function timeAgo(date: string): string {
+    const diff = Date.now() - new Date(date).getTime()
+    const hours = Math.floor(diff / (1000 * 60 * 60))
+    if (hours < 1) return 'now'
+    if (hours < 24) return `${hours}h ago`
+    return `${Math.floor(hours / 24)}d ago`
+  }
+
+  function formatAud(n: number | null): string {
+    if (!n) return ''
+    if (n >= 1000000) return `${(n / 1000000).toFixed(1)}M`
+    if (n >= 1000) return `${(n / 1000).toFixed(0)}K`
+    return `${n}`
+  }
+
+  // NYT-style fonts
+  const nytSerif = "Georgia, 'Times New Roman', serif"
+  const nytSans = "'Helvetica Neue', Arial, sans-serif"
+  const nytFranklin = "'Franklin Gothic Medium', 'Arial Narrow', sans-serif"
+
+  const cats = [
+    { key: 'all', label: 'All' },
+    { key: 'subcultures', label: 'Subcultures' },
+    { key: 'small-town', label: 'Small Town' },
+    { key: 'micro-celebrity', label: 'Micro-Celebrity' },
+  ]
+
+  const platformMap: Record<string, string> = { reddit: 'Reddit', youtube: 'YouTube', news: 'News', 'google-news': 'Google' }
+  const catColors: Record<string, string> = { subcultures: '#567', 'small-town': '#567', 'micro-celebrity': '#567' }
+
+  const lead = stories[0]
+  const sidebar = stories.slice(1, 4)
+  const grid = stories.slice(4, 10)
+
+  return (
+    <div className="win95-inner-content" style={{
+      height: '100%', overflowY: 'auto', background: '#fff', color: '#121212',
+      fontFamily: nytSerif, fontSize: 13,
+    }}>
+      {/* NYT Masthead */}
+      <div style={{ padding: '8px 14px 6px', borderBottom: '2px solid #121212' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+          <span style={{ fontFamily: nytSans, fontSize: 9, color: '#666' }}>
+            {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+          </span>
+          <span style={{ fontFamily: nytSans, fontSize: 9, color: '#666' }}>
+            {stories.length} stories
+          </span>
+        </div>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{
+            fontSize: 32, fontWeight: 700, fontFamily: "'Chomsky', Georgia, 'Old English Text MT', serif",
+            letterSpacing: -0.5, lineHeight: 1,
+            fontStyle: 'normal',
+          }}>
+            {/* NYT-style blackletter approximation with Georgia bold */}
+            <span style={{ fontFamily: nytSerif, fontWeight: 700, fontSize: 28, letterSpacing: -1 }}>The Signal</span>
+          </div>
+          <div style={{ fontFamily: nytSans, fontSize: 8, color: '#999', letterSpacing: 1, textTransform: 'uppercase' as const, marginTop: 2 }}>
+            Documentary-Worthy American Stories
+          </div>
+        </div>
+      </div>
+
+      {/* Nav bar */}
+      <div style={{
+        display: 'flex', justifyContent: 'center', gap: 0, padding: '4px 14px',
+        borderBottom: '1px solid #e2e2e2', background: '#fff',
+      }}>
+        {cats.map(c => (
+          <button key={c.key} onClick={() => setCategory(c.key)} style={{
+            padding: '3px 10px', cursor: 'pointer', border: 'none', background: 'none',
+            fontFamily: nytSans, fontSize: 10, fontWeight: category === c.key ? 700 : 400,
+            color: category === c.key ? '#121212' : '#666',
+            borderBottom: category === c.key ? '2px solid #121212' : '2px solid transparent',
+            transition: 'all 0.15s',
+          }}>{c.label}</button>
+        ))}
+      </div>
+
+      {/* Search */}
+      <form onSubmit={handleSearch} style={{
+        display: 'flex', margin: '8px 14px', border: '1px solid #e2e2e2', borderRadius: 3, overflow: 'hidden',
+      }}>
+        <input type="text" value={searchQuery}
+          onChange={e => { setSearchQuery(e.target.value); if (!e.target.value) setSearchResults(null) }}
+          placeholder="Search The Signal..."
+          style={{
+            flex: 1, border: 'none', padding: '5px 10px', fontSize: 11,
+            outline: 'none', fontFamily: nytSans, color: '#333',
+          }}
+        />
+        <button type="submit" disabled={searching} style={{
+          padding: '5px 12px', background: '#121212', color: '#fff', border: 'none',
+          fontFamily: nytSans, fontSize: 10, fontWeight: 600, cursor: 'pointer',
+          opacity: searching ? 0.6 : 1,
+        }}>{searching ? '...' : 'Search'}</button>
+      </form>
+
+      {/* Content */}
+      <div style={{ padding: '0 14px 14px' }}>
+        {searchResults ? (
+          <>
+            <div style={{ fontFamily: nytFranklin, fontSize: 11, fontWeight: 700, paddingBottom: 6, marginBottom: 10, borderBottom: '1px solid #e2e2e2' }}>
+              Search Results
+            </div>
+            {searchResults.length === 0 ? (
+              <div style={{ textAlign: 'center', color: '#999', padding: '30px 0', fontFamily: nytSerif, fontStyle: 'italic' }}>No matches found.</div>
+            ) : searchResults.map(r => (
+              <div key={r.story.id} style={{ marginBottom: 14, paddingBottom: 14, borderBottom: '1px solid #f0f0f0' }}>
+                <div style={{ fontFamily: nytSans, fontSize: 9, color: '#999', fontStyle: 'italic', marginBottom: 4 }}>
+                  {r.explanation}
+                </div>
+                <a href={r.story.source_url} target="_blank" rel="noopener noreferrer" style={{ color: '#121212', textDecoration: 'none' }}>
+                  <div style={{ fontSize: 15, fontWeight: 700, lineHeight: 1.2, marginBottom: 3 }}>{r.story.headline}</div>
+                </a>
+                {r.story.dek && <div style={{ fontSize: 12, color: '#555', marginBottom: 3 }}>{r.story.dek}</div>}
+                <div style={{ fontSize: 12, color: '#333', lineHeight: 1.6 }}>{r.story.body.slice(0, 200)}</div>
+              </div>
+            ))}
+          </>
+        ) : loading ? (
+          <div style={{ textAlign: 'center', color: '#999', padding: '40px 0', fontFamily: nytSans, fontSize: 12 }}>Loading...</div>
+        ) : stories.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '40px 0' }}>
+            <div style={{ fontFamily: nytSerif, fontSize: 18, fontWeight: 700, color: '#121212' }}>No stories yet.</div>
+            <div style={{ fontFamily: nytSans, fontSize: 11, color: '#999', marginTop: 6 }}>
+              The scraper runs every 6 hours. Stories are sourced from Reddit, YouTube, Google News, and more.
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* LEAD + SIDEBAR — NYT above-the-fold */}
+            <div style={{ display: 'flex', gap: 14, paddingTop: 10, paddingBottom: 14, borderBottom: '1px solid #e2e2e2', marginBottom: 14 }}>
+              {/* Lead story */}
+              {lead && (
+                <div style={{ flex: 2 }}>
+                  <a href={lead.source_url} target="_blank" rel="noopener noreferrer" style={{ color: '#121212', textDecoration: 'none' }}>
+                    <div style={{ fontSize: 22, fontWeight: 700, lineHeight: 1.15, marginBottom: 6, letterSpacing: -0.3 }}>
+                      {lead.headline}
+                    </div>
+                  </a>
+                  {lead.dek && (
+                    <div style={{ fontSize: 13, color: '#555', lineHeight: 1.3, marginBottom: 6 }}>{lead.dek}</div>
+                  )}
+                  <div style={{ fontSize: 12, color: '#333', lineHeight: 1.65 }}>{lead.body}</div>
+                  <div style={{ fontFamily: nytSans, fontSize: 9, color: '#999', marginTop: 6, display: 'flex', gap: 6, alignItems: 'center' }}>
+                    <span style={{ fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: 0.5, color: catColors[lead.category] || '#567' }}>
+                      {lead.category.replace('-', ' ')}
+                    </span>
+                    <span>&middot;</span>
+                    <span>{platformMap[lead.source_platform] || lead.source_platform}</span>
+                    <span>&middot;</span>
+                    <span>{timeAgo(lead.found_at)}</span>
+                    {lead.audience_size_estimate ? <><span>&middot;</span><span>~{formatAud(lead.audience_size_estimate)} audience</span></> : null}
+                  </div>
+                </div>
+              )}
+
+              {/* Sidebar stories */}
+              {sidebar.length > 0 && (
+                <div style={{ flex: 1, borderLeft: '1px solid #e2e2e2', paddingLeft: 14 }}>
+                  {sidebar.map((story, i) => (
+                    <div key={story.id} style={{ paddingBottom: 10, marginBottom: 10, borderBottom: i < sidebar.length - 1 ? '1px solid #f0f0f0' : 'none' }}>
+                      <a href={story.source_url} target="_blank" rel="noopener noreferrer" style={{ color: '#121212', textDecoration: 'none' }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, lineHeight: 1.2, marginBottom: 3 }}>{story.headline}</div>
+                      </a>
+                      <div style={{ fontSize: 11, color: '#333', lineHeight: 1.5 }}>
+                        {story.body.slice(0, 100)}{story.body.length > 100 ? '...' : ''}
+                      </div>
+                      <div style={{ fontFamily: nytSans, fontSize: 8, color: '#999', marginTop: 3 }}>
+                        {timeAgo(story.found_at)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Below the fold — 3-column grid */}
+            {grid.length > 0 && (
+              <>
+                <div style={{ fontFamily: nytFranklin, fontSize: 10, fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: 1, color: '#121212', marginBottom: 10, paddingBottom: 6, borderBottom: '2px solid #121212' }}>
+                  More Stories
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px 14px' }}>
+                  {grid.map(story => (
+                    <div key={story.id}>
+                      <div style={{ fontFamily: nytSans, fontSize: 8, fontWeight: 600, color: '#567', textTransform: 'uppercase' as const, letterSpacing: 0.5, marginBottom: 3 }}>
+                        {story.category.replace('-', ' ')}
+                      </div>
+                      <a href={story.source_url} target="_blank" rel="noopener noreferrer" style={{ color: '#121212', textDecoration: 'none' }}>
+                        <div style={{ fontSize: 12, fontWeight: 700, lineHeight: 1.2, marginBottom: 3 }}>{story.headline}</div>
+                      </a>
+                      <div style={{ fontSize: 10, color: '#555', lineHeight: 1.5 }}>
+                        {story.body.slice(0, 80)}{story.body.length > 80 ? '...' : ''}
+                      </div>
+                      <div style={{ fontFamily: nytSans, fontSize: 8, color: '#bbb', marginTop: 4 }}>
+                        {platformMap[story.source_platform] || story.source_platform} &middot; {timeAgo(story.found_at)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </>
+        )}
+
+        <div style={{
+          textAlign: 'center', fontFamily: nytSans, fontSize: 8, color: '#ccc', marginTop: 16,
+          paddingTop: 8, borderTop: '1px solid #f0f0f0', letterSpacing: 0.5,
+        }}>
+          THE SIGNAL &middot; Stories expire after 6 months &middot; Always rolling
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function CineSwipeApp() {
+  const [frame, setFrame] = useState<CineFrame | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [saved, setSaved] = useState<CineFrame[]>(() => {
+    if (typeof window === 'undefined') return []
+    try { return JSON.parse(localStorage.getItem('cineswipe-saved') || '[]') } catch { return [] }
+  })
+  const [swiped, setSwiped] = useState<string[]>(() => {
+    if (typeof window === 'undefined') return []
+    try { return JSON.parse(localStorage.getItem('cineswipe-swiped') || '[]') } catch { return [] }
+  })
+  const [showInfo, setShowInfo] = useState(false)
+  const [view, setView] = useState<'swipe' | 'library'>('swipe')
+  const [swipeAnim, setSwipeAnim] = useState<'left' | 'right' | null>(null)
+
+  const fetchFrame = useCallback((excludeIds: string[]) => {
+    setLoading(true)
+    setShowInfo(false)
+    const exclude = excludeIds.slice(-100).join(',')
+    fetch(`/api/cineswipe/frame${exclude ? `?exclude=${exclude}` : ''}`)
+      .then(r => r.json())
+      .then(d => setFrame(d.frame || null))
+      .catch(() => setFrame(null))
+      .finally(() => setLoading(false))
+  }, [])
+
+  useEffect(() => {
+    fetchFrame(swiped)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  function handleSwipe(direction: 'left' | 'right') {
+    if (!frame) return
+    setSwipeAnim(direction)
+    setTimeout(() => {
+      setSwipeAnim(null)
+      const newSwiped = [...swiped, frame.id]
+      setSwiped(newSwiped)
+      localStorage.setItem('cineswipe-swiped', JSON.stringify(newSwiped))
+
+      if (direction === 'right') {
+        const newSaved = [...saved, frame]
+        setSaved(newSaved)
+        localStorage.setItem('cineswipe-saved', JSON.stringify(newSaved))
+      }
+
+      fetchFrame(newSwiped)
+    }, 300)
+  }
+
+  const allTags = frame ? [
+    ...frame.tags.lighting, ...frame.tags.lens, ...frame.tags.color,
+    ...frame.tags.composition, ...frame.tags.emotional_register,
+  ].slice(0, 5) : []
+
+  if (view === 'library') {
+    return (
+      <div style={{ flex: 1, overflowY: 'auto', fontFamily: "'Tahoma', sans-serif", fontSize: 11, color: '#000', background: '#1a1a1a' }}>
+        <div style={{ padding: '8px 10px', borderBottom: '1px solid #333', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ color: '#fff', fontWeight: 'bold', fontSize: 12 }}>Saved Frames ({saved.length})</span>
+          <button onClick={() => setView('swipe')} style={w95Btn()}>Back to Swipe</button>
+        </div>
+        {saved.length === 0 ? (
+          <div style={{ textAlign: 'center', color: '#666', padding: '40px 0' }}>No saved frames yet. Start swiping!</div>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 2, padding: 2 }}>
+            {saved.map(f => (
+              <div key={f.id} style={{ position: 'relative', aspectRatio: '16/9', background: '#000', overflow: 'hidden' }}>
+                {f.thumbnail_url || f.cdn_url ? (
+                  <img src={f.thumbnail_url || f.cdn_url || ''} alt={f.film_title}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #1a1a2e, #16213e)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <span style={{ fontSize: 20 }}>🎬</span>
+                  </div>
+                )}
+                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(transparent, rgba(0,0,0,0.85))', padding: '12px 4px 3px' }}>
+                  <div style={{ fontSize: 8, color: '#fff', fontWeight: 'bold', lineHeight: 1.1 }}>{f.film_title}</div>
+                  <div style={{ fontSize: 7, color: '#999' }}>{f.director}, {f.year}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  return (
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', fontFamily: "'Tahoma', sans-serif", fontSize: 11, color: '#fff', background: '#0a0a0a', overflow: 'hidden' }}>
+      {/* Top bar */}
+      <div style={{ padding: '4px 8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #222' }}>
+        <span style={{ fontWeight: 'bold', fontSize: 13, letterSpacing: -0.5 }}>CineSwipe</span>
+        <div style={{ display: 'flex', gap: 4 }}>
+          <button onClick={() => setView('library')} style={w95Btn()}>
+            Library ({saved.length})
+          </button>
+        </div>
+      </div>
+
+      {/* Swipe card area */}
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 8, position: 'relative', overflow: 'hidden' }}>
+        {loading ? (
+          <div style={{ color: '#444' }}>Loading frame...</div>
+        ) : !frame ? (
+          <div style={{ textAlign: 'center', color: '#444' }}>
+            <div style={{ fontSize: 24, marginBottom: 8 }}>🎬</div>
+            <div>No more frames.</div>
+            <button onClick={() => { setSwiped([]); localStorage.removeItem('cineswipe-swiped'); fetchFrame([]) }}
+              style={{ ...w95Btn(), marginTop: 8 }}>Reset</button>
+          </div>
+        ) : (
+          <div
+            onClick={() => setShowInfo(!showInfo)}
+            style={{
+              width: '100%', maxWidth: 400, aspectRatio: frame.aspect_ratio === '2.39:1' ? '2.39/1' : frame.aspect_ratio === '1.85:1' ? '1.85/1' : '16/9',
+              maxHeight: '100%', position: 'relative', cursor: 'pointer', overflow: 'hidden',
+              transition: 'transform 0.3s ease, opacity 0.3s ease',
+              transform: swipeAnim === 'left' ? 'translateX(-120%) rotate(-12deg)' : swipeAnim === 'right' ? 'translateX(120%) rotate(12deg)' : 'translateX(0)',
+              opacity: swipeAnim ? 0.5 : 1,
+              boxShadow: '0 4px 24px rgba(0,0,0,0.6)',
+            }}
+          >
+            {/* Frame image */}
+            {frame.cdn_url || frame.thumbnail_url ? (
+              <img src={frame.cdn_url || frame.thumbnail_url || ''} alt={frame.film_title}
+                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+            ) : (
+              <div style={{
+                width: '100%', height: '100%',
+                background: `linear-gradient(135deg, hsl(${(frame.film_title.length * 37) % 360}, 30%, 15%), hsl(${(frame.film_title.length * 73) % 360}, 20%, 8%))`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <span style={{ fontSize: 40, opacity: 0.3 }}>🎞</span>
+              </div>
+            )}
+
+            {/* Gradient overlay with info */}
+            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(transparent, rgba(0,0,0,0.9))', padding: '24px 10px 8px' }}>
+              <div style={{ fontSize: 14, fontWeight: 'bold', lineHeight: 1.15 }}>{frame.film_title}</div>
+              <div style={{ fontSize: 10, color: '#aaa', marginTop: 2 }}>
+                {frame.director} &bull; {frame.year} &bull; DP: {frame.cinematographer}
+              </div>
+              {allTags.length > 0 && (
+                <div style={{ display: 'flex', gap: 3, flexWrap: 'wrap', marginTop: 4 }}>
+                  {allTags.map(t => (
+                    <span key={t} style={{ fontSize: 8, padding: '1px 4px', background: 'rgba(255,255,255,0.1)', color: '#ccc' }}>
+                      {t.replace(/_/g, ' ')}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Detailed info panel */}
+            {showInfo && (
+              <div style={{
+                position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.92)', padding: 10,
+                display: 'flex', flexDirection: 'column', justifyContent: 'center', fontSize: 10, lineHeight: 1.6,
+              }}>
+                <div style={{ fontSize: 13, fontWeight: 'bold', marginBottom: 6 }}>{frame.film_title} ({frame.year})</div>
+                <div><b>Director:</b> {frame.director}</div>
+                <div><b>Cinematographer:</b> {frame.cinematographer}</div>
+                <div><b>Aspect Ratio:</b> {frame.aspect_ratio}</div>
+                {frame.camera_model && <div><b>Camera:</b> {frame.camera_model}</div>}
+                {frame.lens_info && <div><b>Lens:</b> {frame.lens_info}</div>}
+                {frame.film_stock && <div><b>Stock:</b> {frame.film_stock}</div>}
+                {frame.film_notes && <div style={{ marginTop: 4, color: '#999', fontStyle: 'italic' }}>{frame.film_notes}</div>}
+              </div>
+            )}
+
+            {/* Swipe hint labels */}
+            {swipeAnim === 'left' && (
+              <div style={{ position: 'absolute', top: '40%', left: 12, fontSize: 16, fontWeight: 'bold', color: '#ff4444', transform: 'rotate(-12deg)', border: '2px solid #ff4444', padding: '2px 8px' }}>PASS</div>
+            )}
+            {swipeAnim === 'right' && (
+              <div style={{ position: 'absolute', top: '40%', right: 12, fontSize: 16, fontWeight: 'bold', color: '#44ff44', transform: 'rotate(12deg)', border: '2px solid #44ff44', padding: '2px 8px' }}>SAVE</div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Swipe buttons */}
+      {frame && !loading && (
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 16, padding: '6px 0 10px', borderTop: '1px solid #222' }}>
+          <button onClick={() => handleSwipe('left')} style={{
+            width: 40, height: 40, borderRadius: '50%', background: 'none',
+            border: '2px solid #ff4444', color: '#ff4444', fontSize: 18, cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }} title="Pass">✕</button>
+          <button onClick={() => setShowInfo(!showInfo)} style={{
+            width: 32, height: 32, borderRadius: '50%', background: 'none',
+            border: '1px solid #444', color: '#888', fontSize: 12, cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', alignSelf: 'center',
+          }} title="Info">i</button>
+          <button onClick={() => handleSwipe('right')} style={{
+            width: 40, height: 40, borderRadius: '50%', background: 'none',
+            border: '2px solid #44ff44', color: '#44ff44', fontSize: 18, cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }} title="Save">♥</button>
+        </div>
+      )}
+
+      <div style={{ textAlign: 'center', fontSize: 8, color: '#333', padding: '0 0 4px' }}>
+        {swiped.length} swiped &bull; {saved.length} saved &bull; tap card for details
+      </div>
+    </div>
+  )
+}
+
+type LetterboxdReview = {
+  title: string
+  year: string
+  rating: string
+  review: string
+  link: string
+  date: string
+  image: string
+}
+
+function LetterboxdApp() {
+  const [reviews, setReviews] = useState<LetterboxdReview[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetch('/api/letterboxd')
+      .then(r => r.json())
+      .then(d => setReviews(d.reviews || []))
+      .catch(() => setReviews([]))
+      .finally(() => setLoading(false))
+  }, [])
+
+  return (
+    <div className="win95-inner-content" style={{ height: '100%', overflowY: 'auto', background: '#14181c', fontFamily: "'Tahoma', sans-serif", fontSize: 11 }}>
+      {/* Header */}
+      <div style={{ padding: '10px 12px', borderBottom: '1px solid #2c3440', display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ width: 24, height: 24, background: '#00e054', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 'bold', color: '#fff' }}>L</div>
+        <div>
+          <div style={{ color: '#fff', fontWeight: 'bold', fontSize: 12 }}>Recent Watches</div>
+          <div style={{ color: '#9ab', fontSize: 9 }}>from Letterboxd</div>
+        </div>
+      </div>
+
+      {loading ? (
+        <div style={{ textAlign: 'center', color: '#9ab', padding: '40px 0' }}>Loading reviews...</div>
+      ) : reviews.length === 0 ? (
+        <div style={{ textAlign: 'center', color: '#9ab', padding: '40px 0' }}>
+          <div style={{ fontSize: 13, marginBottom: 4 }}>No reviews found.</div>
+          <div style={{ fontSize: 9 }}>Set LETTERBOXD_USERNAME in .env.local</div>
+        </div>
+      ) : (
+        <div>
+          {reviews.map((review, i) => (
+            <a
+              key={i}
+              href={review.link}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ display: 'flex', gap: 10, padding: '10px 12px', borderBottom: '1px solid #2c3440', textDecoration: 'none', color: 'inherit' }}
+            >
+              {/* Poster */}
+              <div style={{ width: 48, height: 72, flexShrink: 0, background: '#2c3440', overflow: 'hidden' }}>
+                {review.image ? (
+                  <img src={review.image} alt={review.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#456', fontSize: 18 }}>🎬</div>
+                )}
+              </div>
+              {/* Info */}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                  <div style={{ color: '#fff', fontWeight: 'bold', fontSize: 12 }}>{review.title}</div>
+                  <div style={{ color: '#9ab', fontSize: 9, flexShrink: 0 }}>{review.date}</div>
+                </div>
+                <div style={{ color: '#9ab', fontSize: 9 }}>{review.year}</div>
+                {review.rating && (
+                  <div style={{ color: '#00e054', fontSize: 11, margin: '2px 0', letterSpacing: 1 }}>{review.rating}</div>
+                )}
+                {review.review && (
+                  <div style={{ color: '#9ab', fontSize: 10, lineHeight: 1.4, marginTop: 2 }}>
+                    {review.review.slice(0, 120)}{review.review.length > 120 ? '...' : ''}
+                  </div>
+                )}
+              </div>
+            </a>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function PhotoGalleryApp() {
+  // Photos stored in /public/photos/ — add your images there
+  // For now, show a placeholder with instructions
+  const [photos] = useState<string[]>(() => {
+    // Will be populated when photos are added to /public/photos/
+    return []
+  })
+
+  return (
+    <div className="win95-inner-content" style={{ height: '100%', overflowY: 'auto', fontFamily: "'Tahoma', sans-serif", fontSize: 11 }}>
+      {/* Toolbar */}
+      <div style={{ padding: '4px 8px', background: '#c0c0c0', borderBottom: '1px solid #808080', display: 'flex', gap: 4, alignItems: 'center' }}>
+        <span style={{ fontSize: 10, color: '#000' }}>My Photos</span>
+        <span style={{ fontSize: 9, color: '#808080', marginLeft: 'auto' }}>{photos.length} items</span>
+      </div>
+
+      {photos.length === 0 ? (
+        <div style={{ padding: 20, textAlign: 'center', color: '#808080' }}>
+          <div style={{ fontSize: 36, marginBottom: 8 }}>📷</div>
+          <div style={{ fontWeight: 'bold', marginBottom: 4 }}>Photo Gallery</div>
+          <div style={{ fontSize: 10, lineHeight: 1.5 }}>
+            Add photos to <b>/public/photos/</b><br />
+            then list them here to display your work.
+          </div>
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 2, padding: 2 }}>
+          {photos.map((src, i) => (
+            <div key={i} style={{ aspectRatio: '1', overflow: 'hidden', background: '#000' }}>
+              <img src={src} alt={`Photo ${i + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+type GuestbookEntry = {
+  id: string
+  name: string
+  message: string
+  created_at: string
+}
+
+function GuestbookApp() {
+  const [entries, setEntries] = useState<GuestbookEntry[]>([])
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [name, setName] = useState('')
+  const [message, setMessage] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [submitting, setSubmitting] = useState(false)
+  const [composing, setComposing] = useState(false)
+
+  useEffect(() => {
+    fetch('/api/guestbook')
+      .then(r => r.json())
+      .then(d => {
+        const e = d.entries || []
+        setEntries(e)
+        if (e.length > 0) setSelectedId(e[0].id)
+      })
+      .catch(() => setEntries([]))
+      .finally(() => setLoading(false))
+  }, [])
+
+  function handleSubmit() {
+    if (!message.trim()) return
+    setSubmitting(true)
+    fetch('/api/guestbook', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: name.trim() || 'Anonymous', message: message.trim() }),
+    })
+      .then(r => r.json())
+      .then(d => {
+        if (d.entry) {
+          setEntries(prev => [d.entry, ...prev])
+          setSelectedId(d.entry.id)
+          setMessage('')
+          setName('')
+          setComposing(false)
+        }
+      })
+      .catch(() => {})
+      .finally(() => setSubmitting(false))
+  }
+
+  function formatDate(date: string): string {
+    const d = new Date(date)
+    const now = new Date()
+    const diffMs = now.getTime() - d.getTime()
+    const diffDays = Math.floor(diffMs / 86400000)
+    if (diffDays === 0) return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+    if (diffDays === 1) return 'Yesterday'
+    if (diffDays < 7) return d.toLocaleDateString('en-US', { weekday: 'long' })
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: d.getFullYear() !== now.getFullYear() ? 'numeric' : undefined })
+  }
+
+  const selected = entries.find(e => e.id === selectedId)
+
+  // macOS Notes colors
+  const sidebar = '#f5f5f5'
+  const bg = '#fff'
+  const border = '#e0e0e0'
+  const accent = '#f5c542'
+  const textPrimary = '#1d1d1f'
+  const textSecondary = '#86868b'
+
+  return (
+    <div className="win95-inner-content" style={{
+      display: 'flex', height: '100%', fontFamily: "-apple-system, 'Helvetica Neue', sans-serif", fontSize: 13,
+      background: bg, color: textPrimary, overflow: 'hidden',
+    }}>
+      {/* Sidebar — note list */}
+      <div style={{
+        width: 180, flexShrink: 0, background: sidebar, borderRight: `1px solid ${border}`,
+        display: 'flex', flexDirection: 'column', overflow: 'hidden',
+      }}>
+        {/* Sidebar toolbar */}
+        <div style={{
+          padding: '8px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          borderBottom: `1px solid ${border}`,
+        }}>
+          <span style={{ fontWeight: 700, fontSize: 13 }}>Guestbook</span>
+          <button onClick={() => { setComposing(true); setSelectedId(null) }} style={{
+            background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: accent,
+            fontWeight: 'bold', lineHeight: 1, padding: 0,
+          }} title="New note">+</button>
+        </div>
+
+        {/* Search-like count */}
+        <div style={{ padding: '4px 10px', fontSize: 11, color: textSecondary }}>
+          {entries.length} {entries.length === 1 ? 'note' : 'notes'}
+        </div>
+
+        {/* Note list */}
+        <div style={{ flex: 1, overflowY: 'auto' }}>
+          {loading ? (
+            <div style={{ padding: 20, textAlign: 'center', color: textSecondary, fontSize: 12 }}>Loading...</div>
+          ) : entries.map(entry => (
+            <div
+              key={entry.id}
+              onClick={() => { setSelectedId(entry.id); setComposing(false) }}
+              style={{
+                padding: '8px 10px', cursor: 'pointer',
+                background: selectedId === entry.id ? accent : 'transparent',
+                borderBottom: `1px solid ${selectedId === entry.id ? 'transparent' : border}`,
+                borderRadius: selectedId === entry.id ? 6 : 0,
+                margin: selectedId === entry.id ? '1px 4px' : '0',
+              }}
+            >
+              <div style={{
+                fontWeight: 600, fontSize: 12, lineHeight: 1.2,
+                color: selectedId === entry.id ? '#000' : textPrimary,
+                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+              }}>{entry.name}</div>
+              <div style={{
+                fontSize: 11, color: selectedId === entry.id ? 'rgba(0,0,0,0.6)' : textSecondary,
+                display: 'flex', gap: 6, marginTop: 1,
+              }}>
+                <span>{formatDate(entry.created_at)}</span>
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {entry.message.slice(0, 30)}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Main content area */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        {composing ? (
+          /* Compose new note */
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '16px 20px' }}>
+            <div style={{ fontSize: 11, color: textSecondary, textAlign: 'center', marginBottom: 12 }}>
+              New Note
+            </div>
+            <input
+              type="text"
+              value={name}
+              onChange={e => setName(e.target.value)}
+              placeholder="Your name"
+              maxLength={50}
+              style={{
+                border: 'none', outline: 'none', fontSize: 20, fontWeight: 700,
+                fontFamily: 'inherit', color: textPrimary, marginBottom: 8,
+                background: 'transparent',
+              }}
+              autoFocus
+            />
+            <textarea
+              value={message}
+              onChange={e => setMessage(e.target.value)}
+              placeholder="Start writing..."
+              maxLength={500}
+              style={{
+                flex: 1, border: 'none', outline: 'none', fontSize: 14, lineHeight: 1.6,
+                fontFamily: 'inherit', color: textPrimary, resize: 'none',
+                background: 'transparent',
+              }}
+            />
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 8 }}>
+              <button onClick={() => setComposing(false)} style={{
+                padding: '6px 16px', background: '#e5e5e5', border: 'none', borderRadius: 6,
+                fontSize: 12, cursor: 'pointer', fontFamily: 'inherit', color: textPrimary,
+              }}>Cancel</button>
+              <button onClick={handleSubmit} disabled={submitting || !message.trim()} style={{
+                padding: '6px 16px', background: accent, border: 'none', borderRadius: 6,
+                fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+                color: '#000', opacity: submitting || !message.trim() ? 0.4 : 1,
+              }}>{submitting ? 'Signing...' : 'Sign'}</button>
+            </div>
+          </div>
+        ) : selected ? (
+          /* Read selected note */
+          <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px' }}>
+            <div style={{ fontSize: 11, color: textSecondary, textAlign: 'center', marginBottom: 12 }}>
+              {new Date(selected.created_at).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
+            </div>
+            <div style={{ fontSize: 22, fontWeight: 700, marginBottom: 8, lineHeight: 1.2 }}>
+              {selected.name}
+            </div>
+            <div style={{ fontSize: 14, lineHeight: 1.7, color: textPrimary, whiteSpace: 'pre-wrap' }}>
+              {selected.message}
+            </div>
+          </div>
+        ) : (
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: textSecondary }}>
+            {entries.length === 0 ? (
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: 28, marginBottom: 8 }}>📝</div>
+                <div style={{ fontSize: 14 }}>No notes yet</div>
+                <div style={{ fontSize: 12, marginTop: 4 }}>Be the first to sign the guestbook</div>
+              </div>
+            ) : (
+              <div style={{ fontSize: 14 }}>Select a note</div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
 
 // ── Minesweeper Game ──
 
@@ -801,99 +1664,33 @@ working:   Twenty Mile Road`}
       case 'minesweeper':
         return <MinesweeperGame />
 
+      case 'cineswipe':
+        return <CineSwipeApp />
+
+      case 'letterboxd':
+        return <LetterboxdApp />
+
       case 'internet':
         return (
           <div className="win95-inner-content" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
             <div style={{
-              padding: '4px 8px',
-              background: '#c0c0c0',
-              borderBottom: '1px solid #808080',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 4,
-              fontSize: 11,
-              fontFamily: "'Tahoma', sans-serif",
+              padding: '3px 8px', background: '#c0c0c0', borderBottom: '1px solid #808080',
+              display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, fontFamily: "'Tahoma', sans-serif",
             }}>
               <span style={{ color: '#808080' }}>Address:</span>
-              <div style={{
-                flex: 1,
-                background: '#fff',
-                border: '1px solid #808080',
-                padding: '1px 4px',
-                fontSize: 11,
-              }}>
-                https://connornelson.com
+              <div style={{ flex: 1, background: '#fff', border: '1px solid #808080', padding: '1px 4px', fontSize: 11 }}>
+                https://thesignal.connornelson.com
               </div>
             </div>
-            <div style={{ flex: 1, padding: '16px 20px', fontFamily: "'Tahoma', sans-serif", fontSize: 11, color: '#000', overflowY: 'auto' }}>
-              <div style={{ textAlign: 'center', marginBottom: 16 }}>
-                <div style={{ fontSize: 20, fontWeight: 'bold', color: '#000080' }}>Welcome to Connor Nelson Films</div>
-                <div style={{ fontSize: 10, color: '#808080', marginTop: 4 }}>Best viewed in Internet Explorer 5.0 at 800x600</div>
-                <hr style={{ border: 'none', borderTop: '2px solid #000080', margin: '12px 0' }} />
-              </div>
-              <p style={{ marginBottom: 8, lineHeight: 1.6 }}>
-                You have reached the homepage of <b>Connor Nelson</b>, filmmaker and writer from rural Michigan.
-              </p>
-              <p style={{ marginBottom: 8, lineHeight: 1.6 }}>
-                I make dark things. Films, audio dramas, essays. Mostly about what happens in the peripheral vision.
-              </p>
-              <div style={{ marginTop: 16, padding: 8, border: '1px solid #c0c0c0', background: '#f0f0f0' }}>
-                <div style={{ fontWeight: 'bold', marginBottom: 4 }}>Links:</div>
-                {['Letterboxd', 'Vimeo', 'SoundCloud', 'Substack'].map((s) => (
-                  <div key={s} style={{ marginBottom: 2 }}>
-                    <a href="#" style={{ color: '#000080', textDecoration: 'underline' }}>{s}</a>
-                  </div>
-                ))}
-              </div>
-              <div style={{ marginTop: 16, textAlign: 'center', fontSize: 10, color: '#808080' }}>
-                <img alt="" src="" style={{ display: 'none' }} />
-                Visitor #{Math.floor(Math.random() * 9000) + 1000} | Last updated: March 2026
-              </div>
-            </div>
+            <SignalNewsApp />
           </div>
         )
 
       case 'notepad':
-        return (
-          <div className="win95-inner-content" style={{ height: '100%' }}>
-            <textarea
-              style={{
-                width: '100%',
-                height: '100%',
-                border: 'none',
-                outline: 'none',
-                resize: 'none',
-                fontFamily: "'Courier New', monospace",
-                fontSize: 12,
-                padding: '8px 10px',
-                lineHeight: 1.5,
-                color: '#000',
-                background: '#fff',
-              }}
-              defaultValue="Type here..."
-              spellCheck={false}
-            />
-          </div>
-        )
+        return <GuestbookApp />
 
       case 'recyclebin':
-        return (
-          <div className="win95-inner-content">
-            <div style={{
-              padding: '20px',
-              textAlign: 'center',
-              fontFamily: "'Tahoma', sans-serif",
-              fontSize: 11,
-              color: '#808080',
-            }}>
-              <div style={{ fontSize: 36, marginBottom: 8 }}>{'\uD83D\uDDD1\uFE0F'}</div>
-              <div>Recycle Bin is empty.</div>
-              <div style={{ fontSize: 10, marginTop: 4, fontStyle: 'italic' }}>
-                Nothing has been deleted yet.
-              </div>
-            </div>
-          </div>
-        )
+        return <PhotoGalleryApp />
 
       default:
         return null
