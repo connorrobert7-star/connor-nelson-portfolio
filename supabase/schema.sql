@@ -39,3 +39,21 @@ create index on guestbook (created_at desc);
 alter table guestbook enable row level security;
 create policy "Allow all access with service key" on guestbook
   for all using (true) with check (true);
+
+-- Daily photos (Glance Back)
+create table daily_photos (
+  id uuid primary key default gen_random_uuid(),
+  photo_url text not null,
+  taken_at timestamptz not null default now(),
+  created_at timestamptz not null default now()
+);
+
+create index on daily_photos (taken_at desc);
+
+alter table daily_photos enable row level security;
+create policy "Allow all access with service key" on daily_photos
+  for all using (true) with check (true);
+
+-- Storage bucket (run manually in Supabase dashboard):
+-- 1. Go to Storage > New Bucket > name: "photos" > Public: ON
+-- 2. Add policy: allow all operations with service key

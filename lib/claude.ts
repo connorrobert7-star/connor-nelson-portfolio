@@ -53,7 +53,7 @@ Respond in JSON only, no other text:
 
   return {
     ...parsed,
-    passes: parsed.documentary_score >= 7,
+    passes: parsed.documentary_score >= 5,
   };
 }
 

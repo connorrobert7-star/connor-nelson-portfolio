@@ -21,7 +21,8 @@ export async function GET(request: NextRequest) {
 
   let query = client
     .from("frames")
-    .select("id, film_title, director, year, cinematographer, aspect_ratio, r2_key, thumbnail_r2_key, lighting_tags, lens_tags, color_tags, emotional_register_tags, composition_tags, era_tags, subject_tags, movement_tags, folder_tags, camera_model, lens_info, film_stock, film_notes")
+    .select("id, film_title, director, year, cinematographer, aspect_ratio, r2_key, thumbnail_r2_key, lighting_tags, lens_tags, color_tags, emotional_register_tags, composition_tags, era_tags, subject_tags, movement_tags, folder_tags")
+    .eq("is_active", true)
     .limit(50);
 
   if (exclude.length > 0) {
@@ -51,7 +52,7 @@ export async function GET(request: NextRequest) {
       director: frame.director,
       year: frame.year,
       cinematographer: frame.cinematographer,
-      aspect_ratio: frame.aspect_ratio,
+      aspect_ratio: frame.aspect_ratio || "16:9",
       cdn_url: cdnUrl,
       thumbnail_url: thumbUrl,
       tags: {
@@ -65,10 +66,10 @@ export async function GET(request: NextRequest) {
         movement: frame.movement_tags || [],
         folder: frame.folder_tags || [],
       },
-      camera_model: frame.camera_model,
-      lens_info: frame.lens_info,
-      film_stock: frame.film_stock,
-      film_notes: frame.film_notes,
+      camera_model: null,
+      lens_info: null,
+      film_stock: null,
+      film_notes: null,
     },
   });
 }

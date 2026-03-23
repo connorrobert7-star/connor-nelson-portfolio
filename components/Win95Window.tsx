@@ -11,10 +11,12 @@ interface Win95WindowProps {
   zIndex: number
   phase: 'loading' | 'ready'
   minimized: boolean
+  maximized?: boolean
   focused?: boolean
   loadingLines?: string[]
   onClose: () => void
   onMinimize: () => void
+  onMaximize?: () => void
   onFocus: () => void
   onMove: (x: number, y: number) => void
   children: React.ReactNode
@@ -28,10 +30,12 @@ export default function Win95Window({
   zIndex,
   phase,
   minimized,
+  maximized = false,
   focused = false,
   loadingLines = [],
   onClose,
   onMinimize,
+  onMaximize,
   onFocus,
   onMove,
   children,
@@ -127,19 +131,20 @@ export default function Win95Window({
     <div
       className={`win95-window ${focused ? 'focused' : ''}`}
       style={{
-        position: 'absolute',
-        left: position.x,
-        top: position.y,
-        width: size.width,
-        height: size.height,
+        position: maximized ? 'absolute' : 'absolute',
+        left: maximized ? 0 : position.x,
+        top: maximized ? 0 : position.y,
+        width: maximized ? '100%' : size.width,
+        height: maximized ? 'calc(100% - 28px)' : size.height,
         zIndex,
       }}
       onMouseDown={() => onFocus()}
     >
       <div
         className="win95-titlebar"
-        onMouseDown={handleMouseDown}
-        onTouchStart={handleTouchStart}
+        onMouseDown={maximized ? undefined : handleMouseDown}
+        onTouchStart={maximized ? undefined : handleTouchStart}
+        onDoubleClick={() => onMaximize?.()}
       >
         {icon && <span className="win95-titlebar-icon">{icon}</span>}
         <span className="win95-titlebar-text">{title}</span>
@@ -153,8 +158,14 @@ export default function Win95Window({
           >
             _
           </button>
-          <button aria-label="Maximize" disabled>
-            []
+          <button
+            aria-label="Maximize"
+            onClick={(e) => {
+              e.stopPropagation()
+              onMaximize?.()
+            }}
+          >
+            {maximized ? '❐' : '□'}
           </button>
           <button
             onClick={(e) => {

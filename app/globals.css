@@ -58,7 +58,7 @@ img { display: block; max-width: 100%; }
   position: fixed;
   inset: 0;
   pointer-events: none;
-  z-index: 9999;
+  z-index: 99999;
   opacity: 0.025;
   animation: grain-shift 0.6s steps(1) infinite;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
@@ -411,7 +411,7 @@ body::after {
   z-index: 10001;
   display: flex;
   flex-direction: column;
-  background: #012265;
+  background: #008080;
   font-family: 'Tahoma', 'MS Sans Serif', Arial, sans-serif;
   font-size: 11px;
   overflow: hidden;
@@ -428,15 +428,16 @@ body::after {
   bottom: 0;
   left: 0;
   right: 0;
-  height: 30px;
+  height: 28px;
   background: #c0c0c0;
-  border-top: 2px solid #fff;
+  border-top: 1px solid #dfdfdf;
+  box-shadow: inset 0 1px 0 #fff;
   display: flex;
   align-items: center;
-  padding: 2px 4px;
-  gap: 3px;
+  padding: 2px 2px;
+  gap: 2px;
   z-index: 100;
-  font-family: 'Tahoma', 'MS Sans Serif', Arial, sans-serif;
+  font-family: 'MS Sans Serif', 'Tahoma', Arial, sans-serif;
   font-size: 11px;
 }
 .win95-start-btn {
@@ -446,10 +447,12 @@ body::after {
   align-items: center;
   gap: 4px;
   background: #c0c0c0;
-  border-top: 2px solid #fff;
-  border-left: 2px solid #fff;
-  border-right: 2px solid #000;
-  border-bottom: 2px solid #000;
+  border: none;
+  box-shadow:
+    inset 1px 1px 0 #fff,
+    inset -1px -1px 0 #808080,
+    inset 2px 2px 0 #dfdfdf,
+    inset -2px -2px 0 #000;
   font-family: inherit;
   font-weight: bold;
   font-size: 11px;
@@ -459,10 +462,12 @@ body::after {
 }
 .win95-start-btn:active,
 .win95-start-btn.pressed {
-  border-top: 2px solid #000;
-  border-left: 2px solid #000;
-  border-right: 2px solid #fff;
-  border-bottom: 2px solid #fff;
+  box-shadow:
+    inset 1px 1px 0 #000,
+    inset -1px -1px 0 #dfdfdf,
+    inset 2px 2px 0 #808080,
+    inset -2px -2px 0 #fff;
+  padding: 1px 5px 0 7px;
 }
 .win95-start-flag {
   display: inline-flex;
@@ -517,13 +522,28 @@ body::after {
   border-bottom: 2px solid #fff;
   font-weight: bold;
 }
+.win95-taskbar-btn {
+  box-shadow:
+    inset 1px 1px 0 #fff,
+    inset -1px -1px 0 #808080,
+    inset 2px 2px 0 #dfdfdf,
+    inset -2px -2px 0 #000;
+  border: none;
+}
+.win95-taskbar-btn.active {
+  box-shadow:
+    inset 1px 1px 0 #000,
+    inset -1px -1px 0 #dfdfdf,
+    inset 2px 2px 0 #808080;
+  border: none;
+}
 .win95-clock {
   padding: 2px 8px;
   font-size: 11px;
-  border-top: 1px solid #808080;
-  border-left: 1px solid #808080;
-  border-right: 1px solid #fff;
-  border-bottom: 1px solid #fff;
+  border: none;
+  box-shadow:
+    inset 1px 1px 0 #808080,
+    inset -1px -1px 0 #fff;
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -598,17 +618,20 @@ body::after {
 ═════════════════════════════════════════════ */
 .win95-window {
   background: #c0c0c0;
-  border-top: 2px solid #fff;
-  border-left: 2px solid #fff;
-  border-right: 2px solid #000;
-  border-bottom: 2px solid #000;
+  border: none;
+  box-shadow:
+    inset 1px 1px 0 #fff,
+    inset -1px -1px 0 #808080,
+    inset 2px 2px 0 #dfdfdf,
+    inset -2px -2px 0 #000,
+    2px 2px 0 rgba(0,0,0,0.3);
   display: flex;
   flex-direction: column;
-  box-shadow: 2px 2px 0 rgba(0,0,0,0.3);
-  font-family: 'Tahoma', 'MS Sans Serif', Arial, sans-serif;
+  font-family: 'MS Sans Serif', 'Tahoma', Arial, sans-serif;
   font-size: 11px;
   min-width: 180px;
   min-height: 80px;
+  padding: 3px;
 }
 .win95-titlebar {
   height: 20px;
@@ -648,10 +671,12 @@ body::after {
   width: 16px;
   height: 14px;
   background: #c0c0c0;
-  border-top: 1px solid #fff;
-  border-left: 1px solid #fff;
-  border-right: 1px solid #000;
-  border-bottom: 1px solid #000;
+  border: none;
+  box-shadow:
+    inset 1px 1px 0 #fff,
+    inset -1px -1px 0 #000,
+    inset 2px 2px 0 #dfdfdf,
+    inset -2px -2px 0 #808080;
   font-size: 8px;
   font-weight: bold;
   font-family: inherit;
@@ -695,11 +720,15 @@ body::after {
   position: relative;
   overflow: auto;
   background: #fff;
-  margin: 2px;
-  border-top: 1px solid #808080;
-  border-left: 1px solid #808080;
-  border-right: 1px solid #fff;
-  border-bottom: 1px solid #fff;
+  margin: 0;
+  border: none;
+  box-shadow:
+    inset 1px 1px 0 #808080,
+    inset -1px -1px 0 #fff,
+    inset 2px 2px 0 #000,
+    inset -2px -2px 0 #dfdfdf;
+  display: flex;
+  flex-direction: column;
 }
 .win95-content-inset {
   display: none;
@@ -737,19 +766,20 @@ body::after {
   background: none;
   border: 1px solid transparent;
   cursor: pointer;
-  font-family: 'Tahoma', 'MS Sans Serif', Arial, sans-serif;
+  font-family: 'MS Sans Serif', 'Tahoma', Arial, sans-serif;
   color: #fff;
 }
 .desktop-icon:hover {
-  border-color: rgba(255,255,255,0.15);
+  border-color: transparent;
 }
 .desktop-icon-selected {
-  border-color: rgba(255,255,255,0.3);
-  background: rgba(255,255,255,0.08);
+  border: 1px dotted #fff;
+  background: none;
 }
 .desktop-icon-selected .desktop-icon-label {
   background: #000080;
   color: #fff;
+  outline: 1px dotted #fff;
 }
 .desktop-icon-img {
   font-size: 28px;
@@ -757,12 +787,12 @@ body::after {
   filter: drop-shadow(1px 1px 0 rgba(0,0,0,0.5));
 }
 .desktop-icon-label {
-  font-size: 10px;
+  font-size: 11px;
   text-align: center;
   padding: 1px 3px;
   word-break: break-word;
   line-height: 1.2;
-  text-shadow: 1px 1px 0 #000;
+  text-shadow: 1px 1px 1px #000, -1px -1px 1px #000, 1px -1px 1px #000, -1px 1px 1px #000;
 }
 
 /* ═════════════════════════════════════════════
@@ -951,26 +981,68 @@ body::after {
   flex-shrink: 0;
 }
 
+/* ── Mini Demo Reel (persistent on desktop) ── */
+.desktop-mini-reel {
+  position: absolute;
+  bottom: 36px;
+  right: 8px;
+  width: 200px;
+  height: 140px;
+  background: #c0c0c0;
+  border-top: 2px solid #fff;
+  border-left: 2px solid #fff;
+  border-right: 2px solid #000;
+  border-bottom: 2px solid #000;
+  z-index: 50;
+  overflow: hidden;
+  box-shadow: 2px 2px 0 rgba(0,0,0,0.3);
+}
+.desktop-mini-reel-title {
+  height: 16px;
+  background: linear-gradient(90deg, #000080, #1084d0);
+  color: #fff;
+  font-family: 'Tahoma', 'MS Sans Serif', Arial, sans-serif;
+  font-size: 9px;
+  font-weight: bold;
+  padding: 1px 4px;
+  display: flex;
+  align-items: center;
+  user-select: none;
+}
+.desktop-mini-reel-content {
+  height: calc(100% - 16px);
+  background: #000;
+  overflow: hidden;
+}
+
+/* ── Desktop scanlines (atmosphere) ── */
+.desktop-scanlines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,0,0,0.03) 2px,
+    rgba(0,0,0,0.03) 4px
+  );
+  animation: flicker-subtle 6s infinite;
+}
+@keyframes flicker-subtle {
+  0%, 100% { opacity: 1; }
+  95% { opacity: 1; }
+  96% { opacity: 0.85; }
+  97% { opacity: 1; }
+}
+
 /* ═════════════════════════════════════════════
    WIN95 DESKTOP MOBILE
 ═════════════════════════════════════════════ */
 @media (max-width: 660px) {
-  .desktop-icons {
-    top: 8px;
-    left: 8px;
-    gap: 2px;
-  }
-  .desktop-icon {
-    width: 60px;
-  }
-  .desktop-icon-img {
-    font-size: 24px;
-  }
-  .desktop-icon-label {
-    font-size: 9px;
-  }
-  .win95-window {
-    max-width: calc(100vw - 8px);
-    max-height: calc(100vh - 50px);
+  .win95-desktop {
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
   }
 }

@@ -14,6 +14,7 @@ export async function GET(request: NextRequest) {
   const raw = await scrapeAll();
   let processed = 0;
   let stored = 0;
+  const errors: string[] = [];
 
   for (const item of raw) {
     try {
@@ -43,9 +44,6 @@ export async function GET(request: NextRequest) {
         isLead
       );
 
-      const embeddingText = `${story.headline} ${story.dek} ${story.body}`;
-      const embedding = await generateEmbedding(embeddingText);
-
       const { error } = await supabase.from("stories").insert({
         headline: story.headline,
         dek: story.dek,
@@ -55,14 +53,17 @@ export async function GET(request: NextRequest) {
         category: classification.category,
         audience_size_estimate: classification.audience_size_estimate,
         documentary_score: classification.documentary_score,
-        embedding,
       });
 
-      if (!error) stored++;
+      if (error) {
+        errors.push(`${error.message} (cat: ${classification.category}, score: ${classification.documentary_score})`);
+      } else {
+        stored++;
+      }
     } catch {
       // Continue with next item
     }
   }
 
-  return NextResponse.json({ processed, stored, timestamp: new Date().toISOString() });
+  return NextResponse.json({ processed, stored, errors: errors.slice(0, 5), timestamp: new Date().toISOString() });
 }

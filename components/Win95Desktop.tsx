@@ -37,6 +37,7 @@ interface WindowState {
   zIndex: number
   phase: 'loading' | 'ready'
   minimized: boolean
+  maximized: boolean
 }
 
 interface IconState {
@@ -49,10 +50,11 @@ interface IconState {
 }
 
 type Action =
-  | { type: 'OPEN_WINDOW'; payload: Omit<WindowState, 'zIndex' | 'phase'> & { phase?: 'loading' | 'ready' } }
+  | { type: 'OPEN_WINDOW'; payload: Omit<WindowState, 'zIndex' | 'phase' | 'maximized'> & { phase?: 'loading' | 'ready'; maximized?: boolean } }
   | { type: 'CLOSE_WINDOW'; id: string }
   | { type: 'FOCUS_WINDOW'; id: string }
   | { type: 'MINIMIZE_WINDOW'; id: string }
+  | { type: 'MAXIMIZE_WINDOW'; id: string }
   | { type: 'MOVE_WINDOW'; id: string; x: number; y: number }
   | { type: 'SET_READY'; id: string }
 
@@ -127,8 +129,8 @@ const loadingCodeBank: Record<string, string[]> = {
     "Connecting to dial-up...",
     "AT&T WorldNet dialing...",
     "CONNECT 56000",
-    "GET https://thesignal.connornelson.com",
-    "Loading The Signal...",
+    "GET https://www.youtube.com",
+    "Buffering...",
     "Connected.",
   ],
   cineswipe: [
@@ -153,16 +155,16 @@ const loadingCodeBank: Record<string, string[]> = {
     "ready.",
   ],
   notepad: [
-    "C:\\APPS> guestbook.exe",
-    "connecting to database...",
+    "C:\\APPS> chat.exe",
+    "connecting to server...",
     "loading messages...",
-    "ready to sign.",
+    "you are now online.",
   ],
   recyclebin: [
-    "C:\\PHOTOS> dir *.jpg /s",
-    "scanning photo archive...",
-    "loading gallery...",
-    "ready.",
+    "C:\\PHOTOS> glanceback.exe",
+    "syncing with phone...",
+    "loading daily photos...",
+    "gallery ready.",
   ],
 }
 
@@ -186,6 +188,7 @@ function windowReducer(state: WindowState[], action: Action): WindowState[] {
         ...state,
         {
           ...action.payload,
+          maximized: false,
           phase: action.payload.phase ?? 'loading',
           zIndex: maxZ + 1,
         },
@@ -202,6 +205,10 @@ function windowReducer(state: WindowState[], action: Action): WindowState[] {
     case 'MINIMIZE_WINDOW':
       return state.map((w) =>
         w.id === action.id ? { ...w, minimized: !w.minimized } : w
+      )
+    case 'MAXIMIZE_WINDOW':
+      return state.map((w) =>
+        w.id === action.id ? { ...w, maximized: !w.maximized } : w
       )
     case 'MOVE_WINDOW':
       return state.map((w) =>
@@ -223,10 +230,11 @@ const defaultIcons: Omit<IconState, 'x' | 'y'>[] = [
   { id: 'contact', label: 'Contact', icon: '\uD83D\uDCE7', type: 'contact' },
   { id: 'cineswipe', label: 'CineSwipe', icon: '\uD83C\uDFAC', type: 'cineswipe' },
   { id: 'letterboxd', label: 'Letterboxd', icon: '\uD83C\uDF9E\uFE0F', type: 'letterboxd' },
+  { id: 'news', label: 'The Signal', icon: '\uD83D\uDCF0', type: 'news' },
   { id: 'internet', label: 'Internet', icon: '\uD83C\uDF10', type: 'internet' },
   { id: 'minesweeper', label: 'Minesweeper', icon: '\uD83D\uDCA3', type: 'minesweeper' },
-  { id: 'notepad', label: 'Guestbook', icon: '\uD83D\uDCDD', type: 'notepad' },
-  { id: 'recyclebin', label: 'My Photos', icon: '\uD83D\uDCF7', type: 'recyclebin' },
+  { id: 'notepad', label: 'Live Chat', icon: '\uD83D\uDCAC', type: 'notepad' },
+  { id: 'recyclebin', label: 'Glance Back', icon: '\uD83D\uDCF8', type: 'recyclebin' },
 ]
 
 function initIcons(): IconState[] {
@@ -246,19 +254,19 @@ function getWindowConfig(type: string, id: string, label: string, icon: string, 
 
   const configs: Record<string, { title: string; size: { width: number; height: number } }> = {
     films: { title: 'My Films', size: { width: 400, height: 350 } },
-    about: { title: 'About Me - Notepad', size: { width: 420, height: 340 } },
+    about: { title: 'PRACTICE - Notepad', size: { width: 440, height: 420 } },
     writing: { title: 'Writing', size: { width: 400, height: 300 } },
-    contact: { title: 'Contact', size: { width: 340, height: 220 } },
+    contact: { title: 'Contact', size: { width: 280, height: 180 } },
     demoReel: { title: 'Demo Reel', size: { width: 300, height: 220 } },
     influences: { title: 'Influences', size: { width: 350, height: 280 } },
     process: { title: 'Process & Tools', size: { width: 350, height: 280 } },
     minesweeper: { title: 'Minesweeper', size: { width: 280, height: 340 } },
     cineswipe: { title: 'CineSwipe', size: { width: 320, height: 520 } },
-    news: { title: 'The Signal - News', size: { width: 500, height: 420 } },
-    letterboxd: { title: 'Letterboxd - Recent Watches', size: { width: 380, height: 400 } },
-    internet: { title: 'Internet Explorer - The Signal', size: { width: 620, height: 500 } },
-    notepad: { title: 'Guestbook', size: { width: 520, height: 380 } },
-    recyclebin: { title: 'My Photos', size: { width: 440, height: 380 } },
+    news: { title: 'The Signal - News', size: { width: 540, height: 450 } },
+    letterboxd: { title: 'Letterboxd', size: { width: 300, height: 360 } },
+    internet: { title: 'Internet Explorer - YouTube', size: { width: 520, height: 440 } },
+    notepad: { title: 'Live Chat', size: { width: 360, height: 320 } },
+    recyclebin: { title: 'Glance Back', size: { width: 360, height: 400 } },
   }
 
   const cfg = configs[type] || { title: label, size: { width: 400, height: 350 } }
@@ -271,6 +279,7 @@ function getWindowConfig(type: string, id: string, label: string, icon: string, 
     position: { x: baseX, y: baseY },
     size: cfg.size,
     minimized: false,
+    maximized: false,
   }
 }
 
@@ -454,10 +463,11 @@ function SignalNewsApp() {
       }}>
         <input type="text" value={searchQuery}
           onChange={e => { setSearchQuery(e.target.value); if (!e.target.value) setSearchResults(null) }}
+          onMouseDown={e => e.stopPropagation()}
           placeholder="Search The Signal..."
           style={{
             flex: 1, border: 'none', padding: '5px 10px', fontSize: 11,
-            outline: 'none', fontFamily: nytSans, color: '#333',
+            outline: 'none', fontFamily: nytSans, color: '#333', background: '#fff',
           }}
         />
         <button type="submit" disabled={searching} style={{
@@ -602,15 +612,34 @@ function CineSwipeApp() {
   const [view, setView] = useState<'swipe' | 'library'>('swipe')
   const [swipeAnim, setSwipeAnim] = useState<'left' | 'right' | null>(null)
 
+  const demoFrames: CineFrame[] = [
+    { id: 'demo-1', film_title: 'Stalker', director: 'Andrei Tarkovsky', year: 1979, cinematographer: 'Alexander Knyazhinsky', aspect_ratio: '1.37:1', cdn_url: null, thumbnail_url: null, tags: { lighting: ['diffused'], lens: ['wide_angle'], color: ['desaturated'], emotional_register: ['mysterious'], composition: ['deep_focus'], era: ['1970s'], subject: ['landscape'], movement: ['tracking'], folder: [] }, camera_model: null, lens_info: null, film_stock: 'Kodak 5247', film_notes: 'The Zone sequences were shot in Estonia near a power plant.' },
+    { id: 'demo-2', film_title: 'Mulholland Drive', director: 'David Lynch', year: 2001, cinematographer: 'Peter Deming', aspect_ratio: '1.85:1', cdn_url: null, thumbnail_url: null, tags: { lighting: ['hard_light'], lens: ['telephoto'], color: ['warm'], emotional_register: ['unsettling'], composition: ['shallow_focus'], era: ['2000s'], subject: ['portrait'], movement: ['static'], folder: [] }, camera_model: null, lens_info: null, film_stock: null, film_notes: 'Hollywood noir reimagined as a dream logic puzzle.' },
+    { id: 'demo-3', film_title: 'In the Mood for Love', director: 'Wong Kar-wai', year: 2000, cinematographer: 'Christopher Doyle', aspect_ratio: '1.66:1', cdn_url: null, thumbnail_url: null, tags: { lighting: ['soft_light'], lens: ['telephoto'], color: ['saturated'], emotional_register: ['melancholic'], composition: ['framed'], era: ['2000s'], subject: ['portrait'], movement: ['handheld'], folder: [] }, camera_model: null, lens_info: null, film_stock: null, film_notes: 'Slow-motion and step-printing create a sense of suspended time.' },
+    { id: 'demo-4', film_title: 'There Will Be Blood', director: 'Paul Thomas Anderson', year: 2007, cinematographer: 'Robert Elswit', aspect_ratio: '2.39:1', cdn_url: null, thumbnail_url: null, tags: { lighting: ['natural'], lens: ['wide_angle'], color: ['earthy'], emotional_register: ['intense'], composition: ['wide_shot'], era: ['2000s'], subject: ['landscape'], movement: ['crane'], folder: [] }, camera_model: 'Panavision XL2', lens_info: 'Panavision C Series', film_stock: 'Kodak Vision2 5218', film_notes: null },
+  ]
+
   const fetchFrame = useCallback((excludeIds: string[]) => {
     setLoading(true)
     setShowInfo(false)
     const exclude = excludeIds.slice(-100).join(',')
     fetch(`/api/cineswipe/frame${exclude ? `?exclude=${exclude}` : ''}`)
       .then(r => r.json())
-      .then(d => setFrame(d.frame || null))
-      .catch(() => setFrame(null))
+      .then(d => {
+        if (d.frame) {
+          setFrame(d.frame)
+        } else {
+          // Fallback to demo frames
+          const available = demoFrames.filter(f => !excludeIds.includes(f.id))
+          setFrame(available.length > 0 ? available[Math.floor(Math.random() * available.length)] : null)
+        }
+      })
+      .catch(() => {
+        const available = demoFrames.filter(f => !excludeIds.includes(f.id))
+        setFrame(available.length > 0 ? available[Math.floor(Math.random() * available.length)] : null)
+      })
       .finally(() => setLoading(false))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
@@ -807,6 +836,172 @@ type LetterboxdReview = {
   image: string
 }
 
+type YouTubeVideo = {
+  id: string
+  title: string
+  thumbnail: string
+  views: string
+  published: string
+}
+
+function OldYouTubeApp() {
+  const [videos, setVideos] = useState<YouTubeVideo[]>([])
+  const [loading, setLoading] = useState(true)
+  const [playing, setPlaying] = useState<string | null>(null)
+
+  useEffect(() => {
+    fetch('/api/youtube')
+      .then(r => r.json())
+      .then(d => setVideos(d.videos || []))
+      .catch(() => setVideos([]))
+      .finally(() => setLoading(false))
+  }, [])
+
+  function formatViews(v: string): string {
+    const n = parseInt(v)
+    if (isNaN(n)) return v
+    if (n >= 1000000) return `${(n / 1000000).toFixed(1)}M`
+    if (n >= 1000) return `${(n / 1000).toFixed(1)}K`
+    return `${n}`
+  }
+
+  function formatDate(d: string): string {
+    if (!d) return ''
+    const date = new Date(d)
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    return `${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`
+  }
+
+  // Old YouTube 2008 colors
+  const ytBg = '#f2f2f2'
+  const ytHeader = '#fff'
+  const ytRed = '#cc0000'
+  const ytLink = '#0033cc'
+  const ytGray = '#666'
+  const ytBorder = '#ccc'
+
+  if (playing) {
+    return (
+      <div className="win95-inner-content" style={{ display: 'flex', flexDirection: 'column', height: '100%', background: '#000' }}>
+        <div style={{ padding: '4px 8px', background: ytHeader, borderBottom: `1px solid ${ytBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <button onClick={() => setPlaying(null)} style={{
+            background: '#f0f0f0', border: `1px solid ${ytBorder}`, padding: '2px 8px',
+            fontSize: 10, cursor: 'pointer', fontFamily: 'Arial, sans-serif', color: '#333',
+          }}>Back to Videos</button>
+          <span style={{ fontFamily: 'Arial, sans-serif', fontSize: 10, color: ytGray }}>
+            {videos.find(v => v.id === playing)?.title}
+          </span>
+        </div>
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <iframe
+            src={`https://www.youtube.com/embed/${playing}?autoplay=1`}
+            style={{ width: '100%', height: '100%', border: 'none' }}
+            allow="autoplay; encrypted-media"
+            allowFullScreen
+          />
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="win95-inner-content" style={{ display: 'flex', flexDirection: 'column', height: '100%', background: ytBg, fontFamily: 'Arial, sans-serif', fontSize: 11 }}>
+      {/* Old YouTube header */}
+      <div style={{ background: ytHeader, borderBottom: `1px solid ${ytBorder}`, padding: '6px 10px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
+            <span style={{ fontSize: 16, fontWeight: 'bold', color: '#000', fontFamily: 'Arial, sans-serif' }}>You</span>
+            <span style={{
+              fontSize: 16, fontWeight: 'bold', color: '#fff', background: ytRed,
+              padding: '0 4px', borderRadius: 3, marginLeft: 0,
+            }}>Tube</span>
+            <span style={{ fontSize: 9, color: ytGray, marginLeft: 4, fontStyle: 'italic' }}>Broadcast Yourself</span>
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 8, marginTop: 4, fontSize: 10 }}>
+          <span style={{ fontWeight: 'bold', color: ytRed, borderBottom: `2px solid ${ytRed}`, paddingBottom: 2 }}>Videos</span>
+          <span style={{ color: ytGray }}>Channel</span>
+        </div>
+      </div>
+
+      {/* Channel banner */}
+      <div style={{ background: '#fff', borderBottom: `1px solid ${ytBorder}`, padding: '8px 10px', display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{
+          width: 36, height: 36, background: '#e0e0e0', borderRadius: '50%',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 14, fontWeight: 'bold', color: '#666', border: '1px solid #ccc',
+        }}>CN</div>
+        <div>
+          <div style={{ fontWeight: 'bold', fontSize: 13, color: '#000' }}>Connor Nelson</div>
+          <div style={{ fontSize: 9, color: ytGray }}>{videos.length} videos &bull; Joined Jul 2013</div>
+        </div>
+        <button style={{
+          marginLeft: 'auto', background: ytRed, color: '#fff', border: 'none',
+          padding: '3px 10px', fontSize: 10, fontWeight: 'bold', cursor: 'pointer', borderRadius: 2,
+        }}>Subscribe</button>
+      </div>
+
+      {/* Video list */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '8px 10px' }}>
+        {loading ? (
+          <div style={{ textAlign: 'center', color: ytGray, padding: '30px 0' }}>Loading videos...</div>
+        ) : videos.length === 0 ? (
+          <div style={{ textAlign: 'center', color: ytGray, padding: '30px 0' }}>No videos found.</div>
+        ) : (
+          videos.map(video => (
+            <div
+              key={video.id}
+              onClick={() => setPlaying(video.id)}
+              style={{
+                display: 'flex', gap: 8, marginBottom: 10, cursor: 'pointer',
+                padding: 6, background: '#fff', border: `1px solid ${ytBorder}`,
+              }}
+            >
+              {/* Thumbnail */}
+              <div style={{ width: 120, height: 68, flexShrink: 0, background: '#000', position: 'relative', overflow: 'hidden' }}>
+                <img
+                  src={video.thumbnail}
+                  alt={video.title}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+                <div style={{
+                  position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  background: 'rgba(0,0,0,0.15)',
+                }}>
+                  <div style={{
+                    width: 24, height: 24, background: 'rgba(0,0,0,0.7)', borderRadius: '50%',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <div style={{ width: 0, height: 0, borderTop: '5px solid transparent', borderBottom: '5px solid transparent', borderLeft: '8px solid #fff', marginLeft: 2 }} />
+                  </div>
+                </div>
+              </div>
+              {/* Info */}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 12, fontWeight: 'bold', color: ytLink, lineHeight: 1.2, marginBottom: 3 }}>
+                  {video.title}
+                </div>
+                <div style={{ fontSize: 10, color: ytGray }}>Connor Nelson</div>
+                <div style={{ fontSize: 10, color: ytGray, marginTop: 2 }}>
+                  {formatViews(video.views)} views &bull; {formatDate(video.published)}
+                </div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Footer */}
+      <div style={{
+        background: '#fff', borderTop: `1px solid ${ytBorder}`, padding: '4px 10px',
+        textAlign: 'center', fontSize: 9, color: '#999',
+      }}>
+        Copyright &copy; 2008 YouTube, LLC
+      </div>
+    </div>
+  )
+}
+
 function LetterboxdApp() {
   const [reviews, setReviews] = useState<LetterboxdReview[]>([])
   const [loading, setLoading] = useState(true)
@@ -820,99 +1015,146 @@ function LetterboxdApp() {
   }, [])
 
   return (
-    <div className="win95-inner-content" style={{ height: '100%', overflowY: 'auto', background: '#14181c', fontFamily: "'Tahoma', sans-serif", fontSize: 11 }}>
-      {/* Header */}
-      <div style={{ padding: '10px 12px', borderBottom: '1px solid #2c3440', display: 'flex', alignItems: 'center', gap: 8 }}>
-        <div style={{ width: 24, height: 24, background: '#00e054', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 'bold', color: '#fff' }}>L</div>
-        <div>
-          <div style={{ color: '#fff', fontWeight: 'bold', fontSize: 12 }}>Recent Watches</div>
-          <div style={{ color: '#9ab', fontSize: 9 }}>from Letterboxd</div>
+    <div className="win95-inner-content" style={{ height: '100%', overflowY: 'auto', fontFamily: "'Tahoma', sans-serif", fontSize: 11, color: '#000' }}>
+      <div style={{ padding: '16px 20px', textAlign: 'center' }}>
+        <div style={{ fontWeight: 'bold', fontSize: 13, marginBottom: 12, borderBottom: '1px solid #808080', paddingBottom: 6 }}>
+          Recent Watches
         </div>
-      </div>
 
-      {loading ? (
-        <div style={{ textAlign: 'center', color: '#9ab', padding: '40px 0' }}>Loading reviews...</div>
-      ) : reviews.length === 0 ? (
-        <div style={{ textAlign: 'center', color: '#9ab', padding: '40px 0' }}>
-          <div style={{ fontSize: 13, marginBottom: 4 }}>No reviews found.</div>
-          <div style={{ fontSize: 9 }}>Set LETTERBOXD_USERNAME in .env.local</div>
-        </div>
-      ) : (
-        <div>
-          {reviews.map((review, i) => (
+        {loading ? (
+          <div style={{ color: '#808080', padding: '20px 0' }}>Loading...</div>
+        ) : reviews.length === 0 ? (
+          <div style={{ color: '#808080', padding: '20px 0' }}>No reviews found.</div>
+        ) : (
+          reviews.map((review, i) => (
             <a
               key={i}
               href={review.link}
               target="_blank"
               rel="noopener noreferrer"
-              style={{ display: 'flex', gap: 10, padding: '10px 12px', borderBottom: '1px solid #2c3440', textDecoration: 'none', color: 'inherit' }}
+              style={{ display: 'block', textDecoration: 'none', color: 'inherit', marginBottom: 10, paddingBottom: 10, borderBottom: i < reviews.length - 1 ? '1px dotted #c0c0c0' : 'none' }}
             >
-              {/* Poster */}
-              <div style={{ width: 48, height: 72, flexShrink: 0, background: '#2c3440', overflow: 'hidden' }}>
-                {review.image ? (
-                  <img src={review.image} alt={review.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                ) : (
-                  <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#456', fontSize: 18 }}>🎬</div>
-                )}
-              </div>
-              {/* Info */}
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                  <div style={{ color: '#fff', fontWeight: 'bold', fontSize: 12 }}>{review.title}</div>
-                  <div style={{ color: '#9ab', fontSize: 9, flexShrink: 0 }}>{review.date}</div>
+              <div style={{ fontWeight: 'bold', fontSize: 13, color: '#000080' }}>{review.title}</div>
+              <div style={{ fontSize: 10, color: '#808080', marginBottom: 2 }}>{review.year}</div>
+              {review.rating && (
+                <div style={{ fontSize: 12, letterSpacing: 1, marginBottom: 2 }}>{review.rating}</div>
+              )}
+              {review.review && (
+                <div style={{ fontSize: 10, color: '#333', fontStyle: 'italic', lineHeight: 1.4 }}>
+                  &ldquo;{review.review}&rdquo;
                 </div>
-                <div style={{ color: '#9ab', fontSize: 9 }}>{review.year}</div>
-                {review.rating && (
-                  <div style={{ color: '#00e054', fontSize: 11, margin: '2px 0', letterSpacing: 1 }}>{review.rating}</div>
-                )}
-                {review.review && (
-                  <div style={{ color: '#9ab', fontSize: 10, lineHeight: 1.4, marginTop: 2 }}>
-                    {review.review.slice(0, 120)}{review.review.length > 120 ? '...' : ''}
-                  </div>
-                )}
-              </div>
+              )}
+              <div style={{ fontSize: 9, color: '#808080', marginTop: 2 }}>{review.date}</div>
             </a>
-          ))}
-        </div>
-      )}
+          ))
+        )}
+      </div>
     </div>
   )
 }
 
+type DailyPhoto = {
+  id: string
+  photo_url: string
+  taken_at: string
+  created_at: string
+}
+
 function PhotoGalleryApp() {
-  // Photos stored in /public/photos/ — add your images there
-  // For now, show a placeholder with instructions
-  const [photos] = useState<string[]>(() => {
-    // Will be populated when photos are added to /public/photos/
-    return []
-  })
+  const [photos, setPhotos] = useState<DailyPhoto[]>([])
+  const [loading, setLoading] = useState(true)
+  const [selected, setSelected] = useState<DailyPhoto | null>(null)
+
+  useEffect(() => {
+    fetch('/api/photos')
+      .then(r => r.json())
+      .then(d => setPhotos(d.photos || []))
+      .catch(() => setPhotos([]))
+      .finally(() => setLoading(false))
+  }, [])
+
+  function formatDate(d: string): string {
+    const date = new Date(d)
+    return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })
+  }
+
+  function formatTime(d: string): string {
+    return new Date(d).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+  }
+
+  function daysAgo(d: string): string {
+    const diff = Math.floor((Date.now() - new Date(d).getTime()) / 86400000)
+    if (diff === 0) return 'Today'
+    if (diff === 1) return 'Yesterday'
+    return `${diff} days ago`
+  }
+
+  if (selected) {
+    return (
+      <div className="win95-inner-content" style={{ display: 'flex', flexDirection: 'column', height: '100%', background: '#000', fontFamily: "'Tahoma', sans-serif" }}>
+        <div style={{ padding: '4px 8px', background: '#c0c0c0', borderBottom: '1px solid #808080', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <button onClick={() => setSelected(null)} style={{
+            background: '#c0c0c0', fontSize: 10, cursor: 'pointer', color: '#000',
+            borderTop: '1px solid #fff', borderLeft: '1px solid #fff',
+            borderRight: '1px solid #000', borderBottom: '1px solid #000',
+            padding: '2px 8px',
+          }}>Back</button>
+          <span style={{ fontSize: 9, color: '#000' }}>{formatDate(selected.taken_at)}</span>
+        </div>
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+          <img src={selected.photo_url} alt="Glance Back" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+        </div>
+        <div style={{ padding: '6px 10px', background: '#1a1a1a', textAlign: 'center' }}>
+          <div style={{ fontSize: 11, color: '#fff', fontWeight: 'bold' }}>{formatDate(selected.taken_at)}</div>
+          <div style={{ fontSize: 10, color: '#999' }}>Taken at {formatTime(selected.taken_at)} &bull; {daysAgo(selected.taken_at)}</div>
+        </div>
+      </div>
+    )
+  }
 
   return (
-    <div className="win95-inner-content" style={{ height: '100%', overflowY: 'auto', fontFamily: "'Tahoma', sans-serif", fontSize: 11 }}>
-      {/* Toolbar */}
-      <div style={{ padding: '4px 8px', background: '#c0c0c0', borderBottom: '1px solid #808080', display: 'flex', gap: 4, alignItems: 'center' }}>
-        <span style={{ fontSize: 10, color: '#000' }}>My Photos</span>
-        <span style={{ fontSize: 9, color: '#808080', marginLeft: 'auto' }}>{photos.length} items</span>
+    <div className="win95-inner-content" style={{ height: '100%', display: 'flex', flexDirection: 'column', fontFamily: "'Tahoma', sans-serif", fontSize: 11 }}>
+      <div style={{ padding: '4px 8px', background: '#c0c0c0', borderBottom: '1px solid #808080', display: 'flex', alignItems: 'center' }}>
+        <span style={{ fontSize: 10, fontWeight: 'bold', color: '#000' }}>Glance Back</span>
+        <span style={{ fontSize: 9, color: '#808080', marginLeft: 'auto' }}>{photos.length} photos</span>
       </div>
 
-      {photos.length === 0 ? (
-        <div style={{ padding: 20, textAlign: 'center', color: '#808080' }}>
-          <div style={{ fontSize: 36, marginBottom: 8 }}>📷</div>
-          <div style={{ fontWeight: 'bold', marginBottom: 4 }}>Photo Gallery</div>
-          <div style={{ fontSize: 10, lineHeight: 1.5 }}>
-            Add photos to <b>/public/photos/</b><br />
-            then list them here to display your work.
-          </div>
-        </div>
-      ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 2, padding: 2 }}>
-          {photos.map((src, i) => (
-            <div key={i} style={{ aspectRatio: '1', overflow: 'hidden', background: '#000' }}>
-              <img src={src} alt={`Photo ${i + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+      <div style={{ flex: 1, overflowY: 'auto', background: '#000' }}>
+        {loading ? (
+          <div style={{ textAlign: 'center', color: '#808080', padding: '40px 0' }}>Loading...</div>
+        ) : photos.length === 0 ? (
+          <div style={{ padding: 24, textAlign: 'center', color: '#808080' }}>
+            <div style={{ fontSize: 32, marginBottom: 8 }}>📸</div>
+            <div style={{ fontWeight: 'bold', marginBottom: 4, color: '#ccc', fontSize: 12 }}>Glance Back</div>
+            <div style={{ fontSize: 10, lineHeight: 1.5, color: '#666' }}>
+              A photo of me, every day.<br />
+              Photos upload automatically from my phone.
             </div>
-          ))}
-        </div>
-      )}
+          </div>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1, padding: 1 }}>
+            {photos.map(photo => (
+              <div
+                key={photo.id}
+                onClick={() => setSelected(photo)}
+                style={{ position: 'relative', aspectRatio: '1', overflow: 'hidden', cursor: 'pointer' }}
+              >
+                <img src={photo.photo_url} alt={formatDate(photo.taken_at)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <div style={{
+                  position: 'absolute', bottom: 0, left: 0, right: 0,
+                  background: 'linear-gradient(transparent, rgba(0,0,0,0.8))',
+                  padding: '10px 4px 3px', textAlign: 'center',
+                }}>
+                  <div style={{ fontSize: 8, color: '#fff', fontWeight: 'bold' }}>
+                    {new Date(photo.taken_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  </div>
+                  <div style={{ fontSize: 7, color: '#aaa' }}>{formatTime(photo.taken_at)}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
@@ -926,26 +1168,36 @@ type GuestbookEntry = {
 
 function GuestbookApp() {
   const [entries, setEntries] = useState<GuestbookEntry[]>([])
-  const [selectedId, setSelectedId] = useState<string | null>(null)
   const [name, setName] = useState('')
   const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
-  const [composing, setComposing] = useState(false)
+  const [online, setOnline] = useState(true)
+  const chatRef = useRef<HTMLDivElement>(null)
 
+  // Load messages and poll every 10 seconds
   useEffect(() => {
-    fetch('/api/guestbook')
-      .then(r => r.json())
-      .then(d => {
-        const e = d.entries || []
-        setEntries(e)
-        if (e.length > 0) setSelectedId(e[0].id)
-      })
-      .catch(() => setEntries([]))
-      .finally(() => setLoading(false))
+    function fetchMessages() {
+      fetch('/api/guestbook')
+        .then(r => r.json())
+        .then(d => { setEntries((d.entries || []).reverse()); setOnline(true) })
+        .catch(() => setOnline(false))
+        .finally(() => setLoading(false))
+    }
+    fetchMessages()
+    const interval = setInterval(fetchMessages, 10000)
+    return () => clearInterval(interval)
   }, [])
 
-  function handleSubmit() {
+  // Auto-scroll to bottom on new messages
+  useEffect(() => {
+    if (chatRef.current) {
+      chatRef.current.scrollTop = chatRef.current.scrollHeight
+    }
+  }, [entries])
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
     if (!message.trim()) return
     setSubmitting(true)
     fetch('/api/guestbook', {
@@ -956,171 +1208,120 @@ function GuestbookApp() {
       .then(r => r.json())
       .then(d => {
         if (d.entry) {
-          setEntries(prev => [d.entry, ...prev])
-          setSelectedId(d.entry.id)
+          setEntries(prev => [...prev, d.entry])
           setMessage('')
-          setName('')
-          setComposing(false)
         }
       })
       .catch(() => {})
       .finally(() => setSubmitting(false))
   }
 
-  function formatDate(date: string): string {
+  function formatTime(date: string): string {
     const d = new Date(date)
     const now = new Date()
     const diffMs = now.getTime() - d.getTime()
     const diffDays = Math.floor(diffMs / 86400000)
-    if (diffDays === 0) return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
-    if (diffDays === 1) return 'Yesterday'
-    if (diffDays < 7) return d.toLocaleDateString('en-US', { weekday: 'long' })
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: d.getFullYear() !== now.getFullYear() ? 'numeric' : undefined })
+    const time = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+    if (diffDays === 0) return time
+    if (diffDays === 1) return `Yesterday ${time}`
+    if (diffDays < 7) return `${d.toLocaleDateString('en-US', { weekday: 'short' })} ${time}`
+    return `${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} ${time}`
   }
 
-  const selected = entries.find(e => e.id === selectedId)
-
-  // macOS Notes colors
-  const sidebar = '#f5f5f5'
-  const bg = '#fff'
-  const border = '#e0e0e0'
-  const accent = '#f5c542'
-  const textPrimary = '#1d1d1f'
-  const textSecondary = '#86868b'
+  // Generate a color from the name
+  function nameColor(n: string): string {
+    const colors = ['#000080', '#008000', '#800000', '#008080', '#800080', '#808000', '#0000cc', '#cc0000', '#006600']
+    let hash = 0
+    for (let i = 0; i < n.length; i++) hash = n.charCodeAt(i) + ((hash << 5) - hash)
+    return colors[Math.abs(hash) % colors.length]
+  }
 
   return (
     <div className="win95-inner-content" style={{
-      display: 'flex', height: '100%', fontFamily: "-apple-system, 'Helvetica Neue', sans-serif", fontSize: 13,
-      background: bg, color: textPrimary, overflow: 'hidden',
+      display: 'flex', flexDirection: 'column', height: '100%',
+      fontFamily: "'Tahoma', sans-serif", fontSize: 11, color: '#000',
     }}>
-      {/* Sidebar — note list */}
+      {/* Header */}
       <div style={{
-        width: 180, flexShrink: 0, background: sidebar, borderRight: `1px solid ${border}`,
-        display: 'flex', flexDirection: 'column', overflow: 'hidden',
+        padding: '4px 8px', background: '#c0c0c0', borderBottom: '1px solid #808080',
+        display: 'flex', alignItems: 'center', gap: 6,
       }}>
-        {/* Sidebar toolbar */}
-        <div style={{
-          padding: '8px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          borderBottom: `1px solid ${border}`,
-        }}>
-          <span style={{ fontWeight: 700, fontSize: 13 }}>Guestbook</span>
-          <button onClick={() => { setComposing(true); setSelectedId(null) }} style={{
-            background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: accent,
-            fontWeight: 'bold', lineHeight: 1, padding: 0,
-          }} title="New note">+</button>
-        </div>
-
-        {/* Search-like count */}
-        <div style={{ padding: '4px 10px', fontSize: 11, color: textSecondary }}>
-          {entries.length} {entries.length === 1 ? 'note' : 'notes'}
-        </div>
-
-        {/* Note list */}
-        <div style={{ flex: 1, overflowY: 'auto' }}>
-          {loading ? (
-            <div style={{ padding: 20, textAlign: 'center', color: textSecondary, fontSize: 12 }}>Loading...</div>
-          ) : entries.map(entry => (
-            <div
-              key={entry.id}
-              onClick={() => { setSelectedId(entry.id); setComposing(false) }}
-              style={{
-                padding: '8px 10px', cursor: 'pointer',
-                background: selectedId === entry.id ? accent : 'transparent',
-                borderBottom: `1px solid ${selectedId === entry.id ? 'transparent' : border}`,
-                borderRadius: selectedId === entry.id ? 6 : 0,
-                margin: selectedId === entry.id ? '1px 4px' : '0',
-              }}
-            >
-              <div style={{
-                fontWeight: 600, fontSize: 12, lineHeight: 1.2,
-                color: selectedId === entry.id ? '#000' : textPrimary,
-                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-              }}>{entry.name}</div>
-              <div style={{
-                fontSize: 11, color: selectedId === entry.id ? 'rgba(0,0,0,0.6)' : textSecondary,
-                display: 'flex', gap: 6, marginTop: 1,
-              }}>
-                <span>{formatDate(entry.created_at)}</span>
-                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {entry.message.slice(0, 30)}
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
+        <span style={{ fontWeight: 'bold', fontSize: 11 }}>Live Chat</span>
+        <span style={{ fontSize: 9, color: '#666', marginLeft: 'auto' }}>
+          {online ? `${entries.length} messages` : 'Offline'}
+        </span>
+        <span style={{ width: 6, height: 6, borderRadius: '50%', background: online ? '#00cc00' : '#999', display: 'inline-block' }} />
       </div>
 
-      {/* Main content area */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-        {composing ? (
-          /* Compose new note */
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '16px 20px' }}>
-            <div style={{ fontSize: 11, color: textSecondary, textAlign: 'center', marginBottom: 12 }}>
-              New Note
-            </div>
-            <input
-              type="text"
-              value={name}
-              onChange={e => setName(e.target.value)}
-              placeholder="Your name"
-              maxLength={50}
-              style={{
-                border: 'none', outline: 'none', fontSize: 20, fontWeight: 700,
-                fontFamily: 'inherit', color: textPrimary, marginBottom: 8,
-                background: 'transparent',
-              }}
-              autoFocus
-            />
-            <textarea
-              value={message}
-              onChange={e => setMessage(e.target.value)}
-              placeholder="Start writing..."
-              maxLength={500}
-              style={{
-                flex: 1, border: 'none', outline: 'none', fontSize: 14, lineHeight: 1.6,
-                fontFamily: 'inherit', color: textPrimary, resize: 'none',
-                background: 'transparent',
-              }}
-            />
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 8 }}>
-              <button onClick={() => setComposing(false)} style={{
-                padding: '6px 16px', background: '#e5e5e5', border: 'none', borderRadius: 6,
-                fontSize: 12, cursor: 'pointer', fontFamily: 'inherit', color: textPrimary,
-              }}>Cancel</button>
-              <button onClick={handleSubmit} disabled={submitting || !message.trim()} style={{
-                padding: '6px 16px', background: accent, border: 'none', borderRadius: 6,
-                fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
-                color: '#000', opacity: submitting || !message.trim() ? 0.4 : 1,
-              }}>{submitting ? 'Signing...' : 'Sign'}</button>
-            </div>
-          </div>
-        ) : selected ? (
-          /* Read selected note */
-          <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px' }}>
-            <div style={{ fontSize: 11, color: textSecondary, textAlign: 'center', marginBottom: 12 }}>
-              {new Date(selected.created_at).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
-            </div>
-            <div style={{ fontSize: 22, fontWeight: 700, marginBottom: 8, lineHeight: 1.2 }}>
-              {selected.name}
-            </div>
-            <div style={{ fontSize: 14, lineHeight: 1.7, color: textPrimary, whiteSpace: 'pre-wrap' }}>
-              {selected.message}
-            </div>
+      {/* Messages */}
+      <div ref={chatRef} style={{
+        flex: 1, overflowY: 'auto', padding: '6px 8px', background: '#fff',
+      }}>
+        {loading ? (
+          <div style={{ textAlign: 'center', color: '#808080', padding: '30px 0' }}>Loading...</div>
+        ) : entries.length === 0 ? (
+          <div style={{ textAlign: 'center', color: '#808080', padding: '30px 0', fontSize: 10 }}>
+            No messages yet. Say something!
           </div>
         ) : (
-          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: textSecondary }}>
-            {entries.length === 0 ? (
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: 28, marginBottom: 8 }}>📝</div>
-                <div style={{ fontSize: 14 }}>No notes yet</div>
-                <div style={{ fontSize: 12, marginTop: 4 }}>Be the first to sign the guestbook</div>
+          entries.map(entry => (
+            <div key={entry.id} style={{ marginBottom: 6 }}>
+              <span style={{ fontWeight: 'bold', color: nameColor(entry.name), fontSize: 11 }}>
+                {entry.name}
+              </span>
+              <span style={{ fontSize: 9, color: '#999', marginLeft: 6 }}>
+                {formatTime(entry.created_at)}
+              </span>
+              <div style={{ fontSize: 11, color: '#000', lineHeight: 1.4, marginTop: 1, paddingLeft: 0 }}>
+                {entry.message}
               </div>
-            ) : (
-              <div style={{ fontSize: 14 }}>Select a note</div>
-            )}
-          </div>
+            </div>
+          ))
         )}
       </div>
+
+      {/* Input */}
+      <form onSubmit={handleSubmit} style={{
+        padding: '4px 6px', background: '#c0c0c0', borderTop: '1px solid #808080',
+        display: 'flex', flexDirection: 'column', gap: 3,
+      }}>
+        <div style={{ display: 'flex', gap: 4 }}>
+          <input
+            type="text"
+            value={name}
+            onChange={e => setName(e.target.value)}
+            onMouseDown={e => e.stopPropagation()}
+            placeholder="Name"
+            maxLength={50}
+            style={{
+              width: 80, padding: '3px 5px', fontSize: 10,
+              border: '1px solid #808080', fontFamily: 'inherit',
+              outline: 'none', background: '#fff', color: '#000',
+            }}
+          />
+          <input
+            type="text"
+            value={message}
+            onChange={e => setMessage(e.target.value)}
+            onMouseDown={e => e.stopPropagation()}
+            placeholder="Type a message..."
+            maxLength={500}
+            style={{
+              flex: 1, padding: '3px 5px', fontSize: 10,
+              border: '1px solid #808080', fontFamily: 'inherit',
+              outline: 'none', background: '#fff', color: '#000',
+            }}
+            autoFocus
+          />
+          <button type="submit" disabled={submitting || !message.trim()} style={{
+            padding: '3px 10px', fontSize: 10, cursor: 'pointer', fontFamily: 'inherit', color: '#000',
+            background: '#c0c0c0',
+            borderTop: '1px solid #fff', borderLeft: '1px solid #fff',
+            borderRight: '1px solid #000', borderBottom: '1px solid #000',
+            opacity: submitting || !message.trim() ? 0.5 : 1,
+          }}>Send</button>
+        </div>
+      </form>
     </div>
   )
 }
@@ -1499,31 +1700,210 @@ export default function Win95Desktop({
 
       case 'about':
         return (
-          <div className="win95-inner-content" style={{ background: '#fff' }}>
+          <div className="win95-inner-content" style={{ height: '100%', overflowY: 'auto', background: '#fff' }}>
             <pre style={{
-              padding: '10px 14px',
+              padding: '12px 16px',
               fontFamily: "'Courier New', monospace",
-              fontSize: 11,
+              fontSize: 10,
               color: '#000',
-              lineHeight: 1.6,
+              lineHeight: 1.5,
               whiteSpace: 'pre-wrap',
               margin: 0,
             }}>
-{`CONNOR NELSON
-========================================
-Filmmaker / Writer / Audio Drama
-Rural Michigan
+{`PRACTICE
 
-I make dark things. Films, audio dramas,
-essays. Mostly about what happens in the
-peripheral vision.
+Written by Connor Nelson
 
-Based in the UP. Working slowly and on purpose.
 
-CURRENTLY
-watching:  Werckmeister Harmonies
-reading:   Denis Johnson
-working:   Twenty Mile Road`}
+EXT. TUSTIN, MICHIGAN - DAWN
+
+Population sign: TUSTIN. EST. 1872. Below it,
+someone has spray-painted the number 200 and
+crossed it out. Below that, 198.
+
+A sawmill. Mist off the river. The sound of
+the blade before anything else.
+
+A BOY (7) stands at the edge of the property
+watching the logs come through. He doesn't look
+afraid. He looks like he's memorizing something.
+
+                    CONNOR (V.O.)
+          I grew up in a town of two hundred
+          people in Michigan, so small we had
+          to borrow the newspaper from the
+          town over.
+
+
+INT. TUSTIN PUBLIC LIBRARY - DAY
+
+Small. Four tables. A fish tank with one fish
+in it.
+
+A BOY (10) sits alone at a table near the
+window. Not reading. Watching a group of KIDS
+in the corner on a shared computer, playing
+something, laughing at something he can't hear
+from here.
+
+He doesn't go over.
+
+He picks up a book. Puts it down. Picks up
+another one.
+
+                    CONNOR (V.O.)
+          The library had maybe four regulars
+          at a time. I was one of them. I
+          never asked for books. I was too
+          shy to talk to the kids playing
+          RuneScape in the corner so I just
+          watched from across the room.
+
+
+EXT. RIVER - NIGHT
+
+A bonfire. Cousins, neighbors, somebody's dad
+with a cooler. A BOY (7) stands at the outer
+ring of the fire's light, not quite inside the
+circle of people.
+
+A COUSIN (12) holds up a camcorder. Points it
+at the trees.
+
+                    COUSIN
+          We're making a movie. Thirty-foot
+          anaconda. In the jungle.
+
+The Boy looks at the camcorder. Something
+shifts in his face.
+
+                    CONNOR (V.O.)
+          I found film at a bonfire by a
+          river. My cousins had a camcorder,
+          said they were making a movie about
+          a thirty-foot anaconda in the
+          jungle. I was seven. That was
+          enough.
+
+
+INT. LOG CABIN - BEDROOM - NIGHT
+
+A desktop computer. Dial-up modem. A loading
+bar at 12%.
+
+A BOY (13) sits in front of it. Not frustrated.
+Waiting. He's done this before. He'll do it
+again.
+
+On screen: a movie player, buffering.
+
+He leans back in his chair and stares at the
+ceiling. He's not going anywhere.
+
+                    CONNOR (V.O.)
+          I taught myself patience on dial-up
+          internet, watching a movie five
+          times slower than everyone else.
+          Good things come to those who wait.
+          And if you don't like it you just
+          wait it out.
+
+
+EXT. CREEK - DAY
+
+A TEENAGER walks the bank alone. No
+destination. Turns over a rock. Lets it drop.
+Keeps walking.
+
+The creek doesn't care. The woods don't care.
+He walks anyway.
+
+                    CONNOR (V.O.)
+          I spent a lot of time in my own
+          head, walking creek banks alone,
+          going into the woods for no reason
+          other than to walk and think and
+          feel like something was going to
+          happen.
+
+
+INT. FILM SET - VARIOUS - DAY / NIGHT
+
+A YOUNG MAN (20) moves equipment in the dark.
+Extension cords. Sandbags. He's not the
+director. He's not the DP. Nobody's asking
+his name.
+
+He works. The sun goes down. He's still
+working.
+
+Close on his hands. Close on a clock. 2 AM.
+
+                    CONNOR (V.O.)
+          I've worked fourteen-hour days for
+          zero dollars just to be in the room
+          where something was being made.
+          That's not a complaint. That's how
+          I know I mean it.
+
+
+INT. APARTMENT - NIGHT
+
+A YOUNG MAN (24) sits at a desk covered in
+papers, index cards pinned to the wall, a
+hand-drawn diagram of something large and
+intricate. Kabbalistic. The Tree of Life.
+Lines connecting things.
+
+He's not confused by it. He built it.
+
+                    CONNOR (V.O.)
+          I make horror films, the
+          psychological kind, the kind that
+          lives in behavior and obsession and
+          the quiet damage people do to each
+          other in small spaces. I built a
+          whole universe from scratch. I
+          write, I direct, I produce, I
+          figure it out.
+
+
+EXT. SAWMILL - TUSTIN, MICHIGAN - DAWN (FLASHBACK)
+
+The Boy from the first scene, still seven,
+still watching the blade, still memorizing.
+
+The log splits clean.
+
+                    CONNOR (V.O.)
+          I didn't come from money or
+          connections. I came from a sawmill
+          and a broken car stereo and the
+          kind of town where you either find
+          a reason to make something or
+          you don't.
+
+
+INT. FILM SET - NIGHT
+
+A YOUNG MAN stands behind a monitor. On the
+screen: an actor hitting their mark. The image
+is right. He can tell.
+
+He doesn't celebrate. He just nods once.
+
+                    CONNOR (V.O.)
+          Everything I've made so far has
+          been practice.
+
+He watches the playback. The image holds.
+
+                    CONNOR (V.O.) (CONT'D)
+          I'm ready for what comes next.
+
+FADE TO BLACK.
+
+TITLE CARD: PRACTICE`}
             </pre>
           </div>
         )
@@ -1554,27 +1934,22 @@ working:   Twenty Mile Road`}
       case 'contact':
         return (
           <div className="win95-inner-content">
-            <div style={{ padding: '10px 14px', fontFamily: "'Tahoma', sans-serif", fontSize: 11, color: '#000' }}>
-              <div style={{ fontWeight: 'bold', marginBottom: 8, borderBottom: '1px solid #808080', paddingBottom: 4 }}>
-                Links
+            <div style={{ padding: '16px 20px', fontFamily: "'Tahoma', sans-serif", fontSize: 11, color: '#000', textAlign: 'center' }}>
+              <div style={{ fontWeight: 'bold', fontSize: 13, marginBottom: 12, borderBottom: '1px solid #808080', paddingBottom: 6 }}>
+                Contact
               </div>
-              {[
-                { label: 'Letterboxd', href: '#', icon: '\uD83C\uDFAC' },
-                { label: 'Vimeo', href: '#', icon: '\u25B6' },
-                { label: 'SoundCloud', href: '#', icon: '\uD83C\uDFB5' },
-                { label: 'Substack', href: '#', icon: '\u2709' },
-              ].map((link) => (
-                <div key={link.label} style={{ marginBottom: 6 }}>
-                  <a
-                    href={link.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{ color: '#000080', textDecoration: 'underline', cursor: 'pointer' }}
-                  >
-                    {link.icon} {link.label}
-                  </a>
-                </div>
-              ))}
+              <div style={{ marginBottom: 10 }}>
+                <div style={{ fontSize: 10, color: '#808080', marginBottom: 2 }}>Phone</div>
+                <a href="tel:2313882390" style={{ color: '#000080', textDecoration: 'underline', fontSize: 13, fontWeight: 'bold' }}>
+                  231-388-2390
+                </a>
+              </div>
+              <div>
+                <div style={{ fontSize: 10, color: '#808080', marginBottom: 2 }}>Email</div>
+                <a href="mailto:twentymileroad@gmail.com" style={{ color: '#000080', textDecoration: 'underline', fontSize: 13, fontWeight: 'bold' }}>
+                  twentymileroad@gmail.com
+                </a>
+              </div>
             </div>
           </div>
         )
@@ -1670,21 +2045,11 @@ working:   Twenty Mile Road`}
       case 'letterboxd':
         return <LetterboxdApp />
 
+      case 'news':
+        return <SignalNewsApp />
+
       case 'internet':
-        return (
-          <div className="win95-inner-content" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-            <div style={{
-              padding: '3px 8px', background: '#c0c0c0', borderBottom: '1px solid #808080',
-              display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, fontFamily: "'Tahoma', sans-serif",
-            }}>
-              <span style={{ color: '#808080' }}>Address:</span>
-              <div style={{ flex: 1, background: '#fff', border: '1px solid #808080', padding: '1px 4px', fontSize: 11 }}>
-                https://thesignal.connornelson.com
-              </div>
-            </div>
-            <SignalNewsApp />
-          </div>
-        )
+        return <OldYouTubeApp />
 
       case 'notepad':
         return <GuestbookApp />
@@ -1847,10 +2212,12 @@ working:   Twenty Mile Road`}
             zIndex={win.zIndex}
             phase={win.phase}
             minimized={win.minimized}
+            maximized={win.maximized}
             focused={win.zIndex === maxZ}
             loadingLines={lines}
             onClose={() => dispatch({ type: 'CLOSE_WINDOW', id: win.id })}
             onMinimize={() => dispatch({ type: 'MINIMIZE_WINDOW', id: win.id })}
+            onMaximize={() => dispatch({ type: 'MAXIMIZE_WINDOW', id: win.id })}
             onFocus={() => dispatch({ type: 'FOCUS_WINDOW', id: win.id })}
             onMove={(x, y) => dispatch({ type: 'MOVE_WINDOW', id: win.id, x, y })}
           >
@@ -1858,6 +2225,26 @@ working:   Twenty Mile Road`}
           </Win95Window>
         )
       })}
+
+      {/* ── Desktop Scanlines ── */}
+      <div className="desktop-scanlines" aria-hidden="true" />
+
+      {/* ── Desktop Watermark ── */}
+      <div style={{
+        position: 'absolute', top: 12, right: 16, zIndex: 2,
+        textAlign: 'right', pointerEvents: 'none', userSelect: 'none',
+      }}>
+        <div style={{
+          fontFamily: "'MS Sans Serif', 'Tahoma', sans-serif",
+          fontSize: 11, color: 'rgba(255,255,255,0.7)', lineHeight: 1.4,
+          textShadow: '1px 1px 2px rgba(0,0,0,0.5)',
+        }}>
+          <div style={{ fontWeight: 'bold', fontSize: 12 }}>Connor Nelson</div>
+          <div>Filmmaker</div>
+          <div>Twenty Mile Road Production House</div>
+          <div>CineSwipe App</div>
+        </div>
+      </div>
 
       {/* ── Taskbar ── */}
       <div className="win95-taskbar" onClick={(e) => e.stopPropagation()}>
