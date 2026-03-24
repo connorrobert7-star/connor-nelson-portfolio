@@ -4,6 +4,9 @@ import { useState, useCallback, useEffect, useReducer, useRef } from 'react'
 import Win95Boot from './Win95Boot'
 import Win95Window from './Win95Window'
 import DemoReel from './DemoReel'
+import dynamic from 'next/dynamic'
+
+const MiiWalker = dynamic(() => import('./MiiWalker'), { ssr: false })
 
 // ── Types ──
 
@@ -161,9 +164,9 @@ const loadingCodeBank: Record<string, string[]> = {
     "you are now online.",
   ],
   recyclebin: [
-    "C:\\PHOTOS> glanceback.exe",
-    "syncing with phone...",
-    "loading daily photos...",
+    "C:\\PHOTOS> dir *.jpg /s",
+    "scanning photo archive...",
+    "14 photos found.",
     "gallery ready.",
   ],
 }
@@ -233,8 +236,8 @@ const defaultIcons: Omit<IconState, 'x' | 'y'>[] = [
   { id: 'news', label: 'The Signal', icon: '\uD83D\uDCF0', type: 'news' },
   { id: 'internet', label: 'Internet', icon: '\uD83C\uDF10', type: 'internet' },
   { id: 'minesweeper', label: 'Minesweeper', icon: '\uD83D\uDCA3', type: 'minesweeper' },
-  { id: 'notepad', label: 'Live Chat', icon: '\uD83D\uDCAC', type: 'notepad' },
-  { id: 'recyclebin', label: 'Glance Back', icon: '\uD83D\uDCF8', type: 'recyclebin' },
+  { id: 'notepad', label: 'Guestbook', icon: '\uD83D\uDCD3', type: 'notepad' },
+  { id: 'recyclebin', label: 'My Photos', icon: '\uD83D\uDCF7', type: 'recyclebin' },
 ]
 
 function initIcons(): IconState[] {
@@ -266,7 +269,7 @@ function getWindowConfig(type: string, id: string, label: string, icon: string, 
     letterboxd: { title: 'Letterboxd', size: { width: 300, height: 360 } },
     internet: { title: 'Internet Explorer - YouTube', size: { width: 520, height: 440 } },
     notepad: { title: 'Live Chat', size: { width: 360, height: 320 } },
-    recyclebin: { title: 'Glance Back', size: { width: 360, height: 400 } },
+    recyclebin: { title: 'My Photos', size: { width: 360, height: 400 } },
   }
 
   const cfg = configs[type] || { title: label, size: { width: 400, height: 350 } }
@@ -844,6 +847,50 @@ type YouTubeVideo = {
   published: string
 }
 
+function YouTubeBluePlayer({ videoId }: { videoId: string }) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [iframeStyle, setIframeStyle] = useState<React.CSSProperties>({ display: 'none' })
+
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+
+    const calc = () => {
+      const { width: w, height: h } = el.getBoundingClientRect()
+      if (!w || !h) return
+
+      const isWider = (w / h) > (16 / 9)
+      const iW = isWider ? Math.ceil(h * 16 / 9) : w
+      const iH = isWider ? h : Math.ceil(w / (16 / 9))
+
+      setIframeStyle({
+        position: 'absolute',
+        width: iW,
+        height: iH,
+        left: (w - iW) / 2,
+        top: (h - iH) / 2,
+        border: 'none',
+      })
+    }
+
+    requestAnimationFrame(() => requestAnimationFrame(calc))
+    const ro = new ResizeObserver(calc)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [videoId])
+
+  return (
+    <div ref={containerRef} style={{ flex: 1, position: 'relative', background: '#012265', minHeight: 0, overflow: 'hidden' }}>
+      <iframe
+        src={`https://www.youtube.com/embed/${videoId}?autoplay=1&modestbranding=1&rel=0`}
+        style={iframeStyle}
+        allow="autoplay; encrypted-media"
+        allowFullScreen
+      />
+    </div>
+  )
+}
+
 function OldYouTubeApp() {
   const [videos, setVideos] = useState<YouTubeVideo[]>([])
   const [loading, setLoading] = useState(true)
@@ -882,7 +929,7 @@ function OldYouTubeApp() {
 
   if (playing) {
     return (
-      <div className="win95-inner-content" style={{ display: 'flex', flexDirection: 'column', height: '100%', background: '#000' }}>
+      <div className="win95-inner-content" style={{ display: 'flex', flexDirection: 'column', height: '100%', background: '#012265' }}>
         <div style={{ padding: '4px 8px', background: ytHeader, borderBottom: `1px solid ${ytBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <button onClick={() => setPlaying(null)} style={{
             background: '#f0f0f0', border: `1px solid ${ytBorder}`, padding: '2px 8px',
@@ -892,14 +939,7 @@ function OldYouTubeApp() {
             {videos.find(v => v.id === playing)?.title}
           </span>
         </div>
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <iframe
-            src={`https://www.youtube.com/embed/${playing}?autoplay=1`}
-            style={{ width: '100%', height: '100%', border: 'none' }}
-            allow="autoplay; encrypted-media"
-            allowFullScreen
-          />
-        </div>
+        <YouTubeBluePlayer videoId={playing} />
       </div>
     )
   }
@@ -1053,60 +1093,39 @@ function LetterboxdApp() {
   )
 }
 
-type DailyPhoto = {
-  id: string
-  photo_url: string
-  taken_at: string
-  created_at: string
-}
-
 function PhotoGalleryApp() {
-  const [photos, setPhotos] = useState<DailyPhoto[]>([])
-  const [loading, setLoading] = useState(true)
-  const [selected, setSelected] = useState<DailyPhoto | null>(null)
+  const photos = [
+    '/photos/LdP9PuDerJFHZ0EC0TbNp1f2r6ANlvtaRp1gs7jdLXw.webp',
+    '/photos/Screenshot 2024-12-16 at 11.53.48 AM.png',
+    '/photos/Screenshot 2024-12-16 at 11.56.32 AM.png',
+    '/photos/edited_-2.jpg',
+    '/photos/edited_-3.jpg',
+    '/photos/edited_-4.jpg',
+    '/photos/edited_-5.jpg',
+    '/photos/edited_-6.jpg',
+    '/photos/edited_-7.jpg',
+    '/photos/edited_-8.jpg',
+    '/photos/edited_-9.jpg',
+    '/photos/edited_-10.jpg',
+    '/photos/edited_-11.jpg',
+    '/photos/edited_.jpg',
+  ]
 
-  useEffect(() => {
-    fetch('/api/photos')
-      .then(r => r.json())
-      .then(d => setPhotos(d.photos || []))
-      .catch(() => setPhotos([]))
-      .finally(() => setLoading(false))
-  }, [])
-
-  function formatDate(d: string): string {
-    const date = new Date(d)
-    return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })
-  }
-
-  function formatTime(d: string): string {
-    return new Date(d).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
-  }
-
-  function daysAgo(d: string): string {
-    const diff = Math.floor((Date.now() - new Date(d).getTime()) / 86400000)
-    if (diff === 0) return 'Today'
-    if (diff === 1) return 'Yesterday'
-    return `${diff} days ago`
-  }
+  const [selected, setSelected] = useState<string | null>(null)
 
   if (selected) {
     return (
       <div className="win95-inner-content" style={{ display: 'flex', flexDirection: 'column', height: '100%', background: '#000', fontFamily: "'Tahoma', sans-serif" }}>
-        <div style={{ padding: '4px 8px', background: '#c0c0c0', borderBottom: '1px solid #808080', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ padding: '4px 8px', background: '#c0c0c0', borderBottom: '1px solid #808080' }}>
           <button onClick={() => setSelected(null)} style={{
             background: '#c0c0c0', fontSize: 10, cursor: 'pointer', color: '#000',
             borderTop: '1px solid #fff', borderLeft: '1px solid #fff',
             borderRight: '1px solid #000', borderBottom: '1px solid #000',
             padding: '2px 8px',
           }}>Back</button>
-          <span style={{ fontSize: 9, color: '#000' }}>{formatDate(selected.taken_at)}</span>
         </div>
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-          <img src={selected.photo_url} alt="Glance Back" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
-        </div>
-        <div style={{ padding: '6px 10px', background: '#1a1a1a', textAlign: 'center' }}>
-          <div style={{ fontSize: 11, color: '#fff', fontWeight: 'bold' }}>{formatDate(selected.taken_at)}</div>
-          <div style={{ fontSize: 10, color: '#999' }}>Taken at {formatTime(selected.taken_at)} &bull; {daysAgo(selected.taken_at)}</div>
+          <img src={selected} alt="" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
         </div>
       </div>
     )
@@ -1115,45 +1134,21 @@ function PhotoGalleryApp() {
   return (
     <div className="win95-inner-content" style={{ height: '100%', display: 'flex', flexDirection: 'column', fontFamily: "'Tahoma', sans-serif", fontSize: 11 }}>
       <div style={{ padding: '4px 8px', background: '#c0c0c0', borderBottom: '1px solid #808080', display: 'flex', alignItems: 'center' }}>
-        <span style={{ fontSize: 10, fontWeight: 'bold', color: '#000' }}>Glance Back</span>
+        <span style={{ fontSize: 10, fontWeight: 'bold', color: '#000' }}>My Photos</span>
         <span style={{ fontSize: 9, color: '#808080', marginLeft: 'auto' }}>{photos.length} photos</span>
       </div>
-
-      <div style={{ flex: 1, overflowY: 'auto', background: '#000' }}>
-        {loading ? (
-          <div style={{ textAlign: 'center', color: '#808080', padding: '40px 0' }}>Loading...</div>
-        ) : photos.length === 0 ? (
-          <div style={{ padding: 24, textAlign: 'center', color: '#808080' }}>
-            <div style={{ fontSize: 32, marginBottom: 8 }}>📸</div>
-            <div style={{ fontWeight: 'bold', marginBottom: 4, color: '#ccc', fontSize: 12 }}>Glance Back</div>
-            <div style={{ fontSize: 10, lineHeight: 1.5, color: '#666' }}>
-              A photo of me, every day.<br />
-              Photos upload automatically from my phone.
+      <div style={{ flex: 1, overflowY: 'auto', background: '#fff' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 2, padding: 2 }}>
+          {photos.map((src, i) => (
+            <div
+              key={i}
+              onClick={() => setSelected(src)}
+              style={{ aspectRatio: '1', overflow: 'hidden', cursor: 'pointer', background: '#f0f0f0' }}
+            >
+              <img src={src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             </div>
-          </div>
-        ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1, padding: 1 }}>
-            {photos.map(photo => (
-              <div
-                key={photo.id}
-                onClick={() => setSelected(photo)}
-                style={{ position: 'relative', aspectRatio: '1', overflow: 'hidden', cursor: 'pointer' }}
-              >
-                <img src={photo.photo_url} alt={formatDate(photo.taken_at)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                <div style={{
-                  position: 'absolute', bottom: 0, left: 0, right: 0,
-                  background: 'linear-gradient(transparent, rgba(0,0,0,0.8))',
-                  padding: '10px 4px 3px', textAlign: 'center',
-                }}>
-                  <div style={{ fontSize: 8, color: '#fff', fontWeight: 'bold' }}>
-                    {new Date(photo.taken_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                  </div>
-                  <div style={{ fontSize: 7, color: '#aaa' }}>{formatTime(photo.taken_at)}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+          ))}
+        </div>
       </div>
     </div>
   )
@@ -1903,7 +1898,27 @@ He watches the playback. The image holds.
 
 FADE TO BLACK.
 
-TITLE CARD: PRACTICE`}
+TITLE CARD: PRACTICE
+
+
+========================================
+AWARDS & SELECTIONS
+========================================
+
+Wild Winter Film Festival
+  Best Director
+
+Sonscreen Film Festival 2025
+  Special Jury Award for Best Original Score
+    — Fret
+  Official Selection
+    — Conversation with my Grandpa
+
+End of Year Show
+  Best Editor
+
+Lift-Off Global Network Sessions 2023
+  Official Selection`}
             </pre>
           </div>
         )
@@ -2066,38 +2081,8 @@ TITLE CARD: PRACTICE`}
 
   return (
     <div className="win95-desktop" onClick={() => { setSelectedIcon(null); setStartOpen(false) }}>
-      {/* ── YouTube wallpaper ── */}
-      <div style={{
-        position: 'absolute',
-        top: 0,
-        bottom: 30,
-        left: 0,
-        right: 0,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 0,
-        pointerEvents: 'none',
-        background: '#012265',
-        overflow: 'hidden',
-      }}>
-        <iframe
-          src="https://www.youtube.com/embed/HghxOQ12dy4?autoplay=1&mute=1&loop=1&controls=0&showinfo=0&modestbranding=1&playlist=HghxOQ12dy4&disablekb=1"
-          style={{
-            height: '100%',
-            aspectRatio: '16 / 9',
-            border: 'none',
-            pointerEvents: 'none',
-          }}
-          allow="autoplay; encrypted-media"
-          title="Live wallpaper"
-        />
-        {/* Thin blue overlays to cover YouTube's internal black padding — frames the video like a painting */}
-        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 57, background: '#012265', zIndex: 1 }} />
-        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 6, background: '#012265', zIndex: 1 }} />
-        <div style={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: 256, background: '#012265', zIndex: 1 }} />
-        <div style={{ position: 'absolute', top: 0, bottom: 0, right: 0, width: 256, background: '#012265', zIndex: 1 }} />
-      </div>
+      {/* ── Windows 98 Bliss wallpaper + 3D Mii ── */}
+      <MiiWalker />
 
       {/* ── Desktop Icons (draggable) ── */}
       {icons.map((iconDef) => (
@@ -2226,12 +2211,13 @@ TITLE CARD: PRACTICE`}
         )
       })}
 
+
       {/* ── Desktop Scanlines ── */}
       <div className="desktop-scanlines" aria-hidden="true" />
 
       {/* ── Desktop Watermark ── */}
       <div style={{
-        position: 'absolute', top: 12, right: 16, zIndex: 2,
+        position: 'absolute', top: 12, right: 16, zIndex: 0,
         textAlign: 'right', pointerEvents: 'none', userSelect: 'none',
       }}>
         <div style={{
@@ -2239,11 +2225,26 @@ TITLE CARD: PRACTICE`}
           fontSize: 11, color: 'rgba(255,255,255,0.7)', lineHeight: 1.4,
           textShadow: '1px 1px 2px rgba(0,0,0,0.5)',
         }}>
-          <div style={{ fontWeight: 'bold', fontSize: 12 }}>Connor Nelson</div>
-          <div>Filmmaker</div>
-          <div>Twenty Mile Road Production House</div>
-          <div>CineSwipe App</div>
+          <div style={{ fontWeight: 'bold', fontSize: 14 }}>Connor Nelson</div>
+          <div>Director</div>
+          <div style={{ marginTop: 8, fontSize: 9, color: 'rgba(255,255,255,0.45)', lineHeight: 1.5 }}>
+            <div>Wild Winter Film Festival — Best Director</div>
+            <div>Sonscreen 2025 — Best Original Score (Fret)</div>
+            <div>Sonscreen 2025 — Official Selection (Conversation with my Grandpa)</div>
+            <div>End of Year Show — Best Editor</div>
+            <div>Lift-Off Global Network — Official Selection</div>
+          </div>
         </div>
+      </div>
+
+      {/* ── Laurels ── */}
+      <div style={{
+        position: 'absolute', bottom: 36, right: 16, zIndex: 0,
+        display: 'flex', gap: 6, alignItems: 'center',
+        pointerEvents: 'none', userSelect: 'none',
+      }}>
+        <img src="/sonscreen-laurel.png" alt="Sonscreen Film Festival Official Selection 2025" style={{ width: 65, opacity: 0.7 }} />
+        <img src="/laurel.png" alt="Lift-Off Global Network Sessions 2023 Official Selection" style={{ width: 65, opacity: 0.7, filter: 'invert(1)' }} />
       </div>
 
       {/* ── Taskbar ── */}
