@@ -20,7 +20,14 @@ function Bliss() {
         backgroundImage: 'url(/photos/bliss.jpg)',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
-      }} />
+        position: 'relative',
+      }}>
+        {/* Scanlines — only inside the Bliss image, not over blue bars */}
+        <div style={{
+          position: 'absolute', inset: 0, pointerEvents: 'none',
+          background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px)',
+        }} />
+      </div>
     </div>
   )
 }
@@ -137,22 +144,7 @@ function useThreeScene(containerRef: React.RefObject<HTMLDivElement | null>) {
     // Compute grass bounds from current viewport
     GRASS = computeGrassBounds(container.clientWidth, container.clientHeight)
 
-    // Debug overlay — semi-transparent green rectangle showing grass bounds
-    const DEBUG_GRASS_OVERLAY = false
-    const grassWidth = GRASS.maxX - GRASS.minX
-    const grassHeight = GRASS.farY - GRASS.nearY // farY > nearY, so this is positive
-    const debugGrassGeo = new THREE.PlaneGeometry(grassWidth, grassHeight)
-    const debugGrassMat = new THREE.MeshBasicMaterial({
-      color: 0x00ff00, transparent: true, opacity: 0.2, depthTest: false,
-    })
-    const debugGrassMesh = new THREE.Mesh(debugGrassGeo, debugGrassMat)
-    debugGrassMesh.position.set(
-      (GRASS.minX + GRASS.maxX) / 2,
-      (GRASS.nearY + GRASS.farY) / 2,
-      0.01, // slightly in front to avoid z-fighting
-    )
-    debugGrassMesh.visible = DEBUG_GRASS_OVERLAY
-    scene.add(debugGrassMesh)
+
 
     // Lighting
     scene.add(new THREE.AmbientLight(0xffffff, 3))
@@ -173,6 +165,7 @@ function useThreeScene(containerRef: React.RefObject<HTMLDivElement | null>) {
     let namePointsMat: THREE.PointsMaterial | null = null
     let meshMaterials: THREE.MeshStandardMaterial[] = []
     let pointsMat: THREE.PointsMaterial | null = null
+    let titleMat: THREE.MeshBasicMaterial | null = null
     let disposed = false
     let animId = 0
     let time = 0
@@ -205,12 +198,6 @@ function useThreeScene(containerRef: React.RefObject<HTMLDivElement | null>) {
     pickTarget()
 
     // White overlay
-    const whiteOverlay = document.createElement('div')
-    whiteOverlay.style.cssText = `
-      position: absolute; inset: 0; background: white;
-      opacity: 0; pointer-events: none; z-index: 0;
-    `
-    container.parentElement!.insertBefore(whiteOverlay, container)
 
     // Build points cloud
     function buildPoints(mdl: THREE.Group): THREE.Points | null {
@@ -278,34 +265,59 @@ function useThreeScene(containerRef: React.RefObject<HTMLDivElement | null>) {
       pointsCloud = buildPoints(model)
       if (pointsCloud) { pointsCloud.visible = true; model.add(pointsCloud) }
 
-      // Name points
-      const tmpCanvas = document.createElement('canvas')
-      tmpCanvas.width = 300; tmpCanvas.height = 30
-      const tc = tmpCanvas.getContext('2d')!
-      tc.fillStyle = '#000'; tc.fillRect(0, 0, 300, 30)
-      tc.font = 'bold 22px monospace'; tc.fillStyle = '#fff'
-      tc.textAlign = 'center'; tc.textBaseline = 'middle'
-      tc.fillText('Connor Nelson', 150, 15)
-      const td = tc.getImageData(0, 0, 300, 30)
-      const nv: number[] = [], nc: number[] = []
-      for (let py = 0; py < 30; py += 2) {
-        for (let px = 0; px < 300; px += 2) {
-          if (td.data[(py * 300 + px) * 4] > 100) {
-            nv.push((px - 150) * 0.006, (15 - py) * 0.006 + 2.0, 0.01)
-            nc.push(1 / 255, 34 / 255, 101 / 255)
-          }
-        }
-      }
-      if (nv.length > 0) {
-        const ng = new THREE.BufferGeometry()
-        ng.setAttribute('position', new THREE.Float32BufferAttribute(nv, 3))
-        ng.setAttribute('color', new THREE.Float32BufferAttribute(nc, 3))
-        namePointsMat = new THREE.PointsMaterial({
-          size: 0.008, vertexColors: true, transparent: true,
-          opacity: 0, sizeAttenuation: true, depthWrite: false,
+      // Name label — Mii-style font on a plane that rotates with the model
+      {
+        const nameCanvas = document.createElement('canvas')
+        nameCanvas.width = 512; nameCanvas.height = 64
+        const nc = nameCanvas.getContext('2d')!
+        nc.clearRect(0, 0, 512, 64)
+        nc.font = 'bold 36px "Trebuchet MS", "Segoe UI", "Helvetica Neue", Arial, sans-serif'
+        nc.textAlign = 'center'
+        nc.textBaseline = 'middle'
+        nc.fillStyle = '#000000'
+        nc.fillText('Connor Nelson', 256, 32)
+
+        const nameTex = new THREE.CanvasTexture(nameCanvas)
+        nameTex.needsUpdate = true
+        const nameMat = new THREE.MeshBasicMaterial({
+          map: nameTex,
+          transparent: true,
+          opacity: 1,
+          depthWrite: false,
+          side: THREE.DoubleSide,
         })
-        namePoints = new THREE.Points(ng, namePointsMat)
-        model.add(namePoints)
+        const namePlane = new THREE.PlaneGeometry(1.6, 0.2)
+        const nameMesh = new THREE.Mesh(namePlane, nameMat)
+        nameMesh.position.set(0, 1.85, 0)
+        model.add(nameMesh)
+        namePointsMat = nameMat as any
+      }
+
+      // Title label — Director/Producer/Editor, only visible when grabbed
+      {
+        const titleCanvas = document.createElement('canvas')
+        titleCanvas.width = 512; titleCanvas.height = 64
+        const tc2 = titleCanvas.getContext('2d')!
+        tc2.clearRect(0, 0, 512, 64)
+        tc2.font = 'bold 28px "Trebuchet MS", "Segoe UI", "Helvetica Neue", Arial, sans-serif'
+        tc2.textAlign = 'center'
+        tc2.textBaseline = 'middle'
+        tc2.fillStyle = '#000000'
+        tc2.fillText('Director / Producer / Editor', 256, 32)
+
+        const titleTex = new THREE.CanvasTexture(titleCanvas)
+        titleTex.needsUpdate = true
+        titleMat = new THREE.MeshBasicMaterial({
+          map: titleTex,
+          transparent: true,
+          opacity: 0,
+          depthWrite: false,
+          side: THREE.DoubleSide,
+        })
+        const titlePlane = new THREE.PlaneGeometry(1.6, 0.2)
+        const titleMesh = new THREE.Mesh(titlePlane, titleMat)
+        titleMesh.position.set(0, -0.15, 0)
+        model.add(titleMesh)
       }
 
       // Shadow
@@ -403,18 +415,15 @@ function useThreeScene(containerRef: React.RefObject<HTMLDivElement | null>) {
       if (dragging) { holdTime += dt } else { holdTime *= 0.92 }
       const holdStrength = Math.min(1, holdTime / 2)
 
-      // Crossfade mesh <-> points
-      const targetTransition = dragging ? 0.5 + holdStrength * 0.5 : 0
-      transition += (targetTransition - transition) * 0.08
-
-      for (const mat of meshMaterials) { mat.opacity = 1 - transition }
-      if (pointsMat) {
-        pointsMat.opacity = transition
-        pointsMat.size = 0.01 + transition * 0.016
-      }
+      // Solid Mii always visible, name always visible
+      for (const mat of meshMaterials) { mat.opacity = 1 }
+      if (pointsMat) { pointsMat.opacity = 0 }
       if (namePointsMat) {
-        namePointsMat.opacity = transition
-        namePointsMat.size = 0.008 + holdStrength * 0.008
+        namePointsMat.opacity = 1
+      }
+      if (titleMat) {
+        const titleTarget = dragging ? 1 : 0
+        titleMat.opacity += (titleTarget - titleMat.opacity) * 0.1
       }
       if (shadow) {
         const sMat = shadow.material as THREE.MeshBasicMaterial
@@ -431,10 +440,15 @@ function useThreeScene(containerRef: React.RefObject<HTMLDivElement | null>) {
 
       if (dragging) {
         // --- DRAGGING ---
+        // First snap to center, then move relative to where cursor goes from grab point
         const offsetX = dragTarget.x - grabOrigin.x
         const offsetY = dragTarget.y - grabOrigin.y
-        pos.x += (offsetX - pos.x) * 0.15
-        pos.y += (offsetY - pos.y) * 0.15
+        // Center the model visually — model is 1.7 tall * scale, offset down so middle of body is at screen center
+        const modelHalfH = 0.85 * model.scale.x
+        const targetX = 0 + offsetX
+        const targetY = -modelHalfH + offsetY
+        pos.x += (targetX - pos.x) * 0.12
+        pos.y += (targetY - pos.y) * 0.12
         model.position.set(pos.x, pos.y, 0)
 
         // Face camera
@@ -514,10 +528,6 @@ function useThreeScene(containerRef: React.RefObject<HTMLDivElement | null>) {
       const currentScale = model.scale.x
       model.scale.setScalar(currentScale + (targetScale - currentScale) * 0.08)
 
-      // White overlay
-      const whiteTarget = dragging ? 1 : 0
-      const curWhite = parseFloat(whiteOverlay.style.opacity) || 0
-      whiteOverlay.style.opacity = String(curWhite + (whiteTarget - curWhite) * 0.08)
 
       renderer.render(scene, camera)
     }
@@ -535,7 +545,6 @@ function useThreeScene(containerRef: React.RefObject<HTMLDivElement | null>) {
       renderer.dispose()
       dracoLoader.dispose()
       if (container.contains(canvas)) container.removeChild(canvas)
-      if (whiteOverlay.parentElement) whiteOverlay.parentElement.removeChild(whiteOverlay)
     }
   }, [containerRef])
 }
@@ -554,9 +563,10 @@ export default function MiiWalker() {
     }}>
       <Bliss />
       <div ref={canvasContainer} style={{ position: 'absolute', inset: 0, zIndex: 1 }} />
-      <div style={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: 'calc(50% - 25vh)', background: '#012265', zIndex: 2, pointerEvents: 'none' }} />
-      <div style={{ position: 'absolute', top: 0, bottom: 0, right: 0, width: 'calc(50% - 25vh)', background: '#012265', zIndex: 2, pointerEvents: 'none' }} />
-      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 60, background: '#012265', zIndex: 2, pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', top: -2, bottom: -2, left: -2, width: 'calc(50% - 25vh + 4px)', background: '#012265', zIndex: 2, pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', top: -2, bottom: -2, right: -2, width: 'calc(50% - 25vh + 4px)', background: '#012265', zIndex: 2, pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', top: -2, left: -2, right: -2, height: 64, background: '#012265', zIndex: 2, pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', bottom: -2, left: -2, right: -2, height: 64, background: '#012265', zIndex: 2, pointerEvents: 'none' }} />
     </div>
   )
 }

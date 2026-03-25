@@ -2213,7 +2213,6 @@ Lift-Off Global Network Sessions 2023
 
 
       {/* ── Desktop Scanlines ── */}
-      <div className="desktop-scanlines" aria-hidden="true" />
 
       {/* ── Desktop Watermark ── */}
       <div style={{
