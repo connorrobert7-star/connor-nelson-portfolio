@@ -1096,8 +1096,8 @@ function LetterboxdApp() {
 function PhotoGalleryApp() {
   const photos = [
     '/photos/LdP9PuDerJFHZ0EC0TbNp1f2r6ANlvtaRp1gs7jdLXw.webp',
-    '/photos/Screenshot 2024-12-16 at 11.53.48 AM.png',
-    '/photos/Screenshot 2024-12-16 at 11.56.32 AM.png',
+    '/photos/Screenshot 2024-12-16 at 11.53.48 AM.jpg',
+    '/photos/Screenshot 2024-12-16 at 11.56.32 AM.jpg',
     '/photos/edited_-2.jpg',
     '/photos/edited_-3.jpg',
     '/photos/edited_-4.jpg',
