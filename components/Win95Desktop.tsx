@@ -241,11 +241,14 @@ const defaultIcons: Omit<IconState, 'x' | 'y'>[] = [
 ]
 
 function initIcons(): IconState[] {
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 660
+  const colWidth = isMobile ? 64 : 80
+  const rowHeight = isMobile ? 64 : 76
   const colHeight = 7 // icons per column before wrapping
   return defaultIcons.map((ic, i) => ({
     ...ic,
-    x: 12 + Math.floor(i / colHeight) * 80,
-    y: 12 + (i % colHeight) * 76,
+    x: 12 + Math.floor(i / colHeight) * colWidth,
+    y: 12 + (i % colHeight) * rowHeight,
   }))
 }
 

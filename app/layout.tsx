@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { IM_Fell_English, Courier_Prime, Josefin_Sans } from 'next/font/google'
 import './globals.css'
 import Navigation from '@/components/Navigation'
@@ -29,6 +29,13 @@ const josefinSans = Josefin_Sans({
   variable: '--font-josefin',
   display: 'swap',
 })
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+}
 
 export const metadata: Metadata = {
   title: {

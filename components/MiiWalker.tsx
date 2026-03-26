@@ -15,13 +15,17 @@ function Bliss() {
       background: '#012265',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
     }}>
-      <div style={{
-        height: '100%', aspectRatio: '1 / 2',
-        backgroundImage: 'url(/photos/bliss.jpg)',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        position: 'relative',
-      }}>
+      <div
+        className="bliss-image"
+        style={{
+          height: '100%', aspectRatio: '1 / 2',
+          maxWidth: '100%',
+          backgroundImage: 'url(/photos/bliss.jpg)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          position: 'relative',
+        }}
+      >
         {/* Scanlines — only inside the Bliss image, not over blue bars */}
         <div style={{
           position: 'absolute', inset: 0, pointerEvents: 'none',
@@ -71,15 +75,12 @@ function computeGrassBounds(containerW: number, containerH: number) {
   const halfW = halfH * aspect
 
   // --- Horizontal: visible Bliss image strip ---
-  // Side bar width in px = containerW/2 - 25vh (CSS vh = window.innerHeight/100)
-  // But containerH = window.innerHeight - 30, and CSS vh uses window.innerHeight.
-  // We approximate: vh ≈ (containerH + 30) / 100
-  const vh = (containerH + 30) / 100
-  const imageHalfWidthPx = 25 * vh // half of the 50vh-wide image
-  // Fraction of container width that the image occupies on each side of center
-  const imageFracHalf = imageHalfWidthPx / containerW
-  // Convert to world X: fraction of width -> NDC -> world
-  const imageMinX = -imageFracHalf * 2 * halfW  // NDC = -imageFracHalf*2 ... actually:
+  // The Bliss image has aspectRatio 1/2 (width = height/2) and maxWidth: 100%.
+  // On desktop: image width = containerH / 2 (height-constrained).
+  // On mobile: image width = min(containerH / 2, containerW) (width-clamped).
+  // aspectRatio 1/2 means width = height/2, but clamped by maxWidth:100%
+  const imageActualWidthPx = Math.min(containerH / 2, containerW)
+  const imageHalfWidthPx = imageActualWidthPx / 2
   // Image left edge at px = containerW/2 - imageHalfWidthPx
   // NDC_x = 2*(px/containerW) - 1
   // For left edge: 2*((containerW/2 - imageHalfWidthPx)/containerW) - 1 = -2*imageHalfWidthPx/containerW
@@ -102,13 +103,17 @@ function computeGrassBounds(containerW: number, containerH: number) {
   const farY = grassTopNDC * halfH    // top of grass (far, smaller)
   const nearY = grassBottomNDC * halfH // bottom of grass (near, bigger)
 
+  // On mobile viewports, scale the Mii larger so it's not tiny
+  const isMobile = containerW < 768
+  const scaleMult = isMobile ? 2.0 : 1.0
+
   return {
     minX,
     maxX,
     nearY,   // bottom of grass (most negative Y)
     farY,    // top of grass (less negative or positive Y)
-    nearScale: 0.6,
-    farScale: 0.3,
+    nearScale: 0.6 * scaleMult,
+    farScale: 0.3 * scaleMult,
   }
 }
 
@@ -386,6 +391,7 @@ function useThreeScene(containerRef: React.RefObject<HTMLDivElement | null>) {
       camera.aspect = container.clientWidth / container.clientHeight
       camera.updateProjectionMatrix()
       renderer.setSize(container.clientWidth, container.clientHeight)
+      GRASS = computeGrassBounds(container.clientWidth, container.clientHeight)
     }
     window.addEventListener('resize', onResize)
 
@@ -560,11 +566,21 @@ export default function MiiWalker() {
     <div style={{
       position: 'absolute', top: 0, bottom: 30, left: 0, right: 0,
       zIndex: 0, overflow: 'hidden',
-    }}>
+      userSelect: 'none',
+      WebkitUserSelect: 'none',
+      touchAction: 'none',
+      WebkitTouchCallout: 'none',
+    } as React.CSSProperties}>
       <Bliss />
-      <div ref={canvasContainer} style={{ position: 'absolute', inset: 0, zIndex: 1 }} />
-      <div style={{ position: 'absolute', top: -2, bottom: -2, left: -2, width: 'calc(50% - 25vh + 4px)', background: '#012265', zIndex: 2, pointerEvents: 'none' }} />
-      <div style={{ position: 'absolute', top: -2, bottom: -2, right: -2, width: 'calc(50% - 25vh + 4px)', background: '#012265', zIndex: 2, pointerEvents: 'none' }} />
+      <div ref={canvasContainer} style={{
+        position: 'absolute', inset: 0, zIndex: 1,
+        touchAction: 'none',
+        WebkitTouchCallout: 'none',
+        userSelect: 'none',
+        WebkitUserSelect: 'none',
+      } as React.CSSProperties} />
+      <div style={{ position: 'absolute', top: -2, bottom: -2, left: -2, width: 'calc(max(0px, 50% - 25vh) + 4px)', background: '#012265', zIndex: 2, pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', top: -2, bottom: -2, right: -2, width: 'calc(max(0px, 50% - 25vh) + 4px)', background: '#012265', zIndex: 2, pointerEvents: 'none' }} />
       <div style={{ position: 'absolute', top: -2, left: -2, right: -2, height: 64, background: '#012265', zIndex: 2, pointerEvents: 'none' }} />
       <div style={{ position: 'absolute', bottom: -2, left: -2, right: -2, height: 64, background: '#012265', zIndex: 2, pointerEvents: 'none' }} />
     </div>
