@@ -30,6 +30,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "No photo provided" }, { status: 400 });
   }
 
+  const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
+  if (!ALLOWED_TYPES.includes(file.type)) {
+    return NextResponse.json({ error: "Invalid file type" }, { status: 400 });
+  }
+
   // Upload to Supabase Storage
   const timestamp = takenAt || new Date().toISOString();
   const dateStr = new Date(timestamp).toISOString().split("T")[0];
@@ -39,12 +44,13 @@ export async function POST(request: NextRequest) {
   const { error: uploadError } = await supabase.storage
     .from("photos")
     .upload(fileName, arrayBuffer, {
-      contentType: file.type || "image/jpeg",
+      contentType: file.type,
       upsert: false,
     });
 
   if (uploadError) {
-    return NextResponse.json({ error: uploadError.message }, { status: 500 });
+    console.error("Photo upload failed:", uploadError.message);
+    return NextResponse.json({ error: "Failed to upload photo" }, { status: 500 });
   }
 
   // Get public URL
@@ -63,7 +69,8 @@ export async function POST(request: NextRequest) {
     .single();
 
   if (dbError) {
-    return NextResponse.json({ error: dbError.message }, { status: 500 });
+    console.error("Photo DB insert failed:", dbError.message);
+    return NextResponse.json({ error: "Failed to save photo" }, { status: 500 });
   }
 
   return NextResponse.json({ photo: data });

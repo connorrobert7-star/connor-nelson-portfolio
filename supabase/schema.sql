@@ -23,8 +23,10 @@ create index on stories (category);
 create index on stories (found_at desc);
 
 alter table stories enable row level security;
-create policy "Allow all access with service key" on stories
-  for all using (true) with check (true);
+create policy "Anon can read stories" on stories
+  for select using (true);
+create policy "Service role full access on stories" on stories
+  for all using (auth.role() = 'service_role') with check (auth.role() = 'service_role');
 
 -- Guestbook table
 create table guestbook (
@@ -37,8 +39,14 @@ create table guestbook (
 create index on guestbook (created_at desc);
 
 alter table guestbook enable row level security;
-create policy "Allow all access with service key" on guestbook
-  for all using (true) with check (true);
+create policy "Anyone can read guestbook" on guestbook
+  for select using (true);
+create policy "Anyone can insert guestbook" on guestbook
+  for insert with check (true);
+create policy "Service role manages guestbook" on guestbook
+  for update using (auth.role() = 'service_role');
+create policy "Service role deletes guestbook" on guestbook
+  for delete using (auth.role() = 'service_role');
 
 -- Daily photos (Glance Back)
 create table daily_photos (
@@ -51,8 +59,10 @@ create table daily_photos (
 create index on daily_photos (taken_at desc);
 
 alter table daily_photos enable row level security;
-create policy "Allow all access with service key" on daily_photos
-  for all using (true) with check (true);
+create policy "Anon can read photos" on daily_photos
+  for select using (true);
+create policy "Service role manages photos" on daily_photos
+  for all using (auth.role() = 'service_role') with check (auth.role() = 'service_role');
 
 -- Storage bucket (run manually in Supabase dashboard):
 -- 1. Go to Storage > New Bucket > name: "photos" > Public: ON

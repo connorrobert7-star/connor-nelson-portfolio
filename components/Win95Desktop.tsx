@@ -237,7 +237,6 @@ const defaultIcons: Omit<IconState, 'x' | 'y'>[] = [
   { id: 'internet', label: 'Internet', icon: '\uD83C\uDF10', type: 'internet' },
   { id: 'minesweeper', label: 'Minesweeper', icon: '\uD83D\uDCA3', type: 'minesweeper' },
   { id: 'notepad', label: 'Guestbook', icon: '\uD83D\uDCD3', type: 'notepad' },
-  { id: 'recyclebin', label: 'My Photos', icon: '\uD83D\uDCF7', type: 'recyclebin' },
 ]
 
 function initIcons(): IconState[] {
@@ -272,7 +271,6 @@ function getWindowConfig(type: string, id: string, label: string, icon: string, 
     letterboxd: { title: 'Letterboxd', size: { width: 300, height: 360 } },
     internet: { title: 'Internet Explorer - YouTube', size: { width: 520, height: 440 } },
     notepad: { title: 'Live Chat', size: { width: 360, height: 320 } },
-    recyclebin: { title: 'My Photos', size: { width: 360, height: 400 } },
   }
 
   const cfg = configs[type] || { title: label, size: { width: 400, height: 350 } }
@@ -1096,66 +1094,6 @@ function LetterboxdApp() {
   )
 }
 
-function PhotoGalleryApp() {
-  const photos = [
-    '/photos/LdP9PuDerJFHZ0EC0TbNp1f2r6ANlvtaRp1gs7jdLXw.webp',
-    '/photos/Screenshot 2024-12-16 at 11.53.48 AM.jpg',
-    '/photos/Screenshot 2024-12-16 at 11.56.32 AM.jpg',
-    '/photos/edited_-2.jpg',
-    '/photos/edited_-3.jpg',
-    '/photos/edited_-4.jpg',
-    '/photos/edited_-5.jpg',
-    '/photos/edited_-6.jpg',
-    '/photos/edited_-7.jpg',
-    '/photos/edited_-8.jpg',
-    '/photos/edited_-9.jpg',
-    '/photos/edited_-10.jpg',
-    '/photos/edited_-11.jpg',
-    '/photos/edited_.jpg',
-  ]
-
-  const [selected, setSelected] = useState<string | null>(null)
-
-  if (selected) {
-    return (
-      <div className="win95-inner-content" style={{ display: 'flex', flexDirection: 'column', height: '100%', background: '#000', fontFamily: "'Tahoma', sans-serif" }}>
-        <div style={{ padding: '4px 8px', background: '#c0c0c0', borderBottom: '1px solid #808080' }}>
-          <button onClick={() => setSelected(null)} style={{
-            background: '#c0c0c0', fontSize: 10, cursor: 'pointer', color: '#000',
-            borderTop: '1px solid #fff', borderLeft: '1px solid #fff',
-            borderRight: '1px solid #000', borderBottom: '1px solid #000',
-            padding: '2px 8px',
-          }}>Back</button>
-        </div>
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-          <img src={selected} alt="" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
-        </div>
-      </div>
-    )
-  }
-
-  return (
-    <div className="win95-inner-content" style={{ height: '100%', display: 'flex', flexDirection: 'column', fontFamily: "'Tahoma', sans-serif", fontSize: 11 }}>
-      <div style={{ padding: '4px 8px', background: '#c0c0c0', borderBottom: '1px solid #808080', display: 'flex', alignItems: 'center' }}>
-        <span style={{ fontSize: 10, fontWeight: 'bold', color: '#000' }}>My Photos</span>
-        <span style={{ fontSize: 9, color: '#808080', marginLeft: 'auto' }}>{photos.length} photos</span>
-      </div>
-      <div style={{ flex: 1, overflowY: 'auto', background: '#fff' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 2, padding: 2 }}>
-          {photos.map((src, i) => (
-            <div
-              key={i}
-              onClick={() => setSelected(src)}
-              style={{ aspectRatio: '1', overflow: 'hidden', cursor: 'pointer', background: '#f0f0f0' }}
-            >
-              <img src={src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  )
-}
 
 type GuestbookEntry = {
   id: string
@@ -2072,8 +2010,6 @@ Lift-Off Global Network Sessions 2023
       case 'notepad':
         return <GuestbookApp />
 
-      case 'recyclebin':
-        return <PhotoGalleryApp />
 
       default:
         return null

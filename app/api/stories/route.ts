@@ -17,7 +17,8 @@ export async function GET(request: NextRequest) {
   const { data, error } = await query.limit(20);
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("Stories query failed:", error.message);
+    return NextResponse.json({ stories: [] });
   }
 
   return NextResponse.json({ stories: data || [] });

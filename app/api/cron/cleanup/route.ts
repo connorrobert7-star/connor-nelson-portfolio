@@ -16,7 +16,8 @@ export async function GET(request: NextRequest) {
     .lt("found_at", sixMonthsAgo.toISOString());
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("Cleanup failed:", error.message);
+    return NextResponse.json({ error: "Cleanup failed" }, { status: 500 });
   }
 
   return NextResponse.json({ deleted: count, cutoff: sixMonthsAgo.toISOString() });

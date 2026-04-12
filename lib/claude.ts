@@ -2,6 +2,10 @@ import Anthropic from "@anthropic-ai/sdk";
 
 const anthropic = new Anthropic();
 
+function extractJson(text: string): string {
+  return text.replace(/^```(?:json)?\s*\n?/i, "").replace(/\n?```\s*$/i, "").trim();
+}
+
 export type ClassificationResult = {
   documentary_score: number;
   audience_size_estimate: number;
@@ -47,9 +51,9 @@ Respond in JSON only, no other text:
     ],
   });
 
-  const text =
+  const raw =
     response.content[0].type === "text" ? response.content[0].text : "";
-  const parsed = JSON.parse(text);
+  const parsed = JSON.parse(extractJson(raw));
 
   return {
     ...parsed,
@@ -83,9 +87,9 @@ Respond in JSON only:
     ],
   });
 
-  const text =
+  const raw =
     response.content[0].type === "text" ? response.content[0].text : "";
-  return JSON.parse(text);
+  return JSON.parse(extractJson(raw));
 }
 
 export async function generateEmbedding(text: string): Promise<number[]> {
@@ -136,9 +140,9 @@ Respond in JSON only:
     ],
   });
 
-  const text =
+  const raw =
     response.content[0].type === "text" ? response.content[0].text : "";
-  const results = JSON.parse(text);
+  const results = JSON.parse(extractJson(raw));
 
   return results.map((r: { index: number; explanation: string }) => ({
     id: stories[r.index]?.id,
