@@ -43,7 +43,7 @@ export const metadata: Metadata = {
     template: '%s — Connor Nelson',
   },
   description:
-    'Filmmaker, writer, and audio drama creator from rural Michigan. Films and stories at the intersection of landscape and dread.',
+    'Filmmaker, writer, and audio drama creator based in Chattanooga, TN. Films and stories at the intersection of landscape and dread.',
   authors: [{ name: 'Connor Nelson' }],
   creator: 'Connor Nelson',
 }

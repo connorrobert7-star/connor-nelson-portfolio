@@ -9,6 +9,14 @@ import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js'
 // Bliss Background
 // ---------------------------------------------------------------------------
 function Bliss() {
+  const [isMobile, setIsMobile] = useState(false)
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
+  const h = isMobile ? '70%' : '100%'
   return (
     <div style={{
       position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden',
@@ -18,8 +26,8 @@ function Bliss() {
       <div
         className="bliss-image"
         style={{
-          height: '100%', aspectRatio: '1 / 2',
-          maxWidth: '100%',
+          height: h, aspectRatio: '1 / 2',
+          maxWidth: '100%', maxHeight: h,
           backgroundImage: 'url(/bliss.jpg)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
@@ -31,6 +39,16 @@ function Bliss() {
           position: 'absolute', inset: 0, pointerEvents: 'none',
           background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px)',
         }} />
+        {/* Location */}
+        <div style={{
+          position: 'absolute', bottom: 6, left: 0, right: 0,
+          textAlign: 'center', pointerEvents: 'none',
+          fontFamily: "'Tahoma', sans-serif", fontSize: 9,
+          color: 'rgba(255,255,255,0.5)', letterSpacing: 1,
+          textShadow: '0 1px 3px rgba(0,0,0,0.4)',
+        }}>
+          Chattanooga, TN
+        </div>
       </div>
     </div>
   )
@@ -74,44 +92,45 @@ function computeGrassBounds(containerW: number, containerH: number) {
   const aspect = containerW / containerH
   const halfW = halfH * aspect
 
-  // --- Horizontal: visible Bliss image strip ---
-  // The Bliss image has aspectRatio 1/2 (width = height/2) and maxWidth: 100%.
-  // On desktop: image width = containerH / 2 (height-constrained).
-  // On mobile: image width = min(containerH / 2, containerW) (width-clamped).
-  // aspectRatio 1/2 means width = height/2, but clamped by maxWidth:100%
-  const imageActualWidthPx = Math.min(containerH / 2, containerW)
+  const isMobile = typeof window !== 'undefined' ? window.innerWidth < 768 : containerW < 768
+
+  // The Bliss image is 70% on mobile, 100% on desktop
+  const blissFrac = isMobile ? 0.70 : 1.0
+  const imageHeightPx = containerH * blissFrac
+  const imageActualWidthPx = Math.min(imageHeightPx / 2, containerW)
   const imageHalfWidthPx = imageActualWidthPx / 2
-  // Image left edge at px = containerW/2 - imageHalfWidthPx
-  // NDC_x = 2*(px/containerW) - 1
-  // For left edge: 2*((containerW/2 - imageHalfWidthPx)/containerW) - 1 = -2*imageHalfWidthPx/containerW
+
   const imageLeftNDC = -2 * imageHalfWidthPx / containerW
   const imageRightNDC = 2 * imageHalfWidthPx / containerW
-  const minX = imageLeftNDC * halfW
-  const maxX = imageRightNDC * halfW
+  // Shrink horizontal bounds slightly so Mii doesn't walk to edge
+  const margin = isMobile ? 0.15 : 0.05
+  const minX = imageLeftNDC * halfW * (1 - margin)
+  const maxX = imageRightNDC * halfW * (1 - margin)
 
-  // --- Vertical: grass portion of Bliss image ---
-  // The Bliss image fills the full container height. The top 60px is covered
-  // by a blue bar (sky replacement). The grass starts at roughly 45% from the
-  // top of the image and extends to the bottom.
-  //
-  // pixel-from-top -> NDC_y = 1 - 2*(py / containerH)
-  // World Y = NDC_y * halfH
-  const grassTopFrac = 0.50  // higher up — top of grass hill
-  const grassTopNDC = 1 - 2 * grassTopFrac
-  const grassBottomNDC = -1.0  // all the way to bottom
+  // Vertical: the image is centered, so it starts at 15% from top and ends at 85%
+  // Grass is roughly the bottom 55% of the Bliss image
+  // Image top in container = (containerH - imageHeightPx) / 2
+  const imageTopPx = (containerH - imageHeightPx) / 2
+  const imageBottomPx = imageTopPx + imageHeightPx
+  // Grass starts at ~45% of the image from top
+  const grassTopPx = imageTopPx + imageHeightPx * 0.45
+  // Grass ends at bottom of image
+  const grassBottomPx = imageBottomPx
 
-  const farY = grassTopNDC * halfH    // top of grass (far, smaller)
-  const nearY = grassBottomNDC * halfH // bottom of grass (near, bigger)
+  // Convert to NDC: NDC_y = 1 - 2*(py / containerH)
+  const grassTopNDC = 1 - 2 * (grassTopPx / containerH)
+  const grassBottomNDC = 1 - 2 * (grassBottomPx / containerH)
 
-  // On mobile viewports, scale the Mii larger so it's not tiny
-  const isMobile = containerW < 768
-  const scaleMult = isMobile ? 2.0 : 1.0
+  const farY = grassTopNDC * halfH
+  const nearY = grassBottomNDC * halfH
+
+  const scaleMult = isMobile ? 3.0 : 1.0
 
   return {
     minX,
     maxX,
-    nearY,   // bottom of grass (most negative Y)
-    farY,    // top of grass (less negative or positive Y)
+    nearY,
+    farY,
     nearScale: 0.6 * scaleMult,
     farScale: 0.3 * scaleMult,
   }

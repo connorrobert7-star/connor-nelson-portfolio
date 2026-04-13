@@ -25,6 +25,6 @@ The sound design was built around absence. What isn't there. The frequencies tha
 
 Influences live in the periphery of this film rather than at its center: Kiyoshi Kurosawa's *Pulse*, the way Lynch lets things breathe past the point of comfort, the visual grammar of found footage without the formal conceit of found footage. Something that feels discovered rather than made.
 
----
+## Awards
 
-*Dead on TV* has screened at several regional festivals and is currently in post-production for wider distribution.
+- **Best Narrative** — Sonscreen Film Festival 2026

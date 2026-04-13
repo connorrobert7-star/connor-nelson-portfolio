@@ -33,7 +33,8 @@ export default function PostCard({ slug, title, date, category, excerpt, index =
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: '1.5rem',
+          gap: 'clamp(0.5rem, 2vw, 1.5rem)',
+          flexWrap: 'wrap',
           marginBottom: '0.75rem',
         }}
       >
@@ -91,7 +92,7 @@ export default function PostCard({ slug, title, date, category, excerpt, index =
             fontWeight: 400,
             lineHeight: 1.2,
             marginBottom: '0.75rem',
-            paddingLeft: '3.5rem',
+            paddingLeft: 'clamp(0rem, 3vw, 3.5rem)',
             transition: 'color 0.3s ease',
           }}
           className="post-title"
@@ -108,14 +109,14 @@ export default function PostCard({ slug, title, date, category, excerpt, index =
           fontSize: '0.875rem',
           color: '#6b6560',
           lineHeight: 1.7,
-          paddingLeft: '3.5rem',
+          paddingLeft: 'clamp(0rem, 3vw, 3.5rem)',
           maxWidth: '60ch',
         }}
       >
         {excerpt}
       </p>
 
-      <div style={{ paddingLeft: '3.5rem', marginTop: '1rem' }}>
+      <div style={{ paddingLeft: 'clamp(0rem, 3vw, 3.5rem)', marginTop: '1rem' }}>
         <Link
           href={`/writing/${slug}`}
           className="link-underline"

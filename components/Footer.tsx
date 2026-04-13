@@ -26,7 +26,7 @@ export default function Footer() {
             color: 'var(--text-ghost)',
           }}
         >
-          Connor Nelson · Filmmaker / Writer · Michigan
+          Connor Nelson · Filmmaker / Writer · Chattanooga, TN
         </span>
         <span
           style={{

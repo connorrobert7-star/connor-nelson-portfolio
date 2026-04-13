@@ -7,7 +7,6 @@ const links = [
   { href: '/',          label: 'home'    },
   { href: '/portfolio', label: 'work'    },
   { href: '/writing',   label: 'writing' },
-  { href: '/about',     label: 'about'   },
   { href: '/contact',   label: 'contact' },
 ]
 

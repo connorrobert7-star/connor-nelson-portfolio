@@ -34,11 +34,11 @@ export default async function ProjectPage({ params }: Props) {
       <header
         style={{
           position: 'relative',
-          minHeight: '55vh',
+          minHeight: 'clamp(35vh, 50vw, 55vh)',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'flex-end',
-          padding: '0 2rem 4rem',
+          padding: '0 clamp(1.25rem, 4vw, 2rem) clamp(2rem, 5vw, 4rem)',
           maxWidth: '1200px',
           margin: '0 auto',
           overflow: 'hidden',
@@ -131,50 +131,22 @@ export default async function ProjectPage({ params }: Props) {
         style={{
           maxWidth: '1200px',
           margin: '0 auto',
-          padding: '0 2rem',
+          padding: '0 clamp(1.25rem, 4vw, 2rem)',
         }}
       >
         <div style={{ height: '1px', backgroundColor: accent, opacity: 0.3 }} />
       </div>
 
-      {/* ── Image placeholder ── */}
-      <div
-        style={{
-          maxWidth: '1200px',
-          margin: '0 auto',
-          padding: '3rem 2rem',
-        }}
-      >
-        <div
-          className="img-placeholder"
-          style={{
-            width: '100%',
-            aspectRatio: '16/9',
-            maxHeight: '540px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            border: '1px solid #2a2825',
-          }}
-        >
-          <svg width="60" height="60" viewBox="0 0 60 60" fill="none" style={{ opacity: 0.08 }}>
-            <rect x="2" y="2" width="56" height="56" stroke="#e8e4dc" strokeWidth="0.5" />
-            <line x1="2" y1="2" x2="58" y2="58" stroke="#e8e4dc" strokeWidth="0.5" />
-            <line x1="58" y1="2" x2="2" y2="58" stroke="#e8e4dc" strokeWidth="0.5" />
-            <circle cx="30" cy="30" r="10" stroke="#e8e4dc" strokeWidth="0.5" />
-          </svg>
-        </div>
-      </div>
 
       {/* ── Content ── */}
       <div
         style={{
           maxWidth: '1200px',
           margin: '0 auto',
-          padding: '2rem 2rem 8rem',
+          padding: 'clamp(1.25rem, 3vw, 2rem) clamp(1.25rem, 4vw, 2rem) clamp(4rem, 8vw, 8rem)',
           display: 'grid',
-          gridTemplateColumns: '1fr min(65ch, 100%)',
-          gap: '0 4rem',
+          gridTemplateColumns: '1fr',
+          gap: '0',
         }}
       >
         {/* Sidebar / spacer — intentionally off-center */}
@@ -184,7 +156,7 @@ export default async function ProjectPage({ params }: Props) {
         <div
           className="prose"
           dangerouslySetInnerHTML={{ __html: project.contentHtml ?? '' }}
-          style={{ gridColumn: '1 / -1' }}
+          style={{ gridColumn: '1 / -1', maxWidth: '100%', overflowWrap: 'break-word' }}
         />
       </div>
     </article>

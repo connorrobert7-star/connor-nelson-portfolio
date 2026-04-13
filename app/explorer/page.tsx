@@ -107,7 +107,7 @@ export default function ExplorerPage() {
   const grid = stories.slice(4)
 
   return (
-    <div className="site-wrap" style={{ paddingTop: '2rem', paddingBottom: '4rem' }}>
+    <div className="site-wrap" style={{ paddingTop: '2rem', paddingBottom: '4rem', overflowWrap: 'break-word', wordBreak: 'break-word' }}>
       {/* Masthead */}
       <header style={{ borderBottom: '1px solid var(--border)', paddingBottom: '1.25rem', marginBottom: '1.5rem' }}>
         <div style={{ textAlign: 'center' }}>
@@ -138,7 +138,7 @@ export default function ExplorerPage() {
             onChange={e => { setQuery(e.target.value); if (!e.target.value.trim()) setSearchResults(null) }}
             placeholder='Search stories... (e.g. "find me something like the adult baby town story")'
             style={{
-              flex: 1, padding: '0.5rem 0.75rem', background: 'var(--bg-raise)', color: 'var(--text)',
+              flex: 1, minWidth: 0, padding: '0.5rem 0.75rem', background: 'var(--bg-raise)', color: 'var(--text)',
               border: 'none', outline: 'none', fontFamily: 'var(--font-mono)', fontSize: '0.8rem',
             }}
           />
@@ -149,7 +149,7 @@ export default function ExplorerPage() {
               padding: '0.5rem 1rem', background: 'var(--text-dim)', color: 'var(--text)',
               border: 'none', fontFamily: 'var(--font-futura)', fontSize: '0.55rem',
               fontWeight: 600, letterSpacing: '0.18em', textTransform: 'uppercase' as const,
-              cursor: 'pointer', opacity: searching ? 0.5 : 1,
+              cursor: 'pointer', opacity: searching ? 0.5 : 1, flexShrink: 0, whiteSpace: 'nowrap' as const,
             }}
           >
             {searching ? 'Searching...' : 'Search'}
@@ -181,7 +181,7 @@ export default function ExplorerPage() {
       ) : (
         <>
           {/* Category nav */}
-          <nav style={{ display: 'flex', gap: '0.25rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-dim)', paddingBottom: '0.75rem' }}>
+          <nav style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-dim)', paddingBottom: '0.75rem' }}>
             {CATEGORIES.map(cat => (
               <button
                 key={cat.key}
@@ -216,7 +216,7 @@ export default function ExplorerPage() {
             <>
               {/* Above the fold: lead + sidebar */}
               <div style={{
-                display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1.5rem',
+                display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))', gap: '1.5rem',
                 marginBottom: '2rem', paddingBottom: '2rem', borderBottom: '1px solid var(--border-dim)',
               }}>
                 {lead && <StoryCard story={lead} variant="lead" />}
@@ -229,7 +229,7 @@ export default function ExplorerPage() {
 
               {/* Below the fold: grid */}
               {grid.length > 0 && (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: '1.5rem' }}>
                   {grid.map(story => (
                     <StoryCard key={story.id} story={story} variant="grid" />
                   ))}
@@ -255,7 +255,7 @@ function StoryCard({ story, variant }: { story: Story; variant: 'lead' | 'sideba
   const expiryDays = daysUntilExpiry(story.found_at)
 
   const meta = (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.6rem', color: 'var(--text-dim)', fontFamily: 'var(--font-futura)', letterSpacing: '0.1em' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', fontSize: '0.6rem', color: 'var(--text-dim)', fontFamily: 'var(--font-futura)', letterSpacing: '0.1em' }}>
       <span style={{ color: 'var(--text-mid)', fontWeight: 600 }}>
         {PLATFORM_LABELS[story.source_platform] || story.source_platform}
       </span>

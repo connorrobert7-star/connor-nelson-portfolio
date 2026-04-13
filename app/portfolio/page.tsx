@@ -11,7 +11,7 @@ export default function PortfolioPage() {
   const projects = getAllProjects()
 
   return (
-    <div className="site-wrap" style={{ padding: '2.5rem 1.25rem 6rem' }}>
+    <div className="site-wrap" style={{ padding: 'clamp(1.5rem, 4vw, 2.5rem) 20px clamp(3rem, 6vw, 6rem)' }}>
 
       <div style={{ marginBottom: '2.5rem' }}>
         <Link href="/" className="dim-link">← home</Link>
@@ -57,9 +57,9 @@ export default function PortfolioPage() {
           >
             {/* Image thumbnail */}
             <div
-              className="img-ph"
+              className="img-ph portfolio-thumb"
               style={{
-                width: '100px',
+                width: 'clamp(60px, 12vw, 100px)',
                 aspectRatio: '16/9',
                 flexShrink: 0,
               }}
@@ -119,7 +119,7 @@ export default function PortfolioPage() {
                   fontSize: '0.82rem',
                   color: 'var(--text-dim)',
                   lineHeight: 1.65,
-                  maxWidth: '60ch',
+                  maxWidth: 'min(60ch, 100%)',
                 }}
               >
                 {p.description}

@@ -60,6 +60,7 @@ type Action =
   | { type: 'MAXIMIZE_WINDOW'; id: string }
   | { type: 'MOVE_WINDOW'; id: string; x: number; y: number }
   | { type: 'SET_READY'; id: string }
+  | { type: 'CLAMP_POSITIONS'; payload: { vw: number; vh: number } }
 
 // ── Code snippets for loading animations ──
 
@@ -221,6 +222,17 @@ function windowReducer(state: WindowState[], action: Action): WindowState[] {
       return state.map((w) =>
         w.id === action.id ? { ...w, phase: 'ready' as const } : w
       )
+    case 'CLAMP_POSITIONS': {
+      const { vw, vh } = action.payload as { vw: number; vh: number }
+      return state.map(w => ({
+        ...w,
+        size: { ...w.size, width: Math.min(w.size.width, vw - 16) },
+        position: {
+          x: Math.max(0, Math.min(w.position.x, vw - Math.min(w.size.width, vw - 16))),
+          y: Math.max(0, Math.min(w.position.y, vh - 60)),
+        },
+      }))
+    }
     default:
       return state
   }
@@ -240,13 +252,15 @@ const defaultIcons: Omit<IconState, 'x' | 'y'>[] = [
 ]
 
 function initIcons(): IconState[] {
-  const isMobile = typeof window !== 'undefined' && window.innerWidth < 660
+  const vw = typeof window !== 'undefined' ? window.innerWidth : 1000
+  const isMobile = vw < 660
   const colWidth = isMobile ? 64 : 80
   const rowHeight = isMobile ? 64 : 76
   const colHeight = 7 // icons per column before wrapping
+  const maxX = vw - (isMobile ? 56 : 72) // keep icons within viewport
   return defaultIcons.map((ic, i) => ({
     ...ic,
-    x: 12 + Math.floor(i / colHeight) * colWidth,
+    x: Math.min(12 + Math.floor(i / colHeight) * colWidth, maxX),
     y: 12 + (i % colHeight) * rowHeight,
   }))
 }
@@ -254,12 +268,14 @@ function initIcons(): IconState[] {
 // ── Window configs ──
 
 function getWindowConfig(type: string, id: string, label: string, icon: string, cascadeIndex: number) {
-  const baseX = 80 + cascadeIndex * 30
-  const baseY = 40 + cascadeIndex * 30
+  const vw = typeof window !== 'undefined' ? window.innerWidth : 1000
+  const isMobileWin = vw < 500
+  const baseX = isMobileWin ? 8 : 80 + cascadeIndex * 30
+  const baseY = isMobileWin ? 30 + cascadeIndex * 20 : 40 + cascadeIndex * 30
 
   const configs: Record<string, { title: string; size: { width: number; height: number } }> = {
     films: { title: 'My Films', size: { width: 400, height: 350 } },
-    about: { title: 'PRACTICE - Notepad', size: { width: 440, height: 420 } },
+    about: { title: 'About Me - Notepad', size: { width: 440, height: 420 } },
     writing: { title: 'Writing', size: { width: 400, height: 300 } },
     contact: { title: 'Contact', size: { width: 280, height: 180 } },
     demoReel: { title: 'Dead on TV', size: { width: 360, height: 250 } },
@@ -271,17 +287,24 @@ function getWindowConfig(type: string, id: string, label: string, icon: string, 
     letterboxd: { title: 'Letterboxd', size: { width: 300, height: 360 } },
     internet: { title: 'Internet Explorer - YouTube', size: { width: 520, height: 440 } },
     notepad: { title: 'Live Chat', size: { width: 360, height: 320 } },
+    music: { title: 'Media Player', size: { width: 320, height: 180 } },
   }
 
   const cfg = configs[type] || { title: label, size: { width: 400, height: 350 } }
+
+  // Clamp width to viewport minus margins
+  const maxWidth = vw - 16
+  const clampedWidth = Math.min(cfg.size.width, maxWidth)
+  // Clamp x so window stays on screen
+  const clampedX = Math.max(0, Math.min(baseX, vw - clampedWidth - 8))
 
   return {
     id,
     type,
     title: cfg.title,
     icon,
-    position: { x: baseX, y: baseY },
-    size: cfg.size,
+    position: { x: clampedX, y: baseY },
+    size: { width: clampedWidth, height: cfg.size.height },
     minimized: false,
     maximized: false,
   }
@@ -515,7 +538,7 @@ function SignalNewsApp() {
         ) : (
           <>
             {/* LEAD + SIDEBAR — NYT above-the-fold */}
-            <div style={{ display: 'flex', gap: 14, paddingTop: 10, paddingBottom: 14, borderBottom: '1px solid #e2e2e2', marginBottom: 14 }}>
+            <div style={{ display: 'flex', gap: 14, paddingTop: 10, paddingBottom: 14, borderBottom: '1px solid #e2e2e2', marginBottom: 14, flexWrap: 'wrap' }}>
               {/* Lead story */}
               {lead && (
                 <div style={{ flex: 2 }}>
@@ -567,7 +590,7 @@ function SignalNewsApp() {
                 <div style={{ fontFamily: nytFranklin, fontSize: 10, fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: 1, color: '#121212', marginBottom: 10, paddingBottom: 6, borderBottom: '2px solid #121212' }}>
                   More Stories
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px 14px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '12px 14px' }}>
                   {grid.map(story => (
                     <div key={story.id}>
                       <div style={{ fontFamily: nytSans, fontSize: 8, fontWeight: 600, color: '#567', textTransform: 'uppercase' as const, letterSpacing: 0.5, marginBottom: 3 }}>
@@ -999,7 +1022,7 @@ function OldYouTubeApp() {
               }}
             >
               {/* Thumbnail */}
-              <div style={{ width: 120, height: 68, flexShrink: 0, background: '#000', position: 'relative', overflow: 'hidden' }}>
+              <div style={{ width: 'clamp(80px, 25%, 120px)', height: 68, flexShrink: 1, background: '#000', position: 'relative', overflow: 'hidden' }}>
                 <img
                   src={video.thumbnail}
                   alt={video.title}
@@ -1094,6 +1117,139 @@ function LetterboxdApp() {
   )
 }
 
+
+function MusicPlayerBar() {
+  const iframeRef = useRef<HTMLIFrameElement>(null)
+  const [playing, setPlaying] = useState(false)
+  const [hasPlayed, setHasPlayed] = useState(false)
+  const [trackTitle, setTrackTitle] = useState('')
+  const trackIndexRef = useRef(0)
+  const trackCountRef = useRef(0)
+  const widgetRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  type SCWidget = {
+    bind: (event: string, cb: (...args: unknown[]) => void) => void
+    play: () => void
+    pause: () => void
+    next: () => void
+    prev: () => void
+    skip: (index: number) => void
+    getCurrentSoundIndex: (cb: (i: number) => void) => void
+    getCurrentSound: (cb: (s: { title: string }) => void) => void
+    getSounds: (cb: (sounds: unknown[]) => void) => void
+  }
+
+  useEffect(() => {
+    const script = document.createElement('script')
+    script.src = 'https://w.soundcloud.com/player/api.js'
+    script.onload = () => {
+      const iframe = iframeRef.current
+      if (!iframe || !(window as unknown as Record<string, unknown>).SC) return
+      const SC = (window as unknown as Record<string, { Widget: (el: HTMLIFrameElement) => unknown }>).SC
+      const widget = SC.Widget(iframe) as SCWidget;
+      (window as unknown as Record<string, unknown>).__scWidget = widget
+
+      widget.bind('ready', () => {
+        widget.getSounds((sounds: unknown[]) => {
+          trackCountRef.current = sounds.length
+        })
+      })
+      widget.bind('play', () => {
+        setPlaying(true)
+        setHasPlayed(true)
+        widget.getCurrentSound((s: { title: string }) => setTrackTitle(s.title))
+        widget.getCurrentSoundIndex((i: number) => { trackIndexRef.current = i })
+      })
+      widget.bind('pause', () => setPlaying(false))
+      widget.bind('finish', () => {
+        widget.next()
+      })
+    }
+    document.body.appendChild(script)
+    return () => {
+      if (widgetRef.current) clearInterval(widgetRef.current)
+    }
+  }, [])
+
+  function getWidget() {
+    return (window as unknown as Record<string, unknown>).__scWidget as SCWidget | undefined
+  }
+
+  function handlePrev() {
+    const w = getWidget()
+    if (!w) return
+    if (trackIndexRef.current <= 0) {
+      w.skip(trackCountRef.current - 1)
+    } else {
+      w.prev()
+    }
+  }
+
+  function handleNext() {
+    const w = getWidget()
+    if (!w) return
+    if (trackIndexRef.current >= trackCountRef.current - 1) {
+      w.skip(0)
+    } else {
+      w.next()
+    }
+  }
+
+  function handlePlayPause() {
+    const w = getWidget()
+    if (!w) return
+    if (playing) { w.pause() } else { w.play() }
+  }
+
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 500
+  const btnStyle: React.CSSProperties = {
+    background: '#c0c0c0', color: '#000', fontSize: isMobile ? 8 : 10, cursor: 'pointer',
+    borderTop: '1px solid #fff', borderLeft: '1px solid #fff',
+    borderRight: '1px solid #000', borderBottom: '1px solid #000',
+    padding: isMobile ? '1px 3px' : '1px 6px', fontFamily: "'Tahoma', sans-serif", minWidth: isMobile ? 16 : 20,
+  }
+
+  return (
+    <>
+      <iframe
+        ref={iframeRef}
+        width="0" height="0"
+        scrolling="no" frameBorder="no" allow="autoplay"
+        src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/ericstorm1/sets/website&auto_play=false&hide_related=true&show_comments=false&show_user=false&show_reposts=false&show_teaser=false"
+        style={{ position: 'absolute', width: 0, height: 0, opacity: 0, pointerEvents: 'none' }}
+      />
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 2,
+        fontFamily: "'Tahoma', sans-serif", fontSize: 10, color: '#000',
+        flexShrink: 1, minWidth: 0, overflow: 'hidden',
+      }}>
+        <button style={btnStyle} onClick={handlePrev}>{'|◀'}</button>
+        <button style={btnStyle} onClick={handlePlayPause}>
+          {playing ? '▐▐' : '▶'}
+        </button>
+        <button style={btnStyle} onClick={handleNext}>{'▶|'}</button>
+        <div style={{
+          overflow: 'hidden', maxWidth: 'clamp(60px, 20vw, 160px)', whiteSpace: 'nowrap' as const, marginLeft: 4,
+          borderTop: '1px solid #808080', borderLeft: '1px solid #808080',
+          borderRight: '1px solid #fff', borderBottom: '1px solid #fff',
+          background: '#000', padding: '2px 6px', minWidth: 0, height: 16,
+          display: 'flex', alignItems: 'center', flexShrink: 1,
+        }}>
+          {hasPlayed && (
+            <span style={{
+              fontSize: 10, color: '#00ff41', display: 'inline-block',
+              fontFamily: "'Courier New', monospace",
+              animation: trackTitle.length > 18 ? 'marquee 10s linear infinite' : 'none',
+            }}>
+              {trackTitle}
+            </span>
+          )}
+        </div>
+        <style>{`@keyframes marquee { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }`}</style>
+      </div>
+    </>
+  )
+}
 
 type GuestbookEntry = {
   id: string
@@ -1442,6 +1598,7 @@ export default function Win95Desktop({
   const [windows, dispatch] = useReducer(windowReducer, [])
   const [selectedIcon, setSelectedIcon] = useState<string | null>(null)
   const [icons, setIcons] = useState<IconState[]>(initIcons)
+  const [isMobileView, setIsMobileView] = useState(() => typeof window !== 'undefined' ? window.innerWidth < 500 : false)
   const iconDragRef = useRef<{ id: string; startX: number; startY: number; origX: number; origY: number } | null>(null)
   const cascadeRef = useRef(0)
   const demoReelOpened = useRef(false)
@@ -1456,10 +1613,11 @@ export default function Win95Desktop({
       const dragId = drag.id
       const origX = drag.origX
       const origY = drag.origY
+      const maxIconX = window.innerWidth - 60
       setIcons((prev) =>
         prev.map((ic) =>
           ic.id === dragId
-            ? { ...ic, x: origX + dx, y: origY + dy }
+            ? { ...ic, x: Math.max(0, Math.min(origX + dx, maxIconX)), y: Math.max(0, origY + dy) }
             : ic
         )
       )
@@ -1495,16 +1653,44 @@ export default function Win95Desktop({
     return () => clearInterval(interval)
   }, [])
 
-  // Close start menu on outside click
+  // Track mobile viewport
+  useEffect(() => {
+    const check = () => setIsMobileView(window.innerWidth < 500)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
+
+  // Clamp window positions on viewport resize
+  useEffect(() => {
+    function handleResize() {
+      const vw = window.innerWidth
+      const vh = window.innerHeight
+      dispatch({ type: 'CLAMP_POSITIONS', payload: { vw, vh } })
+    }
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
+  // Close start menu on outside click/touch
+  // Uses pointerdown which fires exactly once for both mouse and touch,
+  // avoiding the iOS Safari double-fire issue (touchend + synthetic mousedown).
   useEffect(() => {
     if (!startOpen) return
-    const handler = (e: MouseEvent) => {
+    const handler = (e: PointerEvent) => {
       const t = e.target as HTMLElement
       if (!t.closest('.win95-start-menu') && !t.closest('.win95-start-btn'))
         setStartOpen(false)
     }
-    window.addEventListener('mousedown', handler)
-    return () => window.removeEventListener('mousedown', handler)
+    // Attach on next tick so the current click/tap that opened the menu
+    // doesn't immediately trigger the close handler.
+    const raf = requestAnimationFrame(() => {
+      window.addEventListener('pointerdown', handler)
+    })
+    return () => {
+      cancelAnimationFrame(raf)
+      window.removeEventListener('pointerdown', handler)
+    }
   }, [startOpen])
 
   const handleBootComplete = useCallback(() => {
@@ -1521,8 +1707,11 @@ export default function Win95Desktop({
     const timer = setTimeout(() => {
       const w = typeof window !== 'undefined' ? window.innerWidth : 1000
       const h = typeof window !== 'undefined' ? window.innerHeight : 700
-      const x = Math.max(w / 2 + 40, w - 420)
-      const y = h - 360
+      const isMobileDR = w < 768
+      const drWidth = isMobileDR ? Math.min(200, w * 0.48) : 360
+      const drHeight = isMobileDR ? 160 : 250
+      const x = isMobileDR ? w - drWidth - 8 : Math.max(w / 2 + 40, w - 420)
+      const y = isMobileDR ? h - drHeight - 80 : h - 360
       dispatch({
         type: 'OPEN_WINDOW',
         payload: {
@@ -1531,11 +1720,12 @@ export default function Win95Desktop({
           title: 'Dead on TV',
           icon: '\uD83D\uDCFC',
           position: { x, y },
-          size: { width: 360, height: 250 },
+          size: { width: drWidth, height: drHeight },
           minimized: false,
         },
       })
       setTimeout(() => dispatch({ type: 'SET_READY', id: 'demoReel' }), 1500)
+
     }, 600)
     return () => clearTimeout(timer)
   }, [booting])
@@ -1553,12 +1743,22 @@ export default function Win95Desktop({
       const cfg = getWindowConfig(type, id, label, icon, cascadeRef.current)
       cascadeRef.current = (cascadeRef.current + 1) % 10
 
+      // Clamp any size override to viewport
+      const vwNow = typeof window !== 'undefined' ? window.innerWidth : 1000
+      const maxW = vwNow - 16
+      const finalSize = sizeOverride
+        ? { width: Math.min(sizeOverride.width, maxW), height: sizeOverride.height }
+        : cfg.size
+      const finalPos = posOverride
+        ? { x: Math.max(0, Math.min(posOverride.x, vwNow - finalSize.width - 8)), y: posOverride.y }
+        : cfg.position
+
       dispatch({
         type: 'OPEN_WINDOW',
         payload: {
           ...cfg,
-          position: posOverride || cfg.position,
-          size: sizeOverride || cfg.size,
+          position: finalPos,
+          size: finalSize,
         },
       })
 
@@ -1648,220 +1848,49 @@ export default function Win95Desktop({
               whiteSpace: 'pre-wrap',
               margin: 0,
             }}>
-{`PRACTICE
-
-Written by Connor Nelson
-
-
-EXT. TUSTIN, MICHIGAN - DAWN
-
-Population sign: TUSTIN. EST. 1872. Below it,
-someone has spray-painted the number 200 and
-crossed it out. Below that, 198.
-
-A sawmill. Mist off the river. The sound of
-the blade before anything else.
-
-A BOY (7) stands at the edge of the property
-watching the logs come through. He doesn't look
-afraid. He looks like he's memorizing something.
-
-                    CONNOR (V.O.)
-          I grew up in a town of two hundred
-          people in Michigan, so small we had
-          to borrow the newspaper from the
-          town over.
-
-
-INT. TUSTIN PUBLIC LIBRARY - DAY
-
-Small. Four tables. A fish tank with one fish
-in it.
-
-A BOY (10) sits alone at a table near the
-window. Not reading. Watching a group of KIDS
-in the corner on a shared computer, playing
-something, laughing at something he can't hear
-from here.
-
-He doesn't go over.
-
-He picks up a book. Puts it down. Picks up
-another one.
-
-                    CONNOR (V.O.)
-          The library had maybe four regulars
-          at a time. I was one of them. I
-          never asked for books. I was too
-          shy to talk to the kids playing
-          RuneScape in the corner so I just
-          watched from across the room.
-
-
-EXT. RIVER - NIGHT
-
-A bonfire. Cousins, neighbors, somebody's dad
-with a cooler. A BOY (7) stands at the outer
-ring of the fire's light, not quite inside the
-circle of people.
-
-A COUSIN (12) holds up a camcorder. Points it
-at the trees.
-
-                    COUSIN
-          We're making a movie. Thirty-foot
-          anaconda. In the jungle.
-
-The Boy looks at the camcorder. Something
-shifts in his face.
-
-                    CONNOR (V.O.)
-          I found film at a bonfire by a
-          river. My cousins had a camcorder,
-          said they were making a movie about
-          a thirty-foot anaconda in the
-          jungle. I was seven. That was
-          enough.
-
-
-INT. LOG CABIN - BEDROOM - NIGHT
-
-A desktop computer. Dial-up modem. A loading
-bar at 12%.
-
-A BOY (13) sits in front of it. Not frustrated.
-Waiting. He's done this before. He'll do it
-again.
-
-On screen: a movie player, buffering.
-
-He leans back in his chair and stares at the
-ceiling. He's not going anywhere.
-
-                    CONNOR (V.O.)
-          I taught myself patience on dial-up
-          internet, watching a movie five
-          times slower than everyone else.
-          Good things come to those who wait.
-          And if you don't like it you just
-          wait it out.
-
-
-EXT. CREEK - DAY
-
-A TEENAGER walks the bank alone. No
-destination. Turns over a rock. Lets it drop.
-Keeps walking.
-
-The creek doesn't care. The woods don't care.
-He walks anyway.
-
-                    CONNOR (V.O.)
-          I spent a lot of time in my own
-          head, walking creek banks alone,
-          going into the woods for no reason
-          other than to walk and think and
-          feel like something was going to
-          happen.
-
-
-INT. FILM SET - VARIOUS - DAY / NIGHT
-
-A YOUNG MAN (20) moves equipment in the dark.
-Extension cords. Sandbags. He's not the
-director. He's not the DP. Nobody's asking
-his name.
-
-He works. The sun goes down. He's still
-working.
-
-Close on his hands. Close on a clock. 2 AM.
-
-                    CONNOR (V.O.)
-          I've worked fourteen-hour days for
-          zero dollars just to be in the room
-          where something was being made.
-          That's not a complaint. That's how
-          I know I mean it.
-
-
-INT. APARTMENT - NIGHT
-
-A YOUNG MAN (24) sits at a desk covered in
-papers, index cards pinned to the wall, a
-hand-drawn diagram of something large and
-intricate. Kabbalistic. The Tree of Life.
-Lines connecting things.
-
-He's not confused by it. He built it.
-
-                    CONNOR (V.O.)
-          I make horror films, the
-          psychological kind, the kind that
-          lives in behavior and obsession and
-          the quiet damage people do to each
-          other in small spaces. I built a
-          whole universe from scratch. I
-          write, I direct, I produce, I
-          figure it out.
-
-
-EXT. SAWMILL - TUSTIN, MICHIGAN - DAWN (FLASHBACK)
-
-The Boy from the first scene, still seven,
-still watching the blade, still memorizing.
-
-The log splits clean.
-
-                    CONNOR (V.O.)
-          I didn't come from money or
-          connections. I came from a sawmill
-          and a broken car stereo and the
-          kind of town where you either find
-          a reason to make something or
-          you don't.
-
-
-INT. FILM SET - NIGHT
-
-A YOUNG MAN stands behind a monitor. On the
-screen: an actor hitting their mark. The image
-is right. He can tell.
-
-He doesn't celebrate. He just nods once.
-
-                    CONNOR (V.O.)
-          Everything I've made so far has
-          been practice.
-
-He watches the playback. The image holds.
-
-                    CONNOR (V.O.) (CONT'D)
-          I'm ready for what comes next.
-
-FADE TO BLACK.
-
-TITLE CARD: PRACTICE
-
-
-========================================
-AWARDS & SELECTIONS
-========================================
-
-Wild Winter Film Festival
-  Best Director
-
-Sonscreen Film Festival 2025
-  Special Jury Award for Best Original Score
-    — Fret
-  Official Selection
-    — Conversation with my Grandpa
-
-End of Year Show
-  Best Editor
-
-Lift-Off Global Network Sessions 2023
-  Official Selection`}
+{`I used to climb a dying pine tree at the
+end of our driveway, fifty or sixty feet
+up, and wait. I don't know what I was
+waiting for. I just kept going back.
+
+I made bets with the devil. The logic
+was: if God is almighty he'll do anything
+to keep me, so I'd wager my soul on
+whether I could hold my breath past a
+certain count. The first time I lost
+immediately. I went to my room and waited
+to feel different. I felt exactly the
+same. I thought, well.
+
+Michigan. Population two hundred, give or
+take. I was homeschooled. Adventist. We
+walked through the woods mostly and tried
+to scare each other. I went out there
+alone a lot too. I'd always tell myself I
+was going to take pictures. I never did.
+
+I was seven when my cousin pointed a
+camcorder at the ditch and said we're
+making a movie. I didn't know you could
+do that. We sat at the oak table and
+watched the same thirty seconds back
+three times. Nobody said anything.
+
+At fourteen I was working 5am to 4pm at
+my dad's sawmill, ten dollars an hour
+stacking lumber. I didn't eat in the
+break room. The microwave hadn't been
+cleaned since before I was born. I took
+my sandwich up on a stack of lumber
+twenty feet high and ate it up there.
+
+Now I live in Chattanooga. I sit on my
+porch most evenings. My downstairs
+neighbors argue about money and about him
+not having a job. I can hear everything.
+I don't think they know that.
+
+I keep listening anyway.`}
             </pre>
           </div>
         )
@@ -1918,10 +1947,13 @@ Lift-Off Global Network Sessions 2023
             background: '#000', overflow: 'hidden', display: 'flex',
             flexDirection: 'column', height: '100%',
           }}>
+            {/* eslint-disable-next-line */}
             <video
               src="https://pub-955ffbb69b9e41b4bfabf1cd2ec1c16a.r2.dev/this%20is%20for%20dead%20on%20tv%20demo.mp4"
               autoPlay muted loop playsInline
-              style={{ width: '100%', flex: 1, objectFit: 'cover' }}
+              {...{ 'webkit-playsinline': '' } as Record<string, string>}
+              preload="auto"
+              style={{ width: '100%', flex: 1, objectFit: 'contain', background: '#000' }}
             />
           </div>
         )
@@ -2019,6 +2051,16 @@ Lift-Off Global Network Sessions 2023
       case 'notepad':
         return <GuestbookApp />
 
+      case 'music':
+        return (
+          <div className="win95-inner-content" style={{ background: '#000', height: '100%' }}>
+            <iframe
+              width="100%" height="100%" scrolling="no" frameBorder="no" allow="autoplay"
+              src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/ericstorm1/sets/website&color=%2300ff41&auto_play=true&hide_related=true&show_comments=false&show_user=false&show_reposts=false&show_teaser=false&visual=false"
+            />
+          </div>
+        )
+
 
       default:
         return null
@@ -2028,7 +2070,7 @@ Lift-Off Global Network Sessions 2023
   if (booting) return <Win95Boot onComplete={handleBootComplete} />
 
   return (
-    <div className="win95-desktop" onClick={() => { setSelectedIcon(null); setStartOpen(false) }}>
+    <div className="win95-desktop" style={{ overflowX: 'hidden' }} onMouseDown={() => { setSelectedIcon(null) }}>
       {/* ── Windows 98 Bliss wallpaper + 3D Mii ── */}
       <MiiWalker />
 
@@ -2162,23 +2204,24 @@ Lift-Off Global Network Sessions 2023
 
       {/* ── Desktop Scanlines ── */}
 
-      {/* ── Desktop Watermark ── */}
+      {/* ── Desktop Watermark + Awards ── */}
       <div style={{
-        position: 'absolute', top: 12, right: 16, zIndex: 0,
+        position: 'absolute', top: 12, right: isMobileView ? 8 : 16, zIndex: 0,
         textAlign: 'right', pointerEvents: 'none', userSelect: 'none',
+        maxWidth: isMobileView ? 'calc(100vw - 80px)' : 'none',
       }}>
         <div style={{
           fontFamily: "'MS Sans Serif', 'Tahoma', sans-serif",
-          fontSize: 11, color: 'rgba(255,255,255,0.7)', lineHeight: 1.4,
+          fontSize: isMobileView ? 9 : 11, color: 'rgba(255,255,255,0.7)', lineHeight: 1.4,
           textShadow: '1px 1px 2px rgba(0,0,0,0.5)',
         }}>
-          <div style={{ fontWeight: 'bold', fontSize: 14 }}>Connor Nelson</div>
+          <div style={{ fontWeight: 'bold', fontSize: isMobileView ? 11 : 14 }}>Connor Nelson</div>
           <div>Director</div>
-          <div style={{ marginTop: 8, fontSize: 9, color: 'rgba(255,255,255,0.45)', lineHeight: 1.5 }}>
-            <div>Wild Winter Film Festival — Best Director</div>
+          <div style={{ marginTop: 8, fontSize: isMobileView ? 7 : 9, color: 'rgba(255,255,255,0.45)', lineHeight: 1.5 }}>
             <div>Sonscreen 2026 — Best Narrative (Dead on TV)</div>
             <div>Sonscreen 2025 — Best Original Score (Fret)</div>
-            <div>Sonscreen 2025 — Official Selection (Conversation with my Grandpa)</div>
+            <div>Wild Winter Film Festival — Best Director</div>
+            <div>Sonscreen 2025 — Official Selection</div>
             <div>End of Year Show — Best Editor</div>
             <div>Lift-Off Global Network — Official Selection</div>
           </div>
@@ -2187,13 +2230,15 @@ Lift-Off Global Network Sessions 2023
 
       {/* ── Laurels ── */}
       <div style={{
-        position: 'absolute', bottom: 36, right: 16, zIndex: 0,
+        position: 'absolute', bottom: 36, right: 8, zIndex: 0,
         display: 'flex', gap: 6, alignItems: 'center',
         pointerEvents: 'none', userSelect: 'none',
+        maxWidth: 'calc(100vw - 16px)',
       }}>
-        <img src="/sonscreen-laurel.png" alt="Sonscreen Film Festival Official Selection 2025" style={{ width: 65, opacity: 0.7 }} />
-        <img src="/laurel.png" alt="Lift-Off Global Network Sessions 2023 Official Selection" style={{ width: 65, opacity: 0.7, filter: 'invert(1)' }} />
+        <img src="/sonscreen-laurel.png" alt="Sonscreen Film Festival" style={{ width: isMobileView ? 45 : 65, opacity: 0.7 }} />
+        <img src="/laurel.png" alt="Lift-Off Global Network" style={{ width: isMobileView ? 45 : 65, opacity: 0.7, filter: 'invert(1)' }} />
       </div>
+
 
       {/* ── Taskbar ── */}
       <div className="win95-taskbar" onClick={(e) => e.stopPropagation()}>
@@ -2240,34 +2285,47 @@ Lift-Off Global Network Sessions 2023
 
         <div className="win95-taskbar-divider" />
 
+        <MusicPlayerBar />
+
+        <div className="win95-taskbar-divider" />
+
         <div className="win95-clock">
-          <span style={{ fontSize: 13 }}>{'\uD83D\uDD53'}</span>
-          {clock}
+          {!isMobileView && <span style={{ fontSize: 13 }}>{'\uD83D\uDD53'}</span>}
+          <span style={{ fontSize: isMobileView ? 9 : 11 }}>{clock}</span>
         </div>
 
-        {/* Start Menu */}
-        {startOpen && (
-          <div className="win95-start-menu" onClick={(e) => e.stopPropagation()}>
-            <div className="win95-start-sidebar">
-              <span>CN Films</span>
-            </div>
-            <div className="win95-start-items">
-              {icons.map((iconDef) => (
-                <button
-                  key={iconDef.id}
-                  className="win95-start-item-btn"
-                  onClick={() => {
-                    setStartOpen(false)
-                    handleIconDoubleClick(iconDef)
-                  }}
-                >
-                  {iconDef.icon} {iconDef.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
+
+      {/* Start Menu — outside taskbar to avoid overflow clipping */}
+      {startOpen && (
+        <div className="win95-start-menu" onClick={(e) => e.stopPropagation()} onTouchEnd={(e) => e.stopPropagation()} style={{
+          position: 'absolute', bottom: isMobileView ? 34 : 30, left: 4, zIndex: 200,
+        }}>
+          <div className="win95-start-sidebar">
+            <span>CN Films</span>
+          </div>
+          <div className="win95-start-items">
+            {icons.map((iconDef) => (
+              <button
+                key={iconDef.id}
+                className="win95-start-item-btn"
+                onClick={() => {
+                  setStartOpen(false)
+                  handleIconDoubleClick(iconDef)
+                }}
+                onTouchEnd={(e) => {
+                  e.stopPropagation()
+                  e.preventDefault()
+                  setStartOpen(false)
+                  handleIconDoubleClick(iconDef)
+                }}
+              >
+                {iconDef.icon} {iconDef.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

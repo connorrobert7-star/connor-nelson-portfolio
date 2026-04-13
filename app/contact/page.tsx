@@ -11,7 +11,7 @@ export default function ContactPage() {
     <div
       className="site-wrap"
       style={{
-        padding: '2.5rem 1.25rem 6rem',
+        padding: 'clamp(1.5rem, 4vw, 2.5rem) 20px clamp(3rem, 6vw, 6rem)',
         minHeight: '75vh',
         display: 'flex',
         flexDirection: 'column',
@@ -60,7 +60,9 @@ export default function ContactPage() {
             style={{
               fontSize: 'clamp(1.15rem, 3vw, 1.5rem)',
               fontStyle: 'italic',
-              display: 'inline-block',
+              display: 'inline-flex',
+              alignItems: 'center',
+              minHeight: '44px',
               marginBottom: '3rem',
             }}
           >
@@ -77,7 +79,7 @@ export default function ContactPage() {
               lineHeight: 2.2,
             }}
           >
-            Filmmaker · Writer · Rural Michigan
+            Filmmaker · Writer · Chattanooga, TN
             <br />
             Response time: when the signal is clear
           </p>

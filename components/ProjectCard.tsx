@@ -51,33 +51,8 @@ export default function ProjectCard({
         el.style.transform = tiltStyle.transform ?? ''
       }}
     >
-      {/* Image placeholder */}
-      <div
-        className="img-placeholder"
-        style={{
-          aspectRatio: '16/9',
-          width: '100%',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          borderBottom: '1px solid #2a2825',
-        }}
-      >
-        <svg
-          width="40"
-          height="40"
-          viewBox="0 0 40 40"
-          fill="none"
-          style={{ opacity: 0.15 }}
-        >
-          <rect x="2" y="2" width="36" height="36" stroke="#e8e4dc" strokeWidth="0.5" />
-          <line x1="2" y1="2" x2="38" y2="38" stroke="#e8e4dc" strokeWidth="0.5" />
-          <line x1="38" y1="2" x2="2" y2="38" stroke="#e8e4dc" strokeWidth="0.5" />
-        </svg>
-      </div>
-
       {/* Card content */}
-      <div style={{ padding: '1.25rem 1.5rem 1.5rem' }}>
+      <div style={{ padding: '1.25rem 1.5rem 1.5rem', overflow: 'hidden' }}>
         <div
           style={{
             display: 'flex',
@@ -126,6 +101,8 @@ export default function ProjectCard({
             fontSize: '0.825rem',
             color: '#6b6560',
             lineHeight: 1.6,
+            overflowWrap: 'break-word',
+            wordBreak: 'break-word',
           }}
         >
           {description}

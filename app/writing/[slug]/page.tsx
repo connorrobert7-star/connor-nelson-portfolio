@@ -42,7 +42,7 @@ export default async function PostPage({ params }: Props) {
         style={{
           maxWidth: '1200px',
           margin: '0 auto',
-          padding: '5rem 2rem 4rem',
+          padding: '5rem clamp(1.25rem, 5vw, 2rem) 4rem',
         }}
       >
         <Link
@@ -66,6 +66,7 @@ export default async function PostPage({ params }: Props) {
             display: 'flex',
             alignItems: 'center',
             gap: '1.5rem',
+            flexWrap: 'wrap',
             marginBottom: '1.5rem',
           }}
         >
@@ -115,7 +116,7 @@ export default async function PostPage({ params }: Props) {
               fontSize: '1rem',
               color: '#6b6560',
               lineHeight: 1.7,
-              maxWidth: '55ch',
+              maxWidth: 'min(55ch, 100%)',
               marginTop: '1.5rem',
               fontStyle: 'italic',
             }}
@@ -132,7 +133,7 @@ export default async function PostPage({ params }: Props) {
         style={{
           maxWidth: '1200px',
           margin: '0 auto',
-          padding: '3rem 2rem 8rem',
+          padding: '3rem clamp(1.25rem, 5vw, 2rem) 8rem',
         }}
       >
         <div
@@ -148,7 +149,7 @@ export default async function PostPage({ params }: Props) {
               borderTop: '1px solid #2a2825',
               marginTop: '4rem',
               paddingTop: '2rem',
-              maxWidth: '65ch',
+              maxWidth: 'min(65ch, 100%)',
               margin: '4rem auto 0',
             }}
           >

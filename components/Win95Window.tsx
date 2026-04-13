@@ -136,6 +136,9 @@ export default function Win95Window({
         top: maximized ? 0 : position.y,
         width: maximized ? '100%' : size.width,
         height: maximized ? 'calc(100% - 28px)' : size.height,
+        maxWidth: maximized ? undefined : 'calc(100vw - 8px)',
+        maxHeight: maximized ? undefined : 'calc(100vh - 36px)',
+        overflow: 'hidden',
         zIndex,
       }}
       onMouseDown={() => onFocus()}

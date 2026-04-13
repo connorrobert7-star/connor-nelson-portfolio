@@ -17,11 +17,11 @@ export default function WritingPage() {
       style={{
         maxWidth: '1200px',
         margin: '0 auto',
-        padding: '5rem 2rem 8rem',
+        padding: 'clamp(2.5rem, 5vw, 5rem) 20px clamp(4rem, 8vw, 8rem)',
       }}
     >
       {/* Header */}
-      <header style={{ marginBottom: '5rem' }}>
+      <header style={{ marginBottom: 'clamp(2.5rem, 5vw, 5rem)' }}>
         <p
           style={{
             fontFamily: '"Courier Prime", monospace',
