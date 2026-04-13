@@ -20,7 +20,7 @@ function Bliss() {
         style={{
           height: '100%', aspectRatio: '1 / 2',
           maxWidth: '100%',
-          backgroundImage: 'url(/photos/bliss.jpg)',
+          backgroundImage: 'url(/bliss.jpg)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           position: 'relative',

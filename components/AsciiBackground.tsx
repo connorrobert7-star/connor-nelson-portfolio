@@ -12,7 +12,7 @@ const CHARS = '.:-=+*#%@'
 const MAX_PARTICLES = 4000
 
 const IMAGES = [
-  { src: '/photos/golden-spiral.jpg', w: 900, h: 600, invert: true, threshold: 160 },
+  { src: '/golden-spiral.jpg', w: 900, h: 600, invert: true, threshold: 160 },
 ]
 
 interface Particle {

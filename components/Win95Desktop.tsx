@@ -262,7 +262,7 @@ function getWindowConfig(type: string, id: string, label: string, icon: string, 
     about: { title: 'PRACTICE - Notepad', size: { width: 440, height: 420 } },
     writing: { title: 'Writing', size: { width: 400, height: 300 } },
     contact: { title: 'Contact', size: { width: 280, height: 180 } },
-    demoReel: { title: 'Demo Reel', size: { width: 300, height: 220 } },
+    demoReel: { title: 'Dead on TV', size: { width: 360, height: 250 } },
     influences: { title: 'Influences', size: { width: 350, height: 280 } },
     process: { title: 'Process & Tools', size: { width: 350, height: 280 } },
     minesweeper: { title: 'Minesweeper', size: { width: 280, height: 340 } },
@@ -1519,17 +1519,19 @@ export default function Win95Desktop({
     if (booting || demoReelOpened.current) return
     demoReelOpened.current = true
     const timer = setTimeout(() => {
-      const x = typeof window !== 'undefined' ? window.innerWidth - 340 : 500
-      const y = typeof window !== 'undefined' ? window.innerHeight - 290 : 400
+      const w = typeof window !== 'undefined' ? window.innerWidth : 1000
+      const h = typeof window !== 'undefined' ? window.innerHeight : 700
+      const x = Math.max(w / 2 + 40, w - 420)
+      const y = h - 360
       dispatch({
         type: 'OPEN_WINDOW',
         payload: {
           id: 'demoReel',
           type: 'demoReel',
-          title: 'Demo Reel',
+          title: 'Dead on TV',
           icon: '\uD83D\uDCFC',
           position: { x, y },
-          size: { width: 300, height: 220 },
+          size: { width: 360, height: 250 },
           minimized: false,
         },
       })
@@ -1912,8 +1914,15 @@ Lift-Off Global Network Sessions 2023
 
       case 'demoReel':
         return (
-          <div className="win95-inner-content" style={{ background: '#000', overflow: 'hidden' }}>
-            <DemoReel projects={projects} />
+          <div className="win95-inner-content" style={{
+            background: '#000', overflow: 'hidden', display: 'flex',
+            flexDirection: 'column', height: '100%',
+          }}>
+            <video
+              src="https://pub-955ffbb69b9e41b4bfabf1cd2ec1c16a.r2.dev/this%20is%20for%20dead%20on%20tv%20demo.mp4"
+              autoPlay muted loop playsInline
+              style={{ width: '100%', flex: 1, objectFit: 'cover' }}
+            />
           </div>
         )
 
@@ -2167,6 +2176,7 @@ Lift-Off Global Network Sessions 2023
           <div>Director</div>
           <div style={{ marginTop: 8, fontSize: 9, color: 'rgba(255,255,255,0.45)', lineHeight: 1.5 }}>
             <div>Wild Winter Film Festival — Best Director</div>
+            <div>Sonscreen 2026 — Best Narrative (Dead on TV)</div>
             <div>Sonscreen 2025 — Best Original Score (Fret)</div>
             <div>Sonscreen 2025 — Official Selection (Conversation with my Grandpa)</div>
             <div>End of Year Show — Best Editor</div>
