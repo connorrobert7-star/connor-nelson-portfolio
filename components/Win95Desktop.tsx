@@ -1602,6 +1602,7 @@ export default function Win95Desktop({
   const iconDragRef = useRef<{ id: string; startX: number; startY: number; origX: number; origY: number } | null>(null)
   const cascadeRef = useRef(0)
   const demoReelOpened = useRef(false)
+  const [reelMuted, setReelMuted] = useState(true)
 
   // Icon dragging
   useEffect(() => {
@@ -1945,16 +1946,29 @@ I keep listening anyway.`}
         return (
           <div className="win95-inner-content" style={{
             background: '#000', overflow: 'hidden', display: 'flex',
-            flexDirection: 'column', height: '100%',
+            flexDirection: 'column', height: '100%', position: 'relative',
           }}>
             {/* eslint-disable-next-line */}
             <video
-              src="https://pub-955ffbb69b9e41b4bfabf1cd2ec1c16a.r2.dev/this%20is%20for%20dead%20on%20tv%20demo.mp4"
+              ref={(el) => { if (el) el.muted = reelMuted }}
+              src="https://pub-955ffbb69b9e41b4bfabf1cd2ec1c16a.r2.dev/Connor%20Nelson%20Demo%20Reel%20Director.mov"
               autoPlay muted loop playsInline
               {...{ 'webkit-playsinline': '' } as Record<string, string>}
               preload="auto"
               style={{ width: '100%', flex: 1, objectFit: 'contain', background: '#000' }}
             />
+            <button
+              onClick={() => setReelMuted(!reelMuted)}
+              style={{
+                position: 'absolute', bottom: 8, right: 8,
+                background: 'rgba(0,0,0,0.7)', color: '#fff',
+                border: '1px solid rgba(255,255,255,0.3)', borderRadius: 4,
+                padding: '4px 10px', fontSize: 11, cursor: 'pointer',
+                zIndex: 10,
+              }}
+            >
+              {reelMuted ? '🔇 Unmute' : '🔊 Mute'}
+            </button>
           </div>
         )
 
