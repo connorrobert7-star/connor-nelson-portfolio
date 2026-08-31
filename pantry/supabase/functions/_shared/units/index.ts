@@ -6,12 +6,12 @@
  * detail and will keep changing as the dataset grows.
  */
 
-export { toCanonical, toCanonicalFromText, patternMatchesName } from './toCanonical.js';
-export { normalizeItemName, parseIngredientText } from './itemNames.js';
-export { parseQuantity } from './quantity.js';
-export { normalizeUnit, dimensionOf, isFuzzyUnit } from './unitAliases.js';
-export { buildConversionRules } from './conversionRules.js';
-export { ITEM_PROFILES, CATEGORY_FALLBACKS } from './conversionData.js';
+export { toCanonical, toCanonicalFromText, patternMatchesName } from './toCanonical.ts';
+export { normalizeItemName, parseIngredientText } from './itemNames.ts';
+export { parseQuantity } from './quantity.ts';
+export { normalizeUnit, dimensionOf, isFuzzyUnit } from './unitAliases.ts';
+export { buildConversionRules } from './conversionRules.ts';
+export { ITEM_PROFILES, CATEGORY_FALLBACKS } from './conversionData.ts';
 export {
   PANTRY_CATEGORIES,
   CANONICAL_UNITS,
@@ -19,7 +19,7 @@ export {
   minConfidence,
   isCanonicalUnit,
   isPantryCategory,
-} from './types.js';
+} from './types.ts';
 export type {
   CanonicalUnit,
   Confidence,
@@ -28,4 +28,4 @@ export type {
   PantryCategory,
   ToCanonicalOptions,
   ToCanonicalResult,
-} from './types.js';
+} from './types.ts';

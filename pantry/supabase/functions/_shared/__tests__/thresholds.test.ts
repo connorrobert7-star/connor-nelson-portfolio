@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { defaultLowStockThreshold, isEffectivelyDepleted } from '../units/thresholds.js';
+import { defaultLowStockThreshold, isEffectivelyDepleted } from '../units/thresholds.ts';
 
 describe('defaultLowStockThreshold', () => {
   it('uses 25% for proteins and produce', () => {

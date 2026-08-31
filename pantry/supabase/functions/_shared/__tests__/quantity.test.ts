@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseQuantity } from '../units/quantity.js';
+import { parseQuantity } from '../units/quantity.ts';
 
 describe('parseQuantity', () => {
   it('parses plain numbers at full confidence', () => {

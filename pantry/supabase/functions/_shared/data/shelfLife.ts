@@ -13,7 +13,7 @@
  * shelf life, and there is no honest number to put there.
  */
 
-import type { Confidence, PantryCategory } from '../units/types.js';
+import type { Confidence, PantryCategory } from '../units/types.ts';
 
 export interface ShelfLifeEntry {
   category: PantryCategory;

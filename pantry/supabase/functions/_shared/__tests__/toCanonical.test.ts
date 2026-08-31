@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { toCanonical, toCanonicalFromText } from '../units/toCanonical.js';
+import { toCanonical, toCanonicalFromText } from '../units/toCanonical.ts';
 
 /**
  * The awkward cases named in the spec. If these are right the rest of the

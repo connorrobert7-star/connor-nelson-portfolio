@@ -9,7 +9,7 @@
  * a typical purchase, proteins and produce at 25%, spices exempt.
  */
 
-import type { PantryCategory } from './types.js';
+import type { PantryCategory } from './types.ts';
 
 const THRESHOLD_FRACTION: Record<PantryCategory, number | null> = {
   produce: 0.25,

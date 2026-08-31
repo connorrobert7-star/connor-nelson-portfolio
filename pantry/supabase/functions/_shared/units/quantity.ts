@@ -8,7 +8,7 @@
  * to survive into the pantry row.
  */
 
-import type { Confidence } from './types.js';
+import type { Confidence } from './types.ts';
 
 export interface ParsedQuantity {
   value: number;

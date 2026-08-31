@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { buildConversionRules } from '../units/conversionRules.js';
-import { ITEM_PROFILES } from '../units/conversionData.js';
-import { CANONICAL_UNITS, PANTRY_CATEGORIES } from '../units/types.js';
-import { COUNT_UNITS, VOLUME_UNITS_IN_ML, WEIGHT_UNITS_IN_G } from '../units/unitAliases.js';
+import { buildConversionRules } from '../units/conversionRules.ts';
+import { ITEM_PROFILES } from '../units/conversionData.ts';
+import { CANONICAL_UNITS, PANTRY_CATEGORIES } from '../units/types.ts';
+import { COUNT_UNITS, VOLUME_UNITS_IN_ML, WEIGHT_UNITS_IN_G } from '../units/unitAliases.ts';
 
 const rules = buildConversionRules();
 

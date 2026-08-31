@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_STORAGE_BY_CATEGORY, SHELF_LIFE_REFERENCE } from '../data/shelfLife.js';
-import { PANTRY_CATEGORIES } from '../units/types.js';
+import { DEFAULT_STORAGE_BY_CATEGORY, SHELF_LIFE_REFERENCE } from '../data/shelfLife.ts';
+import { PANTRY_CATEGORIES } from '../units/types.ts';
 
 describe('shelf life reference data', () => {
   it('has unique seed keys so re-seeding is idempotent', () => {

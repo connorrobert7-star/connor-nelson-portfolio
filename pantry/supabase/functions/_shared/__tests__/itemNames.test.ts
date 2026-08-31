@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { normalizeItemName, parseIngredientText } from '../units/itemNames.js';
+import { normalizeItemName, parseIngredientText } from '../units/itemNames.ts';
 
 describe('normalizeItemName', () => {
   it('strips prep words so a recipe ingredient matches a pantry lot', () => {

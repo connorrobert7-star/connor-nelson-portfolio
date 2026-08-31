@@ -13,10 +13,10 @@ import {
   ITEM_PROFILES,
   UNIVERSAL_FUZZY_UNITS,
   type ItemProfile,
-} from './conversionData.js';
-import type { ConversionRule, PantryCategory } from './types.js';
-import { PANTRY_CATEGORIES } from './types.js';
-import { VOLUME_UNITS_IN_ML, WEIGHT_UNITS_IN_G, isFuzzyUnit } from './unitAliases.js';
+} from './conversionData.ts';
+import type { ConversionRule, PantryCategory } from './types.ts';
+import { PANTRY_CATEGORIES } from './types.ts';
+import { VOLUME_UNITS_IN_ML, WEIGHT_UNITS_IN_G, isFuzzyUnit } from './unitAliases.ts';
 
 const ML_PER_CUP = VOLUME_UNITS_IN_ML.cup as number;
 

@@ -15,7 +15,8 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "resolveJsonModule": true,
+    "allowImportingTsExtensions": true,
     "noEmit": true
   },
-  "include": ["src/**/*.ts", "scripts/**/*.ts", "vitest.config.ts"]
+  "include": ["supabase/functions/**/*.ts", "scripts/**/*.ts", "vitest.config.ts"]
 }

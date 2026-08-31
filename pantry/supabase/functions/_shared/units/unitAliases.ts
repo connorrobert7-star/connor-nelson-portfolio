@@ -7,7 +7,7 @@
  * only place that has to know how many ways there are to spell "tablespoon".
  */
 
-import type { Dimension } from './types.js';
+import type { Dimension } from './types.ts';
 
 /** Weight units convertible to grams by pure arithmetic. */
 export const WEIGHT_UNITS_IN_G: Record<string, number> = {

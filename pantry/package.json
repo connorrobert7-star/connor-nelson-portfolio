@@ -13,6 +13,7 @@
     "seed:sql": "tsx scripts/seed.ts --emit-sql supabase/seed.sql"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "0.122.0",
     "@supabase/supabase-js": "^2.99.3"
   },
   "devDependencies": {

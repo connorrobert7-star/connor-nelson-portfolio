@@ -21,9 +21,9 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
-import { SHELF_LIFE_REFERENCE } from '../src/data/shelfLife.js';
-import { buildConversionRules } from '../src/units/conversionRules.js';
-import type { ConversionRule } from '../src/units/types.js';
+import { SHELF_LIFE_REFERENCE } from '../supabase/functions/_shared/data/shelfLife.ts';
+import { buildConversionRules } from '../supabase/functions/_shared/units/conversionRules.ts';
+import type { ConversionRule } from '../supabase/functions/_shared/units/types.ts';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = resolve(HERE, '..');

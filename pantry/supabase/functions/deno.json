@@ -1,0 +1,7 @@
+{
+  "//": "Import map for Supabase Edge Functions (Deno). Bare specifiers here mean the same source files also resolve under Node for vitest and tsc.",
+  "imports": {
+    "@supabase/supabase-js": "npm:@supabase/supabase-js@2.99.3",
+    "@anthropic-ai/sdk": "npm:@anthropic-ai/sdk@0.122.0"
+  }
+}

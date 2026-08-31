@@ -21,7 +21,7 @@
  * about 120 g, which is why confidence travels alongside every one of them.
  */
 
-import type { CanonicalUnit, Confidence, PantryCategory } from './types.js';
+import type { CanonicalUnit, Confidence, PantryCategory } from './types.ts';
 
 export interface ItemProfile {
   /** Normalized item name fragment, matched by substring. Longest match wins. */

@@ -20,16 +20,16 @@
  * that turns a pantry into fiction.
  */
 
-import { buildConversionRules } from './conversionRules.js';
-import { normalizeItemName, parseIngredientText } from './itemNames.js';
-import { parseQuantity } from './quantity.js';
+import { buildConversionRules } from './conversionRules.ts';
+import { normalizeItemName, parseIngredientText } from './itemNames.ts';
+import { parseQuantity } from './quantity.ts';
 import {
   VOLUME_UNITS_IN_ML,
   WEIGHT_UNITS_IN_G,
   dimensionOf,
   isFuzzyUnit,
   normalizeUnit,
-} from './unitAliases.js';
+} from './unitAliases.ts';
 import {
   minConfidence,
   type CanonicalUnit,
@@ -38,7 +38,7 @@ import {
   type PantryCategory,
   type ToCanonicalOptions,
   type ToCanonicalResult,
-} from './types.js';
+} from './types.ts';
 
 /**
  * Does `pattern` appear in `name` as a whole word (or whole word sequence)?
