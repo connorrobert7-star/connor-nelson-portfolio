@@ -45,6 +45,8 @@ export interface PantryItemRow {
   low_stock_threshold_canonical: number | null;
   typical_purchase_canonical: number | null;
   notes: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface PreferencesRow {

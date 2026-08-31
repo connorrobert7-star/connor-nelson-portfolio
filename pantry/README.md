@@ -5,8 +5,8 @@ finds a recipe, checks what you already have, fills an Instacart cart with only
 the missing ingredients, and then tracks what you bought so it can tell you what
 is about to go bad and what to cook to use it up.
 
-**Status: Phase 1 complete.** Schema, seed data, and the unit conversion engine.
-Nothing calls Anthropic or Instacart yet.
+**Status: Phases 1, 2, 4 and 5 complete.** Phase 3 (Instacart) is deliberately
+not built yet — it needs a Developer Platform key and a docs check first.
 
 ## Two things about this project that shape everything else
 
@@ -24,12 +24,35 @@ throw something out.
 ## Layout
 
 ```
-supabase/migrations/   numbered SQL migrations, applied in order
-supabase/seed.sql      generated from the datasets below; do not edit by hand
-src/units/             the conversion engine
-src/data/shelfLife.ts  shelf-life reference dataset
-scripts/seed.ts        idempotent seeder
+supabase/migrations/            numbered SQL migrations, applied in order
+supabase/seed.sql               generated; do not edit by hand
+supabase/functions/<name>/      one Edge Function per directory
+supabase/functions/_shared/     everything the functions share
+supabase/functions/_shared/units/       the conversion engine
+supabase/functions/_shared/data/        shelf-life reference dataset
+scripts/seed.ts                 idempotent seeder
 ```
+
+Shared code lives under `_shared/` rather than a top-level `src/` because that
+is the only place the Edge Function bundler can reach it. Relative imports carry
+`.ts` extensions, which Deno needs and which `allowImportingTsExtensions` makes
+work under tsc, vitest and tsx too.
+
+## Endpoints
+
+| Endpoint | Phase | What it does |
+|---|---|---|
+| `POST /recipe-suggest` | 2 | Generate a recipe and diff it against the pantry |
+| `POST /order-confirm` | 4 | The only path that writes bought goods into the pantry |
+| `POST /order-abandon` | 4 | Nothing was bought; restores restock rows |
+| `POST /pantry-edit` | 4 | Manual add / update / delete |
+| `POST /recipe-cooked` | 5 | FEFO depletion — the step everything else depends on |
+| `GET /recipe-feasibility/:id` | 5 | Can I make this right now? |
+| `POST /low-stock-check` | 5 | Idempotent daily sweep |
+| `POST /pantry-reconcile` | 5 | Drift correction |
+| `POST /leftovers-suggest` | 5 | Recipes ranked by at-risk food cleared |
+
+`POST /cart-create` (Phase 3) is not built yet.
 
 ## Phase 1: what is here
 
@@ -182,10 +205,64 @@ select from_unit, multiplier, to_canonical_unit, confidence, notes
 from unit_conversions where item_name_pattern = 'garlic';
 ```
 
-## Next: Phase 2
+## Phases 2, 4 and 5: what is here
 
-Recipe generation and ingredient parsing — a `POST /recipe-suggest` Edge
-Function that loads preferences and the current pantry (with remaining
-quantities, not just presence), calls Claude for a strict-JSON recipe, and
-cross-references the result against `pantry_items` in canonical units to produce
-the three-way have-enough / have-some / have-none split.
+### The three-way diff (Phase 2)
+
+Recipe requirements are compared against the pantry in canonical units, and the
+answer has three states, not two:
+
+- **have enough** — do not buy it
+- **have some** — buy it anyway, and say how short you are
+- **have none** — buy it
+
+Being told "you have rice" when you have 80 g and need 200 g is worse than being
+told nothing, because you skip it at the shop and find out mid-recipe. Partial
+coverage still goes in the cart.
+
+The model's own `likely_already_have` guess is always overwritten from the
+database. It cannot know what is in the fridge.
+
+Lots measured in a different canonical unit are never counted: 12 eggs by count
+cannot satisfy 200 g of egg. That is flagged rather than silently mixed.
+
+### Depletion (Phase 5)
+
+`/recipe-cooked` is the step that makes the digest and the leftovers
+suggestions possible. Scale by servings, convert through `toCanonical()`,
+deplete the soonest-expiring lot first, and:
+
+- staples are skipped entirely — "a pinch of salt" decrements nothing
+- anything at or below 5% of the original is treated as gone
+- **drift is never floored away.** Using more than the pantry says existed is
+  real information: it is clamped at zero, recorded on the consumption event as
+  a shortfall, returned in the response, and turned into a restock row
+
+Every change to a remaining quantity goes through one module (`consumption.ts`)
+and writes a `consumption_events` row. Nothing else touches that column.
+
+### Shortfalls in purchase units
+
+Grams are right for arithmetic and wrong for a shopping list. `/recipe-feasibility`
+returns "about another half a bunch", never "47 g short". The conversion back is
+derived per lot from what was actually recorded at purchase time, so it stays
+self-consistent even where the conversion data is imperfect.
+
+### Waste urgency
+
+`/leftovers-suggest` ranks the pantry by how much would be wasted if nothing
+changed — urgency decaying with days left, weighted by how much is left. A
+nearly-full bag of spinach expiring in two days far outranks a nearly-empty jar
+of mustard expiring in three months.
+
+The scoring function is pure and its weights are exposed
+(`DEFAULT_WEIGHTS` in `_shared/wasteScore.ts`) because the weighting is a matter
+of taste and will want tuning. Candidate recipes are ranked by what they
+**actually** clear, not by what the model was asked to use.
+
+## Next: Phase 3 (Instacart)
+
+Blocked on an Instacart Developer Platform API key. Before any of it is written,
+the current docs get fetched and the endpoint path, request schema, field names
+and valid units list get confirmed — the spec's description is directionally
+right but flagged as possibly stale.
