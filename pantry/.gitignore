@@ -1,0 +1,14 @@
+node_modules/
+coverage/
+dist/
+*.tsbuildinfo
+.expo/
+
+# Secrets. The root .gitignore already excludes .env* -- this restates it here
+# so the rule is visible next to the file it protects.
+.env
+.env.local
+.env.*.local
+
+# ...but the template with no secrets in it must be committed.
+!.env.example
