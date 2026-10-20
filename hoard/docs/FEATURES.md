@@ -88,8 +88,8 @@ def tick(ctx: Ctx, day) -> None: ...
   from `state.debts` (`debt_card`, `debt_car`, `debt_student` in the demo). A transfer to a
   debt id is a payment.
 - Tests: `backend/features/<id>/test_<id>.py`, using the `engine`, `ctx`, `state` and
-  `client` fixtures from `backend/tests/conftest.py` (import them with
-  `from backend.tests.conftest import *  # noqa: F403`). Run `pytest backend/` and
+  `client` fixtures from `backend/conftest.py` (pytest finds them automatically; `TODAY`
+  is 2026-10-20, the scripted week). Run `pytest backend/` and
   `ruff check . && ruff format --check .` from `hoard/`.
 
 ## Godot

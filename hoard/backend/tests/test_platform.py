@@ -1,10 +1,10 @@
 from datetime import date, timedelta
 
+from backend.conftest import TODAY
 from backend.core.engine import Engine
 from backend.core.router import ROUTES
 from backend.providers import load
 from backend.providers.fixtures import FixtureBank, history_start
-from backend.tests.conftest import TODAY
 
 
 def test_fixture_bank_is_deterministic():

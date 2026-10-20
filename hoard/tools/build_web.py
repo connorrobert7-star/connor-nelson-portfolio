@@ -46,7 +46,9 @@ def python_bundle() -> dict[str, str]:
         rel = path.relative_to(ROOT)
         if path.is_dir() or "__pycache__" in rel.parts or "tests" in rel.parts:
             continue
-        if rel.name == "app.py" or path.suffix not in (".py", ".sql"):
+        if rel.name in ("app.py", "conftest.py") or rel.name.startswith("test_"):
+            continue
+        if path.suffix not in (".py", ".sql"):
             continue
         files[str(rel)] = path.read_text()
     for path in sorted((ROOT / "content").rglob("*.json")):

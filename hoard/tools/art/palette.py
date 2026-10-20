@@ -50,7 +50,9 @@ def shade(c: tuple[int, int, int], f: float) -> tuple[int, int, int]:
     return tuple(max(0, min(255, round(v * f))) for v in c)  # type: ignore[return-value]
 
 
-def speckle(d: ImageDraw.ImageDraw, box: tuple[int, int, int, int], colors: list, n: int, seed: int) -> None:
+def speckle(
+    d: ImageDraw.ImageDraw, box: tuple[int, int, int, int], colors: list, n: int, seed: int
+) -> None:
     rng = random.Random(seed)
     x0, y0, x1, y1 = box
     for _ in range(n):
