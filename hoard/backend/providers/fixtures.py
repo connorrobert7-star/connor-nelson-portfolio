@@ -318,16 +318,14 @@ def _life_file() -> dict:
     return json.loads((CONTENT / "life_table.json").read_text())
 
 
-class SsaLifeTable:
-    name = "ssa"
+class UsLifeTable:
+    """United States Life Tables, 2024 (CDC NCHS). Ages past 100 use the 100+ value."""
+
+    name = "us_life_tables_2024"
 
     def remaining_years(self, age_years: float, sex: str) -> float:
-        table = _life_file()
-        if sex in ("male", "female"):
-            series = table[sex]
-        else:
-            series = [(m + f) / 2 for m, f in zip(table["male"], table["female"], strict=True)]
+        series = _life_file()[sex if sex in ("male", "female") else "total"]
         lo = max(0, min(len(series) - 1, int(age_years)))
         hi = min(len(series) - 1, lo + 1)
-        frac = age_years - lo
+        frac = min(1.0, max(0.0, age_years - lo))
         return series[lo] * (1 - frac) + series[hi] * frac

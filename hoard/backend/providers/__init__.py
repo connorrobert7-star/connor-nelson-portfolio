@@ -6,7 +6,7 @@
     HOARD_TRANSFERS=simulated|plaid_transfer
     HOARD_ADVISOR=fixture|claude
     HOARD_CREDIT=fixture|bureau
-    HOARD_LIFE_TABLE=ssa
+    HOARD_LIFE_TABLE=us   (CDC NCHS United States Life Tables, 2024)
 
 Everything defaults to the demo. The game is in demo mode whenever transfers are
 simulated, and only demo mode can move the clock forward.
@@ -70,7 +70,7 @@ def load(env: Mapping[str, str] = os.environ) -> Providers:
     credit = {"fixture": fixtures.FixtureCredit, "bureau": real.BureauCredit}[
         env.get("HOARD_CREDIT", "fixture")
     ]()
-    life = {"ssa": fixtures.SsaLifeTable}[env.get("HOARD_LIFE_TABLE", "ssa")]()
+    life = {"us": fixtures.UsLifeTable}[env.get("HOARD_LIFE_TABLE", "us")]()
     return Providers(bank, brokerage, market, transfers, advisor, credit, life)
 
 

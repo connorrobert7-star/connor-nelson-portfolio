@@ -89,7 +89,7 @@ class CreditProvider(Protocol):
 
 
 class LifeTableProvider(Protocol):
-    """Remaining life expectancy by age. Default: SSA period life table."""
+    """Remaining life expectancy by age. Default: CDC NCHS United States Life Tables, 2024."""
 
     name: str
 

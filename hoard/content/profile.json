@@ -1,5 +1,5 @@
 {
-  "_note": "Demo profile. The life clock reads birth_date and sex (male, female, or average). Set your own in Settings.",
+  "_note": "Demo profile. The life clock reads birth_date and sex (male, female, or average, which uses the total-population table). Set your own in Settings.",
   "name": "You",
   "birth_date": "1998-06-02",
   "sex": "average",
