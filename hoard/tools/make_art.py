@@ -63,8 +63,9 @@ def speckle(d: ImageDraw.ImageDraw, x0: int, colors: list, n: int, seed: int) ->
 
 
 def tiles() -> Image.Image:
-    # 0 grass, 1 grass tuft, 2 path, 3 water, 4 low water (mud), 5 soil, 6 tree, 7 stone
-    img, d = new(16 * 8, 16)
+    # 0 grass, 1 grass tuft, 2 path, 3 water, 4 low water (mud), 5 soil, 6 tree, 7 stone,
+    # 8 wood floor, 9 wall face, 10 wall top, 11 door mat, 12 counter, 13 table, 14 rug
+    img, d = new(16 * 15, 16)
     d.rectangle((0, 0, 15, 15), fill=GRASS)
     speckle(d, 0, [GRASS_D, GRASS_L], 14, 1)
     d.rectangle((16, 0, 31, 15), fill=GRASS)
@@ -95,6 +96,40 @@ def tiles() -> Image.Image:
     d.line((119, 0, 119, 7), fill=STONE_D)
     d.line((115, 8, 115, 15), fill=STONE_D)
     d.line((124, 8, 124, 15), fill=STONE_D)
+    x = 128
+    d.rectangle((x, 0, x + 15, 15), fill=WOOD)
+    for y in (3, 7, 11, 15):
+        d.line((x, y, x + 15, y), fill=WOOD_D)
+    d.point((x + 5, 1), fill=WOOD_D)
+    d.point((x + 11, 9), fill=WOOD_D)
+    x = 144
+    d.rectangle((x, 0, x + 15, 15), fill=CREAM)
+    d.rectangle((x, 0, x + 15, 2), fill=WOOD_D)
+    d.rectangle((x, 13, x + 15, 15), fill=WOOD_D)
+    speckle(d, x, [(220, 206, 176)], 10, 7)
+    x = 160
+    d.rectangle((x, 0, x + 15, 15), fill=INK)
+    d.line((x, 15, x + 15, 15), fill=WOOD_D)
+    x = 176
+    d.rectangle((x, 0, x + 15, 15), fill=WOOD)
+    d.rectangle((x + 1, 2, x + 14, 15), fill=ROOF_D)
+    for y in (5, 9, 13):
+        d.line((x + 2, y, x + 13, y), fill=ROOF)
+    x = 192
+    d.rectangle((x, 0, x + 15, 15), fill=WOOD)
+    d.rectangle((x, 0, x + 15, 9), fill=WOOD_D)
+    d.line((x, 9, x + 15, 9), fill=INK)
+    d.line((x, 1, x + 15, 1), fill=PATH)
+    x = 208
+    d.rectangle((x, 0, x + 15, 15), fill=WOOD)
+    for y in (3, 7, 11, 15):
+        d.line((x, y, x + 15, y), fill=WOOD_D)
+    d.ellipse((x + 1, 1, x + 14, 12), fill=WOOD_D, outline=INK)
+    d.rectangle((x + 7, 12, x + 8, 15), fill=INK)
+    x = 224
+    d.rectangle((x, 0, x + 15, 15), fill=ROOF_D)
+    d.rectangle((x + 2, 2, x + 13, 13), outline=PRODUCE)
+    d.rectangle((x + 5, 5, x + 10, 10), fill=ROOF)
     return img
 
 
@@ -163,6 +198,72 @@ def leader() -> Image.Image:
             d.ellipse((x + 18, 9 - bob, x + 21, 14 - bob), fill=INK)
             d.point((x + 19, 10 - bob), fill=WHITE)
             d.arc((x + 8, 3 - bob, x + 24, 19 - bob), 160, 260, fill=WOOD_D, width=4)
+    return img
+
+
+NPCS = [
+    # name, body, body dark, hair, hat
+    ("marlo", (92, 120, 84), (70, 96, 64), (120, 110, 100), None),
+    ("bess", (150, 82, 70), (120, 62, 52), (90, 58, 40), "bun"),
+    ("wren", (96, 112, 140), (74, 88, 112), (170, 120, 70), "straw"),
+    ("odo", (226, 218, 198), (196, 186, 162), (226, 218, 198), "hood"),
+]
+
+
+def npcs() -> Image.Image:
+    # 32x32 frames, one per villager, all facing down.
+    img, d = new(32 * len(NPCS), 32)
+    for i, (_, body, body_d, hair, hat) in enumerate(NPCS):
+        x = i * 32
+        d.ellipse((x + 9, 27, x + 23, 31), fill=(0, 0, 0, 60))
+        d.polygon([(x + 9, 30), (x + 23, 30), (x + 21, 17), (x + 11, 17)], fill=body, outline=INK)
+        d.line((x + 16, 19, x + 16, 29), fill=body_d)
+        if i == 0:  # shop apron
+            d.rectangle((x + 13, 20, x + 19, 29), fill=CREAM, outline=INK)
+        d.ellipse((x + 8, 3, x + 24, 19), fill=SKIN, outline=INK)
+        if hat == "hood":
+            d.arc((x + 6, 1, x + 26, 21), 180, 360, fill=body, width=4)
+            d.line((x + 7, 11, x + 7, 18), fill=body, width=2)
+            d.line((x + 25, 11, x + 25, 18), fill=body, width=2)
+        else:
+            d.arc((x + 8, 3, x + 24, 19), 200, 340, fill=hair, width=3)
+        if hat == "bun":
+            d.ellipse((x + 13, 0, x + 19, 5), fill=hair, outline=INK)
+        if hat == "straw":
+            d.ellipse((x + 4, 4, x + 28, 9), fill=PATH, outline=INK)
+            d.ellipse((x + 10, 0, x + 22, 7), fill=PATH, outline=INK)
+            d.line((x + 10, 6, x + 22, 6), fill=ROOF)
+        for ex in (11, 18):
+            d.ellipse((x + ex, 9, x + ex + 3, 14), fill=INK)
+            d.point((x + ex + 1, 10), fill=WHITE)
+        d.point((x + 16, 16), fill=ROOF_D)
+    return img
+
+
+def shelf() -> Image.Image:
+    # 16x32 shelf against the back wall.
+    img, d = new(16, 32)
+    d.rectangle((0, 0, 15, 31), fill=WOOD_D, outline=INK)
+    for y in (9, 19, 29):
+        d.line((1, y, 14, y), fill=WOOD)
+    rng = random.Random(11)
+    for y in (2, 12, 22):
+        x = 2
+        while x < 13:
+            w = rng.choice((2, 3, 4))
+            c = rng.choice([CREAM, STONE, PATH, ROOF, WATER_L])
+            d.rectangle((x, y + rng.choice((0, 1, 2)), min(x + w - 1, 13), y + 6), fill=c)
+            x += w + 1
+    return img
+
+
+def fireplace() -> Image.Image:
+    img, d = new(32, 32)
+    d.rectangle((0, 4, 31, 31), fill=STONE, outline=INK)
+    d.rectangle((0, 4, 31, 8), fill=STONE_D, outline=INK)
+    d.rectangle((7, 14, 24, 31), fill=INK)
+    d.polygon([(10, 31), (16, 17), (22, 31)], fill=PRODUCE)
+    d.polygon([(13, 31), (16, 23), (19, 31)], fill=GLOW)
     return img
 
 
@@ -292,6 +393,9 @@ def main() -> None:
         ("house_plot", house_plot),
         ("drain", drain),
         ("sign", sign),
+        ("npcs", npcs),
+        ("shelf", shelf),
+        ("fireplace", fireplace),
         ("coin", coin),
     ]:
         fn().save(ART / f"{name}.png")

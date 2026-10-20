@@ -105,6 +105,17 @@ CREATE TABLE IF NOT EXISTS pledges (
     coins_delta INTEGER NOT NULL DEFAULT 0
 );
 
+-- Stock buys from the shop counter. Phases 0 to 3 only simulate them.
+CREATE TABLE IF NOT EXISTS orders (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    symbol       TEXT NOT NULL,
+    amount_cents INTEGER NOT NULL,
+    price_cents  INTEGER NOT NULL,
+    qty          REAL NOT NULL,
+    transfer_id  INTEGER NOT NULL REFERENCES transfers(id),
+    created      TEXT NOT NULL
+);
+
 -- Everything the village reacts to.
 CREATE TABLE IF NOT EXISTS events (
     id      INTEGER PRIMARY KEY AUTOINCREMENT,

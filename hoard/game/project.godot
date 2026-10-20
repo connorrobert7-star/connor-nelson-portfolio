@@ -6,8 +6,12 @@ config_version=5
 [application]
 
 config/name="Hoard"
-run/main_scene="res://scenes/village.tscn"
+run/main_scene="res://scenes/main.tscn"
 config/features=PackedStringArray("4.3", "GL Compatibility")
+
+[autoload]
+
+Game="*res://scripts/game.gd"
 
 [display]
 

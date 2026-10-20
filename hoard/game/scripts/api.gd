@@ -3,17 +3,11 @@ extends Node
 ## Talks to the FastAPI backend. The game never calls Plaid or SnapTrade.
 ## A web build can't reach a backend on your machine, so it reads the /state
 ## snapshots in res://demo/ instead (tools/export_demo_state.py writes them).
-
-signal state_loaded(state: Dictionary)
-signal failed(message: String)
-
-var _http := HTTPRequest.new()
+## Every call returns [data: Dictionary, error: String].
 
 
-func _ready() -> void:
-	add_child(_http)
-	_http.timeout = 5.0
-	_http.request_completed.connect(_on_completed)
+static func is_demo() -> bool:
+	return OS.has_feature("web")
 
 
 func base_url() -> String:
@@ -23,38 +17,36 @@ func base_url() -> String:
 	return ProjectSettings.get_setting("hoard/backend_url", "http://127.0.0.1:8000")
 
 
-static func is_demo() -> bool:
-	return OS.has_feature("web")
-
-
-func fetch_state(weeks_ago: int) -> void:
+func get_state(weeks_ago: int) -> Array:
 	if is_demo():
-		_load_demo.call_deferred(weeks_ago)
-		return
-	_http.cancel_request()
-	var err := _http.request("%s/state?weeks_ago=%d" % [base_url(), weeks_ago])
+		var data: Variant = JSON.parse_string(
+			FileAccess.get_file_as_string("res://demo/state_%d.json" % weeks_ago)
+		)
+		return [data, ""] if data is Dictionary else [{}, "Demo data missing for week %d." % weeks_ago]
+	return await _request(HTTPClient.METHOD_GET, "/state?weeks_ago=%d" % weeks_ago)
+
+
+func buy_stock(symbol: String, amount_cents: int) -> Array:
+	return await _request(
+		HTTPClient.METHOD_POST, "/shop/stock", {"symbol": symbol, "amount_cents": amount_cents}
+	)
+
+
+func _request(method: HTTPClient.Method, path: String, body: Variant = null) -> Array:
+	var http := HTTPRequest.new()
+	http.timeout = 5.0
+	add_child(http)
+	var payload := "" if body == null else JSON.stringify(body)
+	var err := http.request(base_url() + path, ["Content-Type: application/json"], method, payload)
 	if err != OK:
-		failed.emit("Could not start request (%d)." % err)
-
-
-func _on_completed(result: int, code: int, _headers: PackedStringArray, body: PackedByteArray) -> void:
-	if result != HTTPRequest.RESULT_SUCCESS:
-		failed.emit("Backend not reachable at %s. Start it with: uvicorn backend.app:app" % base_url())
-		return
-	if code != 200:
-		failed.emit("Backend returned %d." % code)
-		return
-	var data: Variant = JSON.parse_string(body.get_string_from_utf8())
-	if data is Dictionary:
-		state_loaded.emit(data)
-	else:
-		failed.emit("Backend sent something that is not JSON.")
-
-
-func _load_demo(weeks_ago: int) -> void:
-	var text := FileAccess.get_file_as_string("res://demo/state_%d.json" % weeks_ago)
-	var data: Variant = JSON.parse_string(text)
-	if data is Dictionary:
-		state_loaded.emit(data)
-	else:
-		failed.emit("Demo data missing for week %d." % weeks_ago)
+		http.queue_free()
+		return [{}, "Could not start request (%d)." % err]
+	var res: Array = await http.request_completed
+	http.queue_free()
+	if res[0] != HTTPRequest.RESULT_SUCCESS:
+		return [{}, "Backend not reachable at %s. Start it with: uvicorn backend.app:app" % base_url()]
+	var data: Variant = JSON.parse_string((res[3] as PackedByteArray).get_string_from_utf8())
+	if res[1] != 200:
+		var detail: String = str(data.get("detail", "")) if data is Dictionary else ""
+		return [{}, detail if detail != "" else "Backend returned %d." % res[1]]
+	return [data, ""] if data is Dictionary else [{}, "Backend sent something that is not JSON."]

@@ -5,7 +5,7 @@ extends Node2D
 const SPEED := 72.0
 const FOOT := Rect2(-5, -4, 10, 4)
 
-var is_walkable: Callable  # func(Rect2) -> bool, set by the village
+var is_walkable: Callable  # func(Rect2) -> bool, set by the level
 
 var _sprite := Sprite2D.new()
 var _facing := 0  # 0 down, 1 up, 2 side
@@ -20,7 +20,7 @@ func _ready() -> void:
 
 
 func _physics_process(delta: float) -> void:
-	var dir := Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
+	var dir := Vector2.ZERO if Game.busy else Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
 	if dir != Vector2.ZERO:
 		var step := dir * SPEED * delta
 		_try_move(Vector2(step.x, 0))

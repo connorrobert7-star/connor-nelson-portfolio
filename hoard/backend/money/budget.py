@@ -4,6 +4,7 @@ extra = checking balance
         - bills due in the next 14 days
         - floor
         - average weekly spend on food and transport
+        - shop transfers made this week that haven't settled
 """
 
 import calendar
@@ -16,6 +17,7 @@ FLOOR_CENTS = 50_000
 WEEKLY_CASE_CAP_CENTS = 6_000
 BILL_HORIZON_DAYS = 14
 AVERAGE_WEEKS = 4
+HOURS_PER_WEEK = 40
 
 
 def add_month(d: date) -> date:
@@ -74,6 +76,27 @@ def average_weekly_food_and_transport(
     return round(total / AVERAGE_WEEKS)
 
 
+def hourly_rate_cents(conn: sqlite3.Connection, today: date, cmap: CategoryMap) -> int:
+    """Take-home pay per hour worked, from the last four weeks of income."""
+    cats = cmap.categories_for("income")
+    start = today - timedelta(days=7 * AVERAGE_WEEKS)
+    (income,) = conn.execute(
+        f"""SELECT COALESCE(-SUM(amount_cents), 0) FROM transactions
+            WHERE category IN ({_in(cats)}) AND date >= ? AND date < ?""",
+        [*cats, start.isoformat(), today.isoformat()],
+    ).fetchone()
+    return round(income / (HOURS_PER_WEEK * AVERAGE_WEEKS))
+
+
+def committed_this_week(conn: sqlite3.Connection, today: date) -> int:
+    (total,) = conn.execute(
+        """SELECT COALESCE(SUM(amount_cents), 0) FROM transfers
+           WHERE status IN ('simulated', 'pending') AND created >= ?""",
+        [week_start(today).isoformat()],
+    ).fetchone()
+    return total
+
+
 def compute_extra(conn: sqlite3.Connection, today: date, cmap: CategoryMap) -> dict:
     (checking,) = conn.execute(
         "SELECT COALESCE(SUM(balance_cents), 0) FROM accounts WHERE kind = 'checking'"
@@ -81,7 +104,8 @@ def compute_extra(conn: sqlite3.Connection, today: date, cmap: CategoryMap) -> d
     bills = upcoming_bills(conn, today, cmap)
     bills_due = sum(b["amount_cents"] for b in bills)
     food_transport = average_weekly_food_and_transport(conn, today, cmap)
-    extra = checking - bills_due - FLOOR_CENTS - food_transport
+    committed = committed_this_week(conn, today)
+    extra = checking - bills_due - FLOOR_CENTS - food_transport - committed
 
     (cap_used,) = conn.execute(
         "SELECT COALESCE(SUM(amount_cents), 0) FROM cases_opened WHERE opened_at >= ?",
@@ -97,6 +121,7 @@ def compute_extra(conn: sqlite3.Connection, today: date, cmap: CategoryMap) -> d
         "bills": bills,
         "floor_cents": FLOOR_CENTS,
         "avg_weekly_food_transport_cents": food_transport,
+        "committed_this_week_cents": committed,
         "weekly_cap_cents": WEEKLY_CASE_CAP_CENTS,
         "cap_used_cents": cap_used,
         "cap_remaining_cents": cap_remaining,

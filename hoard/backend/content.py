@@ -26,3 +26,17 @@ class CategoryMap:
 def category_map() -> CategoryMap:
     raw = json.loads((CONTENT / "categories.json").read_text())
     return CategoryMap(systems=raw["systems"], categories=raw["categories"])
+
+
+@cache
+def stock_catalog() -> dict[str, dict]:
+    raw = json.loads((CONTENT / "stocks.json").read_text())
+    return {
+        s["symbol"]: {
+            "symbol": s["symbol"],
+            "name": s["name"],
+            "kind": s["kind"],
+            "price_cents": round(s["price"] * 100),
+        }
+        for s in raw["stocks"]
+    }
