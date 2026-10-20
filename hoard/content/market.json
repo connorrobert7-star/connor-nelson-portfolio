@@ -1,0 +1,225 @@
+{
+ "_note": "DEMO market data. Prices are the weekly close at the install week; returns are demo values shaped like each asset, not real history. Replaced by the market data provider later.",
+ "tickers": [
+  {
+   "symbol": "VTI",
+   "name": "Vanguard Total Stock Market ETF",
+   "kind": "index",
+   "risk": "medium",
+   "price_cents": 28310,
+   "annual_returns": [
+    0.12,
+    -0.05,
+    0.21,
+    0.18,
+    -0.19,
+    0.26,
+    0.24,
+    0.13,
+    0.08,
+    0.15
+   ],
+   "dividend_yield": 0.015,
+   "creature": "",
+   "story": ""
+  },
+  {
+   "symbol": "VOO",
+   "name": "Vanguard S&P 500 ETF",
+   "kind": "index",
+   "risk": "medium",
+   "price_cents": 52000,
+   "annual_returns": [
+    0.12,
+    -0.05,
+    0.21,
+    0.18,
+    -0.19,
+    0.26,
+    0.24,
+    0.13,
+    0.08,
+    0.15
+   ],
+   "dividend_yield": 0.015,
+   "creature": "",
+   "story": ""
+  },
+  {
+   "symbol": "VXUS",
+   "name": "Vanguard Total International ETF",
+   "kind": "index",
+   "risk": "medium",
+   "price_cents": 6600,
+   "annual_returns": [
+    0.12,
+    -0.05,
+    0.21,
+    0.18,
+    -0.19,
+    0.26,
+    0.24,
+    0.13,
+    0.08,
+    0.15
+   ],
+   "dividend_yield": 0.015,
+   "creature": "",
+   "story": ""
+  },
+  {
+   "symbol": "SCHD",
+   "name": "Schwab US Dividend Equity ETF",
+   "kind": "index",
+   "risk": "medium",
+   "price_cents": 2753,
+   "annual_returns": [
+    0.12,
+    -0.05,
+    0.21,
+    0.18,
+    -0.19,
+    0.26,
+    0.24,
+    0.13,
+    0.08,
+    0.15
+   ],
+   "dividend_yield": 0.015,
+   "creature": "",
+   "story": ""
+  },
+  {
+   "symbol": "BND",
+   "name": "Vanguard Total Bond Market ETF",
+   "kind": "bond",
+   "risk": "low",
+   "price_cents": 7250,
+   "annual_returns": [
+    0.03,
+    0.01,
+    0.04,
+    -0.02,
+    -0.13,
+    0.05,
+    0.02,
+    0.04,
+    0.03,
+    0.04
+   ],
+   "dividend_yield": 0.015,
+   "creature": "",
+   "story": ""
+  },
+  {
+   "symbol": "AAPL",
+   "name": "Apple",
+   "kind": "stock",
+   "risk": "high",
+   "price_cents": 23080,
+   "annual_returns": [
+    0.25,
+    -0.15,
+    0.4,
+    0.3,
+    -0.28,
+    0.45,
+    0.35,
+    0.1,
+    0.2,
+    0.18
+   ],
+   "dividend_yield": 0.015,
+   "creature": "",
+   "story": ""
+  },
+  {
+   "symbol": "MSFT",
+   "name": "Microsoft",
+   "kind": "stock",
+   "risk": "high",
+   "price_cents": 45300,
+   "annual_returns": [
+    0.25,
+    -0.15,
+    0.4,
+    0.3,
+    -0.28,
+    0.45,
+    0.35,
+    0.1,
+    0.2,
+    0.18
+   ],
+   "dividend_yield": 0.015,
+   "creature": "",
+   "story": ""
+  },
+  {
+   "symbol": "NVDA",
+   "name": "Nvidia",
+   "kind": "stock",
+   "risk": "high",
+   "price_cents": 13500,
+   "annual_returns": [
+    0.25,
+    -0.15,
+    0.4,
+    0.3,
+    -0.28,
+    0.45,
+    0.35,
+    0.1,
+    0.2,
+    0.18
+   ],
+   "dividend_yield": 0.015,
+   "creature": "",
+   "story": ""
+  },
+  {
+   "symbol": "AMZN",
+   "name": "Amazon",
+   "kind": "stock",
+   "risk": "high",
+   "price_cents": 19000,
+   "annual_returns": [
+    0.25,
+    -0.15,
+    0.4,
+    0.3,
+    -0.28,
+    0.45,
+    0.35,
+    0.1,
+    0.2,
+    0.18
+   ],
+   "dividend_yield": 0.015,
+   "creature": "",
+   "story": ""
+  },
+  {
+   "symbol": "GOOGL",
+   "name": "Alphabet",
+   "kind": "stock",
+   "risk": "high",
+   "price_cents": 16500,
+   "annual_returns": [
+    0.25,
+    -0.15,
+    0.4,
+    0.3,
+    -0.28,
+    0.45,
+    0.35,
+    0.1,
+    0.2,
+    0.18
+   ],
+   "dividend_yield": 0.015,
+   "creature": "",
+   "story": ""
+  }
+ ]
+}

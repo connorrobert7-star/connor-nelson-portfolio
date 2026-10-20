@@ -22,7 +22,6 @@ func _init() -> void:
 		"WffffffffffffffW",
 		"WWWWWWWddWWWWWWW",
 	]
-	exit_spawn = Vector2i(26, 22)
 
 
 func build() -> void:
@@ -117,9 +116,9 @@ func _buy(symbol: String) -> void:
 		await d.say([str(res[1])])
 		return
 	var note := (
-		"This is the web demo, so nothing is saved."
-		if res[0].status == "demo"
-		else "Simulated for now. Real money moves once accounts are connected."
+		"Simulated for now. Real money moves once accounts are connected."
+		if res[0].status == "simulated"
+		else "It's on its way. Transfers take a day or two to land."
 	)
 	await d.say(["Done. That's %.4f shares of %s." % [float(res[0].qty), symbol], note])
 

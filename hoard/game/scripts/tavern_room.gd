@@ -23,7 +23,6 @@ func _init() -> void:
 		"WffffffffffffffW",
 		"WWWWWWWddWWWWWWW",
 	]
-	exit_spawn = Vector2i(30, 13)
 
 
 func build() -> void:

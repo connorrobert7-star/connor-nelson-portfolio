@@ -44,9 +44,13 @@ func _ready() -> void:
 
 func open(npc_id: String, speaker: String) -> void:
 	Game.busy = true
+	var look := Level.npc_look(npc_id)
+	var tex: Texture2D = look.texture
+	var frames := int(look.get("hframes", 1))
+	var w := tex.get_width() / frames
 	var atlas := AtlasTexture.new()
-	atlas.atlas = preload("res://art/npcs.png")
-	atlas.region = Rect2(Level.NPC_FRAMES[npc_id] * 32, 0, 32, 32)
+	atlas.atlas = tex
+	atlas.region = Rect2(int(look.get("frame", 0)) * w, 0, w, tex.get_height())
 	_portrait.texture = atlas
 	_name.text = speaker
 	_text.text = ""
@@ -63,6 +67,7 @@ func say(lines: Array) -> void:
 	for line: String in lines:
 		_clear_choices()
 		_type(line)
+		Sfx.play("blip")
 		await _advanced
 
 

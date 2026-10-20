@@ -6,7 +6,7 @@ extends Level
 const ENTRANCE := Vector2i(7, 9)
 const LEGEND := {"W": 10, "w": 9, "f": 8, "c": 12, "t": 13, "r": 14, "d": 11}
 
-var exit_spawn := Vector2i.ZERO
+var exit_spawn := Level.RETURN
 
 
 func build() -> void:

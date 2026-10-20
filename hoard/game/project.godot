@@ -1,5 +1,5 @@
 ; Engine configuration file.
-; Hoard, Phase 0. Open in Godot 4.3+.
+; Hoard. Open in Godot 4.3+.
 
 config_version=5
 
@@ -12,6 +12,8 @@ config/features=PackedStringArray("4.3", "GL Compatibility")
 [autoload]
 
 Game="*res://scripts/game.gd"
+Features="*res://scripts/features.gd"
+Sfx="*res://scripts/sfx.gd"
 
 [display]
 

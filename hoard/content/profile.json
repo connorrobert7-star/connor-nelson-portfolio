@@ -1,0 +1,7 @@
+{
+  "_note": "Demo profile. The life clock reads birth_date and sex (male, female, or average). Set your own in Settings.",
+  "name": "You",
+  "birth_date": "1998-06-02",
+  "sex": "average",
+  "work_hours_per_week": 40
+}

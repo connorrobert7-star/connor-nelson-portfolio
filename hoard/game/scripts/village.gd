@@ -52,6 +52,10 @@ const TAVERN_DOOR := Vector2i(30, 12)
 
 const CROP_FRAME := {"bumper": 0, "healthy": 1, "wilting": 2, "withered": 3}
 
+## Reserved plots that features build on: plot_id -> {rect, door}. `door` is the
+## tile in the plot's bottom row that leads inside, if the owning feature has a level.
+const PLOTS := {}
+
 var _shrine_sprite: Sprite2D
 
 
@@ -71,6 +75,15 @@ func build() -> void:
 	add_npc("farmer", Vector2i(11, 12), Vector2i(11, 13))
 	add_npc("shrine_keeper", Vector2i(16, 21), Vector2i(16, 22))
 
+	for plot_id: String in PLOTS:
+		var f := Features.for_plot(plot_id)
+		if f == null:
+			continue
+		var plot: Dictionary = PLOTS[plot_id]
+		f.build_village(self, plot.rect)
+		if f.door_level() != "" and plot.has("door"):
+			add_door(plot.door, f.door_level(), Room.ENTRANCE)
+
 	add_zone(FIELDS, _fields_text)
 	add_zone(TAVERN, _tavern_text)
 	add_zone(SHRINE, _shrine_text)
@@ -81,6 +94,10 @@ func build() -> void:
 
 
 func dress() -> void:
+	for plot_id: String in PLOTS:
+		var f := Features.for_plot(plot_id)
+		if f:
+			f.dress_village(self, PLOTS[plot_id].rect)
 	_dress_crops()
 	_dress_tavern()
 	_dress_river()

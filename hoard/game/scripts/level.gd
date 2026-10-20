@@ -9,6 +9,8 @@ signal travel(level_id: String, spawn: Vector2i)
 const TILE := 16
 const REACH := 18.0
 const NPC_FRAMES := {"shopkeeper": 0, "tavern_keeper": 1, "farmer": 2, "shrine_keeper": 3}
+## Spawn value for a door that leads back to wherever the player came from.
+const RETURN := Vector2i(-1, -1)
 
 var map: Array[String] = []
 var legend: Dictionary = {}  # char -> atlas index
@@ -82,6 +84,8 @@ func _process(_delta: float) -> void:
 	for door: Dictionary in _doors:
 		if (door.rect as Rect2).has_point(leader.position):
 			Game.busy = true
+			if door.level != "village":
+				main.village_return = door.tile + Vector2i.DOWN
 			travel.emit(door.level, door.spawn)
 			return
 	var it := nearest_interactable()
@@ -171,21 +175,32 @@ func add_interactable(pos: Vector2, label: Callable, action: Callable) -> void:
 	_interactables.append({"pos": pos, "label": label, "action": action})
 
 
+## The sprite sheet, frame and frame count for a villager, from a feature or the core four.
+static func npc_look(npc_id: String) -> Dictionary:
+	var look := Features.npc(npc_id)
+	if not look.is_empty():
+		return look
+	return {"texture": preload("res://art/npcs.png"), "frame": NPC_FRAMES.get(npc_id, 0), "hframes": 4}
+
+
 ## A villager standing on `tile`; you talk to them from `talk_from`.
-func add_npc(npc_id: String, tile: Vector2i, talk_from: Vector2i) -> void:
+## Their name and lines come from Game.state.dialogue[npc_id].
+func add_npc(npc_id: String, tile: Vector2i, talk_from: Vector2i, action: Callable = Callable()) -> Sprite2D:
+	var look := npc_look(npc_id)
 	var s := Sprite2D.new()
-	s.texture = preload("res://art/npcs.png")
-	s.hframes = 4
-	s.frame = NPC_FRAMES[npc_id]
-	s.offset = Vector2(0, -14)
+	s.texture = look.texture
+	s.hframes = int(look.get("hframes", 1))
+	s.frame = int(look.get("frame", 0))
+	s.offset = Vector2(0, -s.texture.get_height() / 2.0 + 2)
 	s.position = feet_at(tile)
 	props.add_child(s)
 	_blocked[tile] = true
 	add_interactable(
 		tile_center(talk_from),
-		func() -> String: return "Talk to " + str(Game.state.dialogue[npc_id].name),
-		func() -> void: talk(npc_id)
+		func() -> String: return "Talk to " + str(Game.state.get("dialogue", {}).get(npc_id, {}).get("name", "them")),
+		action if action.is_valid() else func() -> void: talk(npc_id)
 	)
+	return s
 
 
 ## Walking onto `tile` takes you to `level_id`, arriving at `spawn`.
@@ -193,10 +208,12 @@ func add_door(tile: Vector2i, level_id: String, spawn: Vector2i) -> void:
 	_open[tile] = true
 	_blocked.erase(tile)
 	var r := Rect2(Vector2(tile * TILE), Vector2(TILE, TILE)).grow(-3)
-	_doors.append({"rect": r, "level": level_id, "spawn": spawn})
+	_doors.append({"rect": r, "level": level_id, "spawn": spawn, "tile": tile})
 
 
 func talk(npc_id: String) -> void:
+	if not Game.state.get("dialogue", {}).has(npc_id):
+		return
 	var npc: Dictionary = Game.state.dialogue[npc_id]
 	var d: Dialogue = main.dialogue
 	d.open(npc_id, npc.name)
