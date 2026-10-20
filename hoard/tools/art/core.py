@@ -1,6 +1,6 @@
 """Placeholder pixel art for Phase 0. Replace with Aseprite art later.
 
-    python tools/make_art.py
+    python tools/art/core.py
 
 Writes PNGs into game/art/. Muted palette on purpose: rarity colors are the only
 loud colors in the game, and Phase 0 has none.
@@ -11,7 +11,7 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw
 
-ART = Path(__file__).resolve().parent.parent / "game" / "art"
+ART = Path(__file__).resolve().parents[2] / "game" / "art"
 
 INK = (43, 38, 34)
 GRASS = (111, 143, 78)
