@@ -1,6 +1,8 @@
 class_name HoardApi
 extends Node
 ## Talks to the FastAPI backend. The game never calls Plaid or SnapTrade.
+## A web build can't reach a backend on your machine, so it reads the /state
+## snapshots in res://demo/ instead (tools/export_demo_state.py writes them).
 
 signal state_loaded(state: Dictionary)
 signal failed(message: String)
@@ -21,7 +23,14 @@ func base_url() -> String:
 	return ProjectSettings.get_setting("hoard/backend_url", "http://127.0.0.1:8000")
 
 
+static func is_demo() -> bool:
+	return OS.has_feature("web")
+
+
 func fetch_state(weeks_ago: int) -> void:
+	if is_demo():
+		_load_demo.call_deferred(weeks_ago)
+		return
 	_http.cancel_request()
 	var err := _http.request("%s/state?weeks_ago=%d" % [base_url(), weeks_ago])
 	if err != OK:
@@ -40,3 +49,12 @@ func _on_completed(result: int, code: int, _headers: PackedStringArray, body: Pa
 		state_loaded.emit(data)
 	else:
 		failed.emit("Backend sent something that is not JSON.")
+
+
+func _load_demo(weeks_ago: int) -> void:
+	var text := FileAccess.get_file_as_string("res://demo/state_%d.json" % weeks_ago)
+	var data: Variant = JSON.parse_string(text)
+	if data is Dictionary:
+		state_loaded.emit(data)
+	else:
+		failed.emit("Demo data missing for week %d." % weeks_ago)

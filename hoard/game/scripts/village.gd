@@ -201,6 +201,8 @@ func _on_state(s: Dictionary) -> void:
 	var w: Dictionary = s.window
 	var hint := "[ earlier" + ("   ] later" if weeks_ago > 0 else "")
 	week_label.text = "%s to %s   %s" % [_day(w.start), _day(w.end), hint]
+	if HoardApi.is_demo():
+		hint += "   (fake data)"
 	purse_label.text = "coins %d    extra this week %s" % [
 		int(s.coins), Money.fmt(maxi(0, int(s.extra.extra_cents)))
 	]
