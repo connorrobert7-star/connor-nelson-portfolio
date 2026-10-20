@@ -1,0 +1,40 @@
+{
+ "as_of": "2026-10-18",
+ "holdings": [
+  {
+   "id": "hld_1",
+   "account_id": "brk_1",
+   "symbol": "VTI",
+   "qty": 42.5,
+   "value": 12031.75
+  },
+  {
+   "id": "hld_2",
+   "account_id": "brk_1",
+   "symbol": "VXUS",
+   "qty": 61.0,
+   "value": 4026.0
+  },
+  {
+   "id": "hld_3",
+   "account_id": "brk_1",
+   "symbol": "AAPL",
+   "qty": 18.0,
+   "value": 4154.4
+  },
+  {
+   "id": "hld_4",
+   "account_id": "brk_1",
+   "symbol": "MSFT",
+   "qty": 14.0,
+   "value": 6342.0
+  },
+  {
+   "id": "hld_5",
+   "account_id": "brk_1",
+   "symbol": "SCHD",
+   "qty": 192.0,
+   "value": 5286.25
+  }
+ ]
+}

@@ -1,0 +1,37 @@
+{
+  "_note": "Plaid detailed personal_finance_category -> village system. Budgets are placeholders until the Settings screen exists. Plaid has no subscription category, so streaming and gym categories stand in for drains; expect to tune this in Phase 3.",
+  "systems": {
+    "crops":     {"label": "Crops and larder",     "budget_cents": 12000, "period": "week"},
+    "tavern":    {"label": "Tavern",               "budget_cents": 8000,  "period": "week"},
+    "walls":     {"label": "Walls and roofs",      "budget_cents": null,  "period": "month", "bill": true},
+    "drains":    {"label": "Drains on the river",  "budget_cents": 7500,  "period": "month", "bill": true},
+    "roads":     {"label": "Roads",                "budget_cents": 5000,  "period": "week"},
+    "market":    {"label": "Market stalls",        "budget_cents": 6000,  "period": "week"},
+    "gate":      {"label": "The gate",             "budget_cents": null,  "period": "month", "bill": true},
+    "shrine":    {"label": "Shrine (saved)",       "budget_cents": null,  "period": "week"},
+    "followers": {"label": "Followers (invested)", "budget_cents": null,  "period": "week"},
+    "income":    {"label": "Income",               "budget_cents": null,  "period": "week"}
+  },
+  "categories": {
+    "FOOD_AND_DRINK_GROCERIES": "crops",
+    "FOOD_AND_DRINK_RESTAURANT": "tavern",
+    "FOOD_AND_DRINK_FAST_FOOD": "tavern",
+    "FOOD_AND_DRINK_COFFEE": "tavern",
+    "RENT_AND_UTILITIES_RENT": "walls",
+    "RENT_AND_UTILITIES_GAS_AND_ELECTRICITY": "walls",
+    "RENT_AND_UTILITIES_INTERNET_AND_CABLE": "walls",
+    "RENT_AND_UTILITIES_TELEPHONE": "walls",
+    "ENTERTAINMENT_TV_AND_MOVIES": "drains",
+    "ENTERTAINMENT_MUSIC_AND_AUDIO": "drains",
+    "PERSONAL_CARE_GYMS_AND_FITNESS_CENTERS": "drains",
+    "TRANSPORTATION_GAS": "roads",
+    "TRANSPORTATION_PUBLIC_TRANSIT": "roads",
+    "TRANSPORTATION_TAXIS_AND_RIDE_SHARES": "roads",
+    "GENERAL_MERCHANDISE_ONLINE_MARKETPLACES": "market",
+    "GENERAL_MERCHANDISE_CLOTHING_AND_ACCESSORIES": "market",
+    "LOAN_PAYMENTS_CAR_PAYMENT": "gate",
+    "TRANSFER_OUT_SAVINGS": "shrine",
+    "TRANSFER_OUT_INVESTMENT_AND_RETIREMENT_FUNDS": "followers",
+    "INCOME_WAGES": "income"
+  }
+}

@@ -42,3 +42,9 @@ public/photos
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# hoard
+hoard/backend/db/*.sqlite3
+__pycache__/
+.pytest_cache/
+.ruff_cache/

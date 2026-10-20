@@ -1,0 +1,1157 @@
+{
+ "end_date": "2026-10-19",
+ "transactions": [
+  {
+   "id": "txn_0000",
+   "account_id": "chk_1",
+   "date": "2026-07-22",
+   "amount": 31.12,
+   "merchant": "Amazon",
+   "category": "GENERAL_MERCHANDISE_ONLINE_MARKETPLACES"
+  },
+  {
+   "id": "txn_0001",
+   "account_id": "chk_1",
+   "date": "2026-07-22",
+   "amount": 5.77,
+   "merchant": "Blue Door Cafe",
+   "category": "FOOD_AND_DRINK_COFFEE"
+  },
+  {
+   "id": "txn_0002",
+   "account_id": "chk_1",
+   "date": "2026-07-22",
+   "amount": 40.95,
+   "merchant": "Green Basket Market",
+   "category": "FOOD_AND_DRINK_GROCERIES"
+  },
+  {
+   "id": "txn_0003",
+   "account_id": "chk_1",
+   "date": "2026-07-22",
+   "amount": 22.97,
+   "merchant": "Taqueria Sol",
+   "category": "FOOD_AND_DRINK_RESTAURANT"
+  },
+  {
+   "id": "txn_0004",
+   "account_id": "chk_1",
+   "date": "2026-07-23",
+   "amount": 48.45,
+   "merchant": "Green Basket Market",
+   "category": "FOOD_AND_DRINK_GROCERIES"
+  },
+  {
+   "id": "txn_0005",
+   "account_id": "chk_1",
+   "date": "2026-07-23",
+   "amount": 40.42,
+   "merchant": "Taqueria Sol",
+   "category": "FOOD_AND_DRINK_RESTAURANT"
+  },
+  {
+   "id": "txn_0006",
+   "account_id": "chk_1",
+   "date": "2026-07-24",
+   "amount": -2450.0,
+   "merchant": "Acme Corp Payroll",
+   "category": "INCOME_WAGES"
+  },
+  {
+   "id": "txn_0007",
+   "account_id": "chk_1",
+   "date": "2026-07-24",
+   "amount": 6.65,
+   "merchant": "Blue Door Cafe",
+   "category": "FOOD_AND_DRINK_COFFEE"
+  },
+  {
+   "id": "txn_0008",
+   "account_id": "chk_1",
+   "date": "2026-07-24",
+   "amount": 41.04,
+   "merchant": "Hilltop Foods",
+   "category": "FOOD_AND_DRINK_GROCERIES"
+  },
+  {
+   "id": "txn_0009",
+   "account_id": "chk_1",
+   "date": "2026-07-24",
+   "amount": 150.0,
+   "merchant": "Transfer to Brokerage",
+   "category": "TRANSFER_OUT_INVESTMENT_AND_RETIREMENT_FUNDS"
+  },
+  {
+   "id": "txn_0010",
+   "account_id": "chk_1",
+   "date": "2026-07-24",
+   "amount": 200.0,
+   "merchant": "Transfer to House Fund",
+   "category": "TRANSFER_OUT_SAVINGS"
+  },
+  {
+   "id": "txn_0011",
+   "account_id": "chk_1",
+   "date": "2026-07-25",
+   "amount": 41.14,
+   "merchant": "Fuel Stop",
+   "category": "TRANSPORTATION_GAS"
+  },
+  {
+   "id": "txn_0012",
+   "account_id": "chk_1",
+   "date": "2026-07-25",
+   "amount": 49.4,
+   "merchant": "Green Basket Market",
+   "category": "FOOD_AND_DRINK_GROCERIES"
+  },
+  {
+   "id": "txn_0013",
+   "account_id": "chk_1",
+   "date": "2026-07-26",
+   "amount": 25.01,
+   "merchant": "Hilltop Foods",
+   "category": "FOOD_AND_DRINK_GROCERIES"
+  },
+  {
+   "id": "txn_0014",
+   "account_id": "chk_1",
+   "date": "2026-07-26",
+   "amount": 26.89,
+   "merchant": "Noodle House",
+   "category": "FOOD_AND_DRINK_RESTAURANT"
+  },
+  {
+   "id": "txn_0015",
+   "account_id": "chk_1",
+   "date": "2026-07-28",
+   "amount": 25.93,
+   "merchant": "Green Basket Market",
+   "category": "FOOD_AND_DRINK_GROCERIES"
+  },
+  {
+   "id": "txn_0016",
+   "account_id": "chk_1",
+   "date": "2026-07-29",
+   "amount": 5.78,
+   "merchant": "Blue Door Cafe",
+   "category": "FOOD_AND_DRINK_COFFEE"
+  },
+  {
+   "id": "txn_0017",
+   "account_id": "chk_1",
+   "date": "2026-07-31",
+   "amount": 6.24,
+   "merchant": "Blue Door Cafe",
+   "category": "FOOD_AND_DRINK_COFFEE"
+  },
+  {
+   "id": "txn_0018",
+   "account_id": "chk_1",
+   "date": "2026-07-31",
+   "amount": 49.51,
+   "merchant": "Hilltop Foods",
+   "category": "FOOD_AND_DRINK_GROCERIES"
+  },
+  {
+   "id": "txn_0019",
+   "account_id": "chk_1",
+   "date": "2026-08-01",
+   "amount": 40.0,
+   "merchant": "Iron Gym",
+   "category": "PERSONAL_CARE_GYMS_AND_FITNESS_CENTERS"
+  },
+  {
+   "id": "txn_0020",
+   "account_id": "chk_1",
+   "date": "2026-08-01",
+   "amount": 1650.0,
+   "merchant": "Maple Court Apartments",
+   "category": "RENT_AND_UTILITIES_RENT"
+  },
+  {
+   "id": "txn_0021",
+   "account_id": "chk_1",
+   "date": "2026-08-02",
+   "amount": 31.41,
+   "merchant": "DoorDash",
+   "category": "FOOD_AND_DRINK_RESTAURANT"
+  },
+  {
+   "id": "txn_0022",
+   "account_id": "chk_1",
+   "date": "2026-08-03",
+   "amount": 64.58,
+   "merchant": "Corner Grocer",
+   "category": "FOOD_AND_DRINK_GROCERIES"
+  },
+  {
+   "id": "txn_0023",
+   "account_id": "chk_1",
+   "date": "2026-08-03",
+   "amount": 15.49,
+   "merchant": "Netflix",
+   "category": "ENTERTAINMENT_TV_AND_MOVIES"
+  },
+  {
+   "id": "txn_0024",
+   "account_id": "chk_1",
+   "date": "2026-08-04",
+   "amount": 5.22,
+   "merchant": "Blue Door Cafe",
+   "category": "FOOD_AND_DRINK_COFFEE"
+  },
+  {
+   "id": "txn_0025",
+   "account_id": "chk_1",
+   "date": "2026-08-06",
+   "amount": 36.58,
+   "merchant": "Noodle House",
+   "category": "FOOD_AND_DRINK_RESTAURANT"
+  },
+  {
+   "id": "txn_0026",
+   "account_id": "chk_1",
+   "date": "2026-08-07",
+   "amount": -2450.0,
+   "merchant": "Acme Corp Payroll",
+   "category": "INCOME_WAGES"
+  },
+  {
+   "id": "txn_0027",
+   "account_id": "chk_1",
+   "date": "2026-08-07",
+   "amount": 150.0,
+   "merchant": "Transfer to Brokerage",
+   "category": "TRANSFER_OUT_INVESTMENT_AND_RETIREMENT_FUNDS"
+  },
+  {
+   "id": "txn_0028",
+   "account_id": "chk_1",
+   "date": "2026-08-07",
+   "amount": 200.0,
+   "merchant": "Transfer to House Fund",
+   "category": "TRANSFER_OUT_SAVINGS"
+  },
+  {
+   "id": "txn_0029",
+   "account_id": "chk_1",
+   "date": "2026-08-08",
+   "amount": 6.58,
+   "merchant": "Blue Door Cafe",
+   "category": "FOOD_AND_DRINK_COFFEE"
+  },
+  {
+   "id": "txn_0030",
+   "account_id": "chk_1",
+   "date": "2026-08-08",
+   "amount": 36.51,
+   "merchant": "Fuel Stop",
+   "category": "TRANSPORTATION_GAS"
+  },
+  {
+   "id": "txn_0031",
+   "account_id": "chk_1",
+   "date": "2026-08-08",
+   "amount": 29.26,
+   "merchant": "Green Basket Market",
+   "category": "FOOD_AND_DRINK_GROCERIES"
+  },
+  {
+   "id": "txn_0032",
+   "account_id": "chk_1",
+   "date": "2026-08-08",
+   "amount": 45.0,
+   "merchant": "Mobile Co",
+   "category": "RENT_AND_UTILITIES_TELEPHONE"
+  },
+  {
+   "id": "txn_0033",
+   "account_id": "chk_1",
+   "date": "2026-08-09",
+   "amount": 4.81,
+   "merchant": "Blue Door Cafe",
+   "category": "FOOD_AND_DRINK_COFFEE"
+  },
+  {
+   "id": "txn_0034",
+   "account_id": "chk_1",
+   "date": "2026-08-09",
+   "amount": 11.99,
+   "merchant": "Spotify",
+   "category": "ENTERTAINMENT_MUSIC_AND_AUDIO"
+  },
+  {
+   "id": "txn_0035",
+   "account_id": "chk_1",
+   "date": "2026-08-12",
+   "amount": 285.0,
+   "merchant": "Car loan payment",
+   "category": "LOAN_PAYMENTS_CAR_PAYMENT"
+  },
+  {
+   "id": "txn_0036",
+   "account_id": "chk_1",
+   "date": "2026-08-13",
+   "amount": 43.15,
+   "merchant": "Green Basket Market",
+   "category": "FOOD_AND_DRINK_GROCERIES"
+  },
+  {
+   "id": "txn_0037",
+   "account_id": "chk_1",
+   "date": "2026-08-13",
+   "amount": 15.07,
+   "merchant": "Taqueria Sol",
+   "category": "FOOD_AND_DRINK_RESTAURANT"
+  },
+  {
+   "id": "txn_0038",
+   "account_id": "chk_1",
+   "date": "2026-08-14",
+   "amount": 5.02,
+   "merchant": "Blue Door Cafe",
+   "category": "FOOD_AND_DRINK_COFFEE"
+  },
+  {
+   "id": "txn_0039",
+   "account_id": "chk_1",
+   "date": "2026-08-15",
+   "amount": 99.57,
+   "merchant": "City Power",
+   "category": "RENT_AND_UTILITIES_GAS_AND_ELECTRICITY"
+  },
+  {
+   "id": "txn_0040",
+   "account_id": "chk_1",
+   "date": "2026-08-15",
+   "amount": 39.81,
+   "merchant": "Fuel Stop",
+   "category": "TRANSPORTATION_GAS"
+  },
+  {
+   "id": "txn_0041",
+   "account_id": "chk_1",
+   "date": "2026-08-16",
+   "amount": 6.37,
+   "merchant": "Blue Door Cafe",
+   "category": "FOOD_AND_DRINK_COFFEE"
+  },
+  {
+   "id": "txn_0042",
+   "account_id": "chk_1",
+   "date": "2026-08-19",
+   "amount": 52.12,
+   "merchant": "Amazon",
+   "category": "GENERAL_MERCHANDISE_ONLINE_MARKETPLACES"
+  },
+  {
+   "id": "txn_0043",
+   "account_id": "chk_1",
+   "date": "2026-08-20",
+   "amount": 65.0,
+   "merchant": "Fibernet",
+   "category": "RENT_AND_UTILITIES_INTERNET_AND_CABLE"
+  },
+  {
+   "id": "txn_0044",
+   "account_id": "chk_1",
+   "date": "2026-08-21",
+   "amount": -2450.0,
+   "merchant": "Acme Corp Payroll",
+   "category": "INCOME_WAGES"
+  },
+  {
+   "id": "txn_0045",
+   "account_id": "chk_1",
+   "date": "2026-08-21",
+   "amount": 150.0,
+   "merchant": "Transfer to Brokerage",
+   "category": "TRANSFER_OUT_INVESTMENT_AND_RETIREMENT_FUNDS"
+  },
+  {
+   "id": "txn_0046",
+   "account_id": "chk_1",
+   "date": "2026-08-21",
+   "amount": 200.0,
+   "merchant": "Transfer to House Fund",
+   "category": "TRANSFER_OUT_SAVINGS"
+  },
+  {
+   "id": "txn_0047",
+   "account_id": "chk_1",
+   "date": "2026-08-22",
+   "amount": 5.1,
+   "merchant": "Blue Door Cafe",
+   "category": "FOOD_AND_DRINK_COFFEE"
+  },
+  {
+   "id": "txn_0048",
+   "account_id": "chk_1",
+   "date": "2026-08-22",
+   "amount": 44.85,
+   "merchant": "Fuel Stop",
+   "category": "TRANSPORTATION_GAS"
+  },
+  {
+   "id": "txn_0049",
+   "account_id": "chk_1",
+   "date": "2026-08-24",
+   "amount": 25.42,
+   "merchant": "DoorDash",
+   "category": "FOOD_AND_DRINK_RESTAURANT"
+  },
+  {
+   "id": "txn_0050",
+   "account_id": "chk_1",
+   "date": "2026-08-25",
+   "amount": 5.07,
+   "merchant": "Blue Door Cafe",
+   "category": "FOOD_AND_DRINK_COFFEE"
+  },
+  {
+   "id": "txn_0051",
+   "account_id": "chk_1",
+   "date": "2026-08-26",
+   "amount": 6.77,
+   "merchant": "Blue Door Cafe",
+   "category": "FOOD_AND_DRINK_COFFEE"
+  },
+  {
+   "id": "txn_0052",
+   "account_id": "chk_1",
+   "date": "2026-08-26",
+   "amount": 69.29,
+   "merchant": "Hilltop Foods",
+   "category": "FOOD_AND_DRINK_GROCERIES"
+  },
+  {
+   "id": "txn_0053",
+   "account_id": "chk_1",
+   "date": "2026-08-27",
+   "amount": 5.47,
+   "merchant": "Blue Door Cafe",
+   "category": "FOOD_AND_DRINK_COFFEE"
+  },
+  {
+   "id": "txn_0054",
+   "account_id": "chk_1",
+   "date": "2026-08-28",
+   "amount": 6.87,
+   "merchant": "Blue Door Cafe",
+   "category": "FOOD_AND_DRINK_COFFEE"
+  },
+  {
+   "id": "txn_0055",
+   "account_id": "chk_1",
+   "date": "2026-08-28",
+   "amount": 42.83,
+   "merchant": "Green Basket Market",
+   "category": "FOOD_AND_DRINK_GROCERIES"
+  },
+  {
+   "id": "txn_0056",
+   "account_id": "chk_1",
+   "date": "2026-08-29",
+   "amount": 39.13,
+   "merchant": "Amazon",
+   "category": "GENERAL_MERCHANDISE_ONLINE_MARKETPLACES"
+  },
+  {
+   "id": "txn_0057",
+   "account_id": "chk_1",
+   "date": "2026-08-29",
+   "amount": 4.9,
+   "merchant": "Blue Door Cafe",
+   "category": "FOOD_AND_DRINK_COFFEE"
+  },
+  {
+   "id": "txn_0058",
+   "account_id": "chk_1",
+   "date": "2026-08-31",
+   "amount": 49.77,
+   "merchant": "Amazon",
+   "category": "GENERAL_MERCHANDISE_ONLINE_MARKETPLACES"
+  },
+  {
+   "id": "txn_0059",
+   "account_id": "chk_1",
+   "date": "2026-08-31",
+   "amount": 5.87,
+   "merchant": "Blue Door Cafe",
+   "category": "FOOD_AND_DRINK_COFFEE"
+  },
+  {
+   "id": "txn_0060",
+   "account_id": "chk_1",
+   "date": "2026-09-01",
+   "amount": 40.0,
+   "merchant": "Iron Gym",
+   "category": "PERSONAL_CARE_GYMS_AND_FITNESS_CENTERS"
+  },
+  {
+   "id": "txn_0061",
+   "account_id": "chk_1",
+   "date": "2026-09-01",
+   "amount": 1650.0,
+   "merchant": "Maple Court Apartments",
+   "category": "RENT_AND_UTILITIES_RENT"
+  },
+  {
+   "id": "txn_0062",
+   "account_id": "chk_1",
+   "date": "2026-09-01",
+   "amount": 25.01,
+   "merchant": "Noodle House",
+   "category": "FOOD_AND_DRINK_RESTAURANT"
+  },
+  {
+   "id": "txn_0063",
+   "account_id": "chk_1",
+   "date": "2026-09-02",
+   "amount": 32.21,
+   "merchant": "Corner Grocer",
+   "category": "FOOD_AND_DRINK_GROCERIES"
+  },
+  {
+   "id": "txn_0064",
+   "account_id": "chk_1",
+   "date": "2026-09-03",
+   "amount": 6.35,
+   "merchant": "Blue Door Cafe",
+   "category": "FOOD_AND_DRINK_COFFEE"
+  },
+  {
+   "id": "txn_0065",
+   "account_id": "chk_1",
+   "date": "2026-09-03",
+   "amount": 15.49,
+   "merchant": "Netflix",
+   "category": "ENTERTAINMENT_TV_AND_MOVIES"
+  },
+  {
+   "id": "txn_0066",
+   "account_id": "chk_1",
+   "date": "2026-09-04",
+   "amount": -2450.0,
+   "merchant": "Acme Corp Payroll",
+   "category": "INCOME_WAGES"
+  },
+  {
+   "id": "txn_0067",
+   "account_id": "chk_1",
+   "date": "2026-09-04",
+   "amount": 150.0,
+   "merchant": "Transfer to Brokerage",
+   "category": "TRANSFER_OUT_INVESTMENT_AND_RETIREMENT_FUNDS"
+  },
+  {
+   "id": "txn_0068",
+   "account_id": "chk_1",
+   "date": "2026-09-04",
+   "amount": 200.0,
+   "merchant": "Transfer to House Fund",
+   "category": "TRANSFER_OUT_SAVINGS"
+  },
+  {
+   "id": "txn_0069",
+   "account_id": "chk_1",
+   "date": "2026-09-05",
+   "amount": 5.6,
+   "merchant": "Blue Door Cafe",
+   "category": "FOOD_AND_DRINK_COFFEE"
+  },
+  {
+   "id": "txn_0070",
+   "account_id": "chk_1",
+   "date": "2026-09-05",
+   "amount": 32.06,
+   "merchant": "Fuel Stop",
+   "category": "TRANSPORTATION_GAS"
+  },
+  {
+   "id": "txn_0071",
+   "account_id": "chk_1",
+   "date": "2026-09-05",
+   "amount": 27.71,
+   "merchant": "Noodle House",
+   "category": "FOOD_AND_DRINK_RESTAURANT"
+  },
+  {
+   "id": "txn_0072",
+   "account_id": "chk_1",
+   "date": "2026-09-06",
+   "amount": 51.72,
+   "merchant": "Corner Grocer",
+   "category": "FOOD_AND_DRINK_GROCERIES"
+  },
+  {
+   "id": "txn_0073",
+   "account_id": "chk_1",
+   "date": "2026-09-06",
+   "amount": 21.78,
+   "merchant": "Taqueria Sol",
+   "category": "FOOD_AND_DRINK_RESTAURANT"
+  },
+  {
+   "id": "txn_0074",
+   "account_id": "chk_1",
+   "date": "2026-09-07",
+   "amount": 6.43,
+   "merchant": "Blue Door Cafe",
+   "category": "FOOD_AND_DRINK_COFFEE"
+  },
+  {
+   "id": "txn_0075",
+   "account_id": "chk_1",
+   "date": "2026-09-07",
+   "amount": 19.45,
+   "merchant": "Taqueria Sol",
+   "category": "FOOD_AND_DRINK_RESTAURANT"
+  },
+  {
+   "id": "txn_0076",
+   "account_id": "chk_1",
+   "date": "2026-09-08",
+   "amount": 45.0,
+   "merchant": "Mobile Co",
+   "category": "RENT_AND_UTILITIES_TELEPHONE"
+  },
+  {
+   "id": "txn_0077",
+   "account_id": "chk_1",
+   "date": "2026-09-09",
+   "amount": 11.99,
+   "merchant": "Spotify",
+   "category": "ENTERTAINMENT_MUSIC_AND_AUDIO"
+  },
+  {
+   "id": "txn_0078",
+   "account_id": "chk_1",
+   "date": "2026-09-12",
+   "amount": 285.0,
+   "merchant": "Car loan payment",
+   "category": "LOAN_PAYMENTS_CAR_PAYMENT"
+  },
+  {
+   "id": "txn_0079",
+   "account_id": "chk_1",
+   "date": "2026-09-12",
+   "amount": 33.95,
+   "merchant": "Fuel Stop",
+   "category": "TRANSPORTATION_GAS"
+  },
+  {
+   "id": "txn_0080",
+   "account_id": "chk_1",
+   "date": "2026-09-13",
+   "amount": 35.52,
+   "merchant": "DoorDash",
+   "category": "FOOD_AND_DRINK_RESTAURANT"
+  },
+  {
+   "id": "txn_0081",
+   "account_id": "chk_1",
+   "date": "2026-09-13",
+   "amount": 42.56,
+   "merchant": "Green Basket Market",
+   "category": "FOOD_AND_DRINK_GROCERIES"
+  },
+  {
+   "id": "txn_0082",
+   "account_id": "chk_1",
+   "date": "2026-09-14",
+   "amount": 6.71,
+   "merchant": "Blue Door Cafe",
+   "category": "FOOD_AND_DRINK_COFFEE"
+  },
+  {
+   "id": "txn_0083",
+   "account_id": "chk_1",
+   "date": "2026-09-15",
+   "amount": 85.47,
+   "merchant": "City Power",
+   "category": "RENT_AND_UTILITIES_GAS_AND_ELECTRICITY"
+  },
+  {
+   "id": "txn_0084",
+   "account_id": "chk_1",
+   "date": "2026-09-16",
+   "amount": 41.82,
+   "merchant": "Burger Barn",
+   "category": "FOOD_AND_DRINK_FAST_FOOD"
+  },
+  {
+   "id": "txn_0085",
+   "account_id": "chk_1",
+   "date": "2026-09-17",
+   "amount": 12.58,
+   "merchant": "DoorDash",
+   "category": "FOOD_AND_DRINK_RESTAURANT"
+  },
+  {
+   "id": "txn_0086",
+   "account_id": "chk_1",
+   "date": "2026-09-18",
+   "amount": -2450.0,
+   "merchant": "Acme Corp Payroll",
+   "category": "INCOME_WAGES"
+  },
+  {
+   "id": "txn_0087",
+   "account_id": "chk_1",
+   "date": "2026-09-18",
+   "amount": 46.84,
+   "merchant": "Corner Grocer",
+   "category": "FOOD_AND_DRINK_GROCERIES"
+  },
+  {
+   "id": "txn_0088",
+   "account_id": "chk_1",
+   "date": "2026-09-18",
+   "amount": 150.0,
+   "merchant": "Transfer to Brokerage",
+   "category": "TRANSFER_OUT_INVESTMENT_AND_RETIREMENT_FUNDS"
+  },
+  {
+   "id": "txn_0089",
+   "account_id": "chk_1",
+   "date": "2026-09-18",
+   "amount": 200.0,
+   "merchant": "Transfer to House Fund",
+   "category": "TRANSFER_OUT_SAVINGS"
+  },
+  {
+   "id": "txn_0090",
+   "account_id": "chk_1",
+   "date": "2026-09-19",
+   "amount": 6.76,
+   "merchant": "Blue Door Cafe",
+   "category": "FOOD_AND_DRINK_COFFEE"
+  },
+  {
+   "id": "txn_0091",
+   "account_id": "chk_1",
+   "date": "2026-09-19",
+   "amount": 44.09,
+   "merchant": "Fuel Stop",
+   "category": "TRANSPORTATION_GAS"
+  },
+  {
+   "id": "txn_0092",
+   "account_id": "chk_1",
+   "date": "2026-09-19",
+   "amount": 14.52,
+   "merchant": "Taqueria Sol",
+   "category": "FOOD_AND_DRINK_RESTAURANT"
+  },
+  {
+   "id": "txn_0093",
+   "account_id": "chk_1",
+   "date": "2026-09-20",
+   "amount": 65.0,
+   "merchant": "Fibernet",
+   "category": "RENT_AND_UTILITIES_INTERNET_AND_CABLE"
+  },
+  {
+   "id": "txn_0094",
+   "account_id": "chk_1",
+   "date": "2026-09-22",
+   "amount": 22.29,
+   "merchant": "Amazon",
+   "category": "GENERAL_MERCHANDISE_ONLINE_MARKETPLACES"
+  },
+  {
+   "id": "txn_0095",
+   "account_id": "chk_1",
+   "date": "2026-09-22",
+   "amount": 4.54,
+   "merchant": "Blue Door Cafe",
+   "category": "FOOD_AND_DRINK_COFFEE"
+  },
+  {
+   "id": "txn_0096",
+   "account_id": "chk_1",
+   "date": "2026-09-22",
+   "amount": 30.8,
+   "merchant": "Hilltop Foods",
+   "category": "FOOD_AND_DRINK_GROCERIES"
+  },
+  {
+   "id": "txn_0097",
+   "account_id": "chk_1",
+   "date": "2026-09-23",
+   "amount": 37.88,
+   "merchant": "DoorDash",
+   "category": "FOOD_AND_DRINK_RESTAURANT"
+  },
+  {
+   "id": "txn_0098",
+   "account_id": "chk_1",
+   "date": "2026-09-24",
+   "amount": 4.82,
+   "merchant": "Blue Door Cafe",
+   "category": "FOOD_AND_DRINK_COFFEE"
+  },
+  {
+   "id": "txn_0099",
+   "account_id": "chk_1",
+   "date": "2026-09-25",
+   "amount": 5.26,
+   "merchant": "Blue Door Cafe",
+   "category": "FOOD_AND_DRINK_COFFEE"
+  },
+  {
+   "id": "txn_0100",
+   "account_id": "chk_1",
+   "date": "2026-09-25",
+   "amount": 68.52,
+   "merchant": "Green Basket Market",
+   "category": "FOOD_AND_DRINK_GROCERIES"
+  },
+  {
+   "id": "txn_0101",
+   "account_id": "chk_1",
+   "date": "2026-09-25",
+   "amount": 18.05,
+   "merchant": "Noodle House",
+   "category": "FOOD_AND_DRINK_RESTAURANT"
+  },
+  {
+   "id": "txn_0102",
+   "account_id": "chk_1",
+   "date": "2026-09-26",
+   "amount": 4.55,
+   "merchant": "Blue Door Cafe",
+   "category": "FOOD_AND_DRINK_COFFEE"
+  },
+  {
+   "id": "txn_0103",
+   "account_id": "chk_1",
+   "date": "2026-09-26",
+   "amount": 47.65,
+   "merchant": "Fuel Stop",
+   "category": "TRANSPORTATION_GAS"
+  },
+  {
+   "id": "txn_0104",
+   "account_id": "chk_1",
+   "date": "2026-09-26",
+   "amount": 54.26,
+   "merchant": "Hilltop Foods",
+   "category": "FOOD_AND_DRINK_GROCERIES"
+  },
+  {
+   "id": "txn_0105",
+   "account_id": "chk_1",
+   "date": "2026-09-26",
+   "amount": 41.83,
+   "merchant": "Taqueria Sol",
+   "category": "FOOD_AND_DRINK_RESTAURANT"
+  },
+  {
+   "id": "txn_0106",
+   "account_id": "chk_1",
+   "date": "2026-09-27",
+   "amount": 27.1,
+   "merchant": "Corner Grocer",
+   "category": "FOOD_AND_DRINK_GROCERIES"
+  },
+  {
+   "id": "txn_0107",
+   "account_id": "chk_1",
+   "date": "2026-09-30",
+   "amount": 4.64,
+   "merchant": "Blue Door Cafe",
+   "category": "FOOD_AND_DRINK_COFFEE"
+  },
+  {
+   "id": "txn_0108",
+   "account_id": "chk_1",
+   "date": "2026-10-01",
+   "amount": 6.16,
+   "merchant": "Blue Door Cafe",
+   "category": "FOOD_AND_DRINK_COFFEE"
+  },
+  {
+   "id": "txn_0109",
+   "account_id": "chk_1",
+   "date": "2026-10-01",
+   "amount": 64.23,
+   "merchant": "Hilltop Foods",
+   "category": "FOOD_AND_DRINK_GROCERIES"
+  },
+  {
+   "id": "txn_0110",
+   "account_id": "chk_1",
+   "date": "2026-10-01",
+   "amount": 40.0,
+   "merchant": "Iron Gym",
+   "category": "PERSONAL_CARE_GYMS_AND_FITNESS_CENTERS"
+  },
+  {
+   "id": "txn_0111",
+   "account_id": "chk_1",
+   "date": "2026-10-01",
+   "amount": 1650.0,
+   "merchant": "Maple Court Apartments",
+   "category": "RENT_AND_UTILITIES_RENT"
+  },
+  {
+   "id": "txn_0112",
+   "account_id": "chk_1",
+   "date": "2026-10-02",
+   "amount": -2450.0,
+   "merchant": "Acme Corp Payroll",
+   "category": "INCOME_WAGES"
+  },
+  {
+   "id": "txn_0113",
+   "account_id": "chk_1",
+   "date": "2026-10-02",
+   "amount": 150.0,
+   "merchant": "Transfer to Brokerage",
+   "category": "TRANSFER_OUT_INVESTMENT_AND_RETIREMENT_FUNDS"
+  },
+  {
+   "id": "txn_0114",
+   "account_id": "chk_1",
+   "date": "2026-10-02",
+   "amount": 200.0,
+   "merchant": "Transfer to House Fund",
+   "category": "TRANSFER_OUT_SAVINGS"
+  },
+  {
+   "id": "txn_0115",
+   "account_id": "chk_1",
+   "date": "2026-10-03",
+   "amount": 6.9,
+   "merchant": "Blue Door Cafe",
+   "category": "FOOD_AND_DRINK_COFFEE"
+  },
+  {
+   "id": "txn_0116",
+   "account_id": "chk_1",
+   "date": "2026-10-03",
+   "amount": 29.56,
+   "merchant": "Green Basket Market",
+   "category": "FOOD_AND_DRINK_GROCERIES"
+  },
+  {
+   "id": "txn_0117",
+   "account_id": "chk_1",
+   "date": "2026-10-03",
+   "amount": 15.49,
+   "merchant": "Netflix",
+   "category": "ENTERTAINMENT_TV_AND_MOVIES"
+  },
+  {
+   "id": "txn_0118",
+   "account_id": "chk_1",
+   "date": "2026-10-04",
+   "amount": 32.46,
+   "merchant": "Corner Grocer",
+   "category": "FOOD_AND_DRINK_GROCERIES"
+  },
+  {
+   "id": "txn_0119",
+   "account_id": "chk_1",
+   "date": "2026-10-04",
+   "amount": 23.45,
+   "merchant": "DoorDash",
+   "category": "FOOD_AND_DRINK_RESTAURANT"
+  },
+  {
+   "id": "txn_0120",
+   "account_id": "chk_1",
+   "date": "2026-10-05",
+   "amount": 59.26,
+   "merchant": "Hilltop Foods",
+   "category": "FOOD_AND_DRINK_GROCERIES"
+  },
+  {
+   "id": "txn_0121",
+   "account_id": "chk_1",
+   "date": "2026-10-05",
+   "amount": 16.32,
+   "merchant": "Taqueria Sol",
+   "category": "FOOD_AND_DRINK_RESTAURANT"
+  },
+  {
+   "id": "txn_0122",
+   "account_id": "chk_1",
+   "date": "2026-10-06",
+   "amount": 33.17,
+   "merchant": "Hilltop Foods",
+   "category": "FOOD_AND_DRINK_GROCERIES"
+  },
+  {
+   "id": "txn_0123",
+   "account_id": "chk_1",
+   "date": "2026-10-08",
+   "amount": 51.6,
+   "merchant": "Amazon",
+   "category": "GENERAL_MERCHANDISE_ONLINE_MARKETPLACES"
+  },
+  {
+   "id": "txn_0124",
+   "account_id": "chk_1",
+   "date": "2026-10-08",
+   "amount": 29.17,
+   "merchant": "Corner Grocer",
+   "category": "FOOD_AND_DRINK_GROCERIES"
+  },
+  {
+   "id": "txn_0125",
+   "account_id": "chk_1",
+   "date": "2026-10-08",
+   "amount": 45.0,
+   "merchant": "Mobile Co",
+   "category": "RENT_AND_UTILITIES_TELEPHONE"
+  },
+  {
+   "id": "txn_0126",
+   "account_id": "chk_1",
+   "date": "2026-10-09",
+   "amount": 11.99,
+   "merchant": "Spotify",
+   "category": "ENTERTAINMENT_MUSIC_AND_AUDIO"
+  },
+  {
+   "id": "txn_0127",
+   "account_id": "chk_1",
+   "date": "2026-10-10",
+   "amount": 42.98,
+   "merchant": "Fuel Stop",
+   "category": "TRANSPORTATION_GAS"
+  },
+  {
+   "id": "txn_0128",
+   "account_id": "chk_1",
+   "date": "2026-10-10",
+   "amount": 58.14,
+   "merchant": "Hilltop Foods",
+   "category": "FOOD_AND_DRINK_GROCERIES"
+  },
+  {
+   "id": "txn_0129",
+   "account_id": "chk_1",
+   "date": "2026-10-11",
+   "amount": 11.13,
+   "merchant": "Amazon",
+   "category": "GENERAL_MERCHANDISE_ONLINE_MARKETPLACES"
+  },
+  {
+   "id": "txn_0130",
+   "account_id": "chk_1",
+   "date": "2026-10-12",
+   "amount": 285.0,
+   "merchant": "Car loan payment",
+   "category": "LOAN_PAYMENTS_CAR_PAYMENT"
+  },
+  {
+   "id": "txn_0131",
+   "account_id": "chk_1",
+   "date": "2026-10-13",
+   "amount": 61.2,
+   "merchant": "Green Basket Market",
+   "category": "FOOD_AND_DRINK_GROCERIES"
+  },
+  {
+   "id": "txn_0132",
+   "account_id": "chk_1",
+   "date": "2026-10-14",
+   "amount": 5.75,
+   "merchant": "Blue Door Cafe",
+   "category": "FOOD_AND_DRINK_COFFEE"
+  },
+  {
+   "id": "txn_0133",
+   "account_id": "chk_1",
+   "date": "2026-10-14",
+   "amount": 17.99,
+   "merchant": "StreamBox+",
+   "category": "ENTERTAINMENT_TV_AND_MOVIES"
+  },
+  {
+   "id": "txn_0134",
+   "account_id": "chk_1",
+   "date": "2026-10-15",
+   "amount": 79.73,
+   "merchant": "City Power",
+   "category": "RENT_AND_UTILITIES_GAS_AND_ELECTRICITY"
+  },
+  {
+   "id": "txn_0135",
+   "account_id": "chk_1",
+   "date": "2026-10-15",
+   "amount": 41.3,
+   "merchant": "Fuel Stop",
+   "category": "TRANSPORTATION_GAS"
+  },
+  {
+   "id": "txn_0136",
+   "account_id": "chk_1",
+   "date": "2026-10-16",
+   "amount": -2450.0,
+   "merchant": "Acme Corp Payroll",
+   "category": "INCOME_WAGES"
+  },
+  {
+   "id": "txn_0137",
+   "account_id": "chk_1",
+   "date": "2026-10-16",
+   "amount": 52.75,
+   "merchant": "Green Basket Market",
+   "category": "FOOD_AND_DRINK_GROCERIES"
+  },
+  {
+   "id": "txn_0138",
+   "account_id": "chk_1",
+   "date": "2026-10-16",
+   "amount": 150.0,
+   "merchant": "Transfer to Brokerage",
+   "category": "TRANSFER_OUT_INVESTMENT_AND_RETIREMENT_FUNDS"
+  },
+  {
+   "id": "txn_0139",
+   "account_id": "chk_1",
+   "date": "2026-10-16",
+   "amount": 200.0,
+   "merchant": "Transfer to House Fund",
+   "category": "TRANSFER_OUT_SAVINGS"
+  },
+  {
+   "id": "txn_0140",
+   "account_id": "chk_1",
+   "date": "2026-10-17",
+   "amount": 23.99,
+   "merchant": "Amazon",
+   "category": "GENERAL_MERCHANDISE_ONLINE_MARKETPLACES"
+  },
+  {
+   "id": "txn_0141",
+   "account_id": "chk_1",
+   "date": "2026-10-17",
+   "amount": 18.4,
+   "merchant": "Taqueria Sol",
+   "category": "FOOD_AND_DRINK_RESTAURANT"
+  },
+  {
+   "id": "txn_0142",
+   "account_id": "chk_1",
+   "date": "2026-10-18",
+   "amount": 6.25,
+   "merchant": "Blue Door Cafe",
+   "category": "FOOD_AND_DRINK_COFFEE"
+  },
+  {
+   "id": "txn_0143",
+   "account_id": "chk_1",
+   "date": "2026-10-18",
+   "amount": 36.1,
+   "merchant": "Corner Grocer",
+   "category": "FOOD_AND_DRINK_GROCERIES"
+  }
+ ]
+}

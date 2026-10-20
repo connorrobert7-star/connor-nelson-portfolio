@@ -1,0 +1,29 @@
+; Engine configuration file.
+; Hoard, Phase 0. Open in Godot 4.3+.
+
+config_version=5
+
+[application]
+
+config/name="Hoard"
+run/main_scene="res://scenes/village.tscn"
+config/features=PackedStringArray("4.3", "GL Compatibility")
+
+[display]
+
+window/size/viewport_width=480
+window/size/viewport_height=270
+window/size/window_width_override=1440
+window/size/window_height_override=810
+window/stretch/mode="canvas_items"
+
+[hoard]
+
+backend_url="http://127.0.0.1:8000"
+
+[rendering]
+
+textures/canvas_textures/default_texture_filter=0
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+2d/snap/snap_2d_transforms_to_pixel=true
