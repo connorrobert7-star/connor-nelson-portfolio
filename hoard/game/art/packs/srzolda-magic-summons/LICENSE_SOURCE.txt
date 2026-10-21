@@ -1,0 +1,9 @@
+Free Magic Summons Pack, by SrZolda
+Page: https://srzolda.itch.io/magic-summons   (read 2026-10-21)
+License: CC-BY 4.0 (https://creativecommons.org/licenses/by/4.0/). No license file in the downloads (they are bare PNGs).
+Evidence on the page: metadata row "Asset license: Creative Commons Attribution v4.0 International", and the author's reply in
+the comments: "the licence is Creative Commons Attribution v4.0 International".
+Credit line: "Magic Summons by SrZolda (CC-BY 4.0)".
+Files: *_summon_Sheet.png (circle draws itself) and *_idle_Sheet.png (loop) in blue, green, purple, red, as shipped (8x upscaled, 512 px frames; red 816 px).
+native_1x/: the same sheets downscaled 8x with nearest neighbour (lossless, verified pixel-for-pixel): 64x64 frames (red 102x102).
+This is a modification permitted by CC-BY; credit still applies.

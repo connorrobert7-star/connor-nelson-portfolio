@@ -1,0 +1,6 @@
+Treasure chests 32x32 by Bonsaiheldin
+Page: https://opengameart.org/content/treasure-chests-32x32   (read 2026-10-21)
+License: CC-BY 4.0
+Evidence: Readme.txt inside the zip: "This work was released by Bonsaiheldin under the Creative Commons BY 4.0 license." OGA page License(s): CC-BY 4.0; notice "Bonsaiheldin | Link to this page OR the page on my profile".
+Notes: CREDIT: Bonsaiheldin (http://bonsaiheld.org) - https://opengameart.org/content/treasure-chests-32x32. 32x32; 10 base colors x gold/silver/wood frames x open/closed x lock/no lock = 120 chests.
+Staged by the casino/arcade asset scout for Hoard (private build).

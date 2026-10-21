@@ -1,0 +1,6 @@
+Free - Whimsy Hallow Asset Pack - Dungeon (v1.62) by Crumpaloo -- https://crumpaloo.itch.io/whimsy-hallow
+License: CC0 1.0. The zip contains only the sheet; license read on the itch page (2026-10-21):
+  Page text: "Custom License: https://creativecommons.org/public-domain/cc0/"
+  Page info table: "Asset license: Creative Commons Zero v1.0 Universal"
+Sheet notes: one 2680x2896 RGBA sheet on an opaque black background with dark-purple cell backings;
+16x16 grid; must be sliced (and the black keyed out) before use.

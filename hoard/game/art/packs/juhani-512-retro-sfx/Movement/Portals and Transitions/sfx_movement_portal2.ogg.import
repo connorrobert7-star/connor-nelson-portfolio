@@ -1,0 +1,19 @@
+[remap]
+
+importer="oggvorbisstr"
+type="AudioStreamOggVorbis"
+uid="uid://b5up787vqky5"
+path="res://.godot/imported/sfx_movement_portal2.ogg-f48b75d99fa81fa5482b00384766e3fa.oggvorbisstr"
+
+[deps]
+
+source_file="res://art/packs/juhani-512-retro-sfx/Movement/Portals and Transitions/sfx_movement_portal2.ogg"
+dest_files=["res://.godot/imported/sfx_movement_portal2.ogg-f48b75d99fa81fa5482b00384766e3fa.oggvorbisstr"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

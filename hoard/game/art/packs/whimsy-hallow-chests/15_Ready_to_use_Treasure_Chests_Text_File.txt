@@ -1,0 +1,37 @@
+
+15 Ready to use Treasure Chests
+-------------------------------------
+
+Tresure Chest Spritesheet Size: [ 1008 x 568 ]
+
+
+
+Treasure Chest Pixel Canvas Sizes:
+
+Big Chest - [ 48 x 40 ]
+
+Small Chest - [ 32 x 24 ]
+
+
+
+Treasure Chest Frames:
+
+Big Chest - 21 per chest
+
+Small Chest - 11 per chest
+
+-------------------------------------
+
+Royalty Free Sounds of Chest noises:
+
+https://www.soundsnap.com/tags/treasure_chest
+
+
+Tutorial I Followed to create the chests: 
+
+https://www.youtube.com/watch?v=A12wj5MGRi8&t=1s
+
+-------------------------------------
+
+Note: The small greyscale chest can be found at the very bottom,
+and the large one at the top.

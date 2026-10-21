@@ -1,0 +1,11 @@
+Source page: https://opengameart.org/content/heartbeat-sounds
+Title: Heartbeat sounds
+Author (submitter): bart
+License(s) listed in the page's License field: CC0
+License links: href='http://creativecommons.org/publicdomain/zero/1.0/'
+Copyright/Attribution notice: 
+Retrieved: 2026-10-21 via curl of the page above.
+
+Page description:
+ Some hearbeat sounds for the Halloween Challenge.  Fast and slow, with and without reverb. Looping. 
+

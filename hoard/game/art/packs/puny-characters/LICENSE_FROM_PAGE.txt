@@ -1,0 +1,12 @@
+Free 16x16 Puny Character Sprites + PunyMonsters, by Shade (merchant-shade)
+Source page: https://merchant-shade.itch.io/16x16-puny-characters (fetched 2026-10-21)
+Mirror: https://opengameart.org/content/puny-characters (License(s): CC0)
+The zips contain no license file. License text quoted from the itch.io page:
+
+  "LICENSE (CC0)
+   Feel free to use this for your game (commercially or not).
+   Feel free to creatively modify these sprites however you like.
+   ...
+   No need to give me credit but I would appreciate it :D"
+
+itch.io metadata on the same page: "Asset license: Creative Commons Zero v1.0 Universal".

@@ -1,0 +1,19 @@
+[remap]
+
+importer="oggvorbisstr"
+type="AudioStreamOggVorbis"
+uid="uid://chdoi8duirt7a"
+path="res://.godot/imported/sfx_movement_dooropen4.ogg-1ec3e5a1bdfc995541d83096c5dc4685.oggvorbisstr"
+
+[deps]
+
+source_file="res://art/packs/juhani-512-retro-sfx/Movement/Opening Doors/sfx_movement_dooropen4.ogg"
+dest_files=["res://.godot/imported/sfx_movement_dooropen4.ogg-1ec3e5a1bdfc995541d83096c5dc4685.oggvorbisstr"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

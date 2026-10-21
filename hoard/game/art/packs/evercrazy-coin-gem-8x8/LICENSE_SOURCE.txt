@@ -1,0 +1,6 @@
+8x8 Free Coin/ Gem Collection by EverCrazy
+Page: https://opengameart.org/content/8x8-free-coin-gem-collection   (read 2026-10-21)
+License: CC0
+Evidence: OGA page License(s): CC0. Description: "You can use this completely free (CC0)". Page archived as pack_page.html.
+Notes: 8x8 spinning coin, jumping shining coin, spinning gem, shining gem strips (+GIFs). Right size for coin-fountain particles at 480x270.
+Staged by the casino/arcade asset scout for Hoard (private build).

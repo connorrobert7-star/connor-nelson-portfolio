@@ -1,0 +1,1 @@
+Subset (altars, statues, fountains, sarcophagus, chests) of Dungeon Crawl Stone Soup Full 32x32 tiles. Page: https://opengameart.org/content/dungeon-crawl-32x32-tiles-supplemental (CC0; LICENSE.txt inside). Full set: https://github.com/crawl/tiles

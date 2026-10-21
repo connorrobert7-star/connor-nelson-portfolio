@@ -1,0 +1,7 @@
+Lucifer - Effects (1.0), commissioned from Baldur, distributed by Foozle
+Page: https://foozlecc.itch.io/lucifer-effects   (read 2026-10-21)
+License: CC0 1.0. Evidence: Readme.txt inside the zip (kept here): "License: (Creative Commons Zero, CC0) ...
+This content is free to use and modify for all projects, including commercial projects. Attribution not required."
+Contents: Rarity Effects (Common/Rare/Magic/Legendary/Mythic loot beams, 6-9 frames, ~6x20 px each), Pickup effects,
+Destroy Effect (48x48 white puff), Wave (directional shockwave crescents). PNG + .aseprite sources.
+Sibling pack Lucifer - Pickups is staged by another scout at ../foozle-lucifer-pickups/.

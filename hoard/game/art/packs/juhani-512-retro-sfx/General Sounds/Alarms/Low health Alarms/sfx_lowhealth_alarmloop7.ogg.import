@@ -1,0 +1,19 @@
+[remap]
+
+importer="oggvorbisstr"
+type="AudioStreamOggVorbis"
+uid="uid://b6770xvrq08mc"
+path="res://.godot/imported/sfx_lowhealth_alarmloop7.ogg-8402a872d949632350aaf7ccffa32ab9.oggvorbisstr"
+
+[deps]
+
+source_file="res://art/packs/juhani-512-retro-sfx/General Sounds/Alarms/Low health Alarms/sfx_lowhealth_alarmloop7.ogg"
+dest_files=["res://.godot/imported/sfx_lowhealth_alarmloop7.ogg-8402a872d949632350aaf7ccffa32ab9.oggvorbisstr"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

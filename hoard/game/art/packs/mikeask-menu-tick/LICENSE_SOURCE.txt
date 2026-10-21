@@ -1,0 +1,11 @@
+Source page: https://opengameart.org/content/menu-select-tick
+Title: Menu select tick
+Author (submitter): mikeask
+License(s) listed in the page's License field: CC0
+License links: href='http://creativecommons.org/publicdomain/zero/1.0/'
+Copyright/Attribution notice: field-name-field-copyright-notice field-type-text-long field-label-above"> Copyright/Attribution Notice:&nbsp; it&#039;s yours File(s):&nbsp; menu tick.wav 24.8 Kb [ 708 download(s)] </span
+Retrieved: 2026-10-21 via curl of the page above.
+
+Page description:
+ A sound that you can use for selecting an item in a menu effect 
+

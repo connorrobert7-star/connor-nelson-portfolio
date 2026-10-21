@@ -1,0 +1,19 @@
+[remap]
+
+importer="oggvorbisstr"
+type="AudioStreamOggVorbis"
+uid="uid://ctn2yad0targ3"
+path="res://.godot/imported/Whoosh2.ogg-ae43282e3cfa6451b0e6919edc449f98.oggvorbisstr"
+
+[deps]
+
+source_file="res://art/packs/ninja-adventure/Audio/Sounds/Whoosh & Slash/Whoosh2.ogg"
+dest_files=["res://.godot/imported/Whoosh2.ogg-ae43282e3cfa6451b0e6919edc449f98.oggvorbisstr"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

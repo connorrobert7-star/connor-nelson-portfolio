@@ -1,0 +1,19 @@
+[remap]
+
+importer="oggvorbisstr"
+type="AudioStreamOggVorbis"
+uid="uid://itgb6ootmfoh"
+path="res://.godot/imported/Spirit.ogg-252f9009cd7780459abd546687c57cee.oggvorbisstr"
+
+[deps]
+
+source_file="res://art/packs/ninja-adventure/Audio/Sounds/Magic & Skill/Spirit.ogg"
+dest_files=["res://.godot/imported/Spirit.ogg-252f9009cd7780459abd546687c57cee.oggvorbisstr"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

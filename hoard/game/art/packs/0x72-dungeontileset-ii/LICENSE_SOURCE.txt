@@ -1,0 +1,19 @@
+0x72 DungeonTileset II family -- all CC0 1.0 (public domain). No license file ships inside these zips;
+the license is stated on each itch.io page (read 2026-10-21):
+
+0x72_DungeonTilesetII_v1.7/  (staged by another scout, identical to the itch zip) 16x16 DungeonTileset II v1.7 by 0x72 -- https://0x72.itch.io/dungeontileset-ii
+  Page text: "As always: You can use this tileset for whatever you like ( CC-0 ). Credit is not necessary,
+  but if you create something using this tileset I'd be happy to see your work"
+  Page info table: "Asset license: Creative Commons Zero v1.0 Universal"
+
+extended_niji/  Dungeon Tileset II Extended v1.1 by Niji (nijikokun) -- https://nijikokun.itch.io/dungeontileset-ii-extended
+  Page text: "This 16x16 dungeon tileset is FREE for anyone to use (CC-0)! This tileset is an extension to
+  Dungeon Tileset II by 0x72. While it is an extension it does include all of the original assets"
+  Page info table: "Asset license: Creative Commons Zero v1.0 Universal"
+
+dark_kosinaz/  16x16 Dark Dungeon Tileset by Zoltan Kosina -- https://kosinaz.itch.io/16x16-dark-dungeon-tileset
+  Page text: "Based on 0x72's 16x16 DungeonTileset II. Darker and older floor, Centered walls, 4 traps ...
+  8 fountains. Same as 0x72: You can use this tileset for whatever you like (CC-0)."
+  Page info table: "Asset license: Creative Commons Zero v1.0 Universal"
+
+CC0 legal code: https://creativecommons.org/publicdomain/zero/1.0/legalcode

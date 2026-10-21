@@ -1,0 +1,7 @@
+Animated Transitions Pack, by Screaming Brain Studios
+Page: https://screamingbrainstudios.itch.io/animated-transitions-pack   (read 2026-10-21)
+License: CC0 1.0. Evidence: License.txt inside the archive (kept here): "All Screaming Brain Studios assets have been released
+under the CC0/Public Domain License. You are free to use these assets in any and all projects, commercial or non-commercial,
+with no restrictions, and can be released with or without credit."
+Contents: 70 transition types, 1214 black-and-white 128x128 PNG frames (iris, wipe, checker, mosaic, melt, star, pinwheel, television...).
+Use as dissolve masks in a screen-transition shader. Extracted with bsdtar (unar failed on 35 entries; all 1214 PNGs decode cleanly).

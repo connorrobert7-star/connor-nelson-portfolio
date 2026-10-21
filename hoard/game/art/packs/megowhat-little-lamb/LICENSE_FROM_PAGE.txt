@@ -1,0 +1,3 @@
+Little Lamb by megowhat -- https://opengameart.org/content/little-lamb  (OGA node 121461, fetched 2026-10-21)
+OGA "License(s)" field: CC0. No copyright/attribution notice on the page. No license file ships with the PNGs.
+lamb64x64.png: 192x256 sheet, 64x64 frames, 3 frames x 4 directions (down, right, left, up). lamb3.png: 64x64 front portrait.

@@ -1,0 +1,6 @@
+Explosion Animations Pack (explosion pack 1 + bonus from pack 2), by Luis Zuno (ansimuz)
+Page: https://ansimuz.itch.io/explosion-animations-pack   (read 2026-10-21; itch "Asset license: Creative Commons Zero v1.0 Universal")
+License: CC0 1.0. Evidence: public-license.pdf inside the zip (kept, plus a text copy): "All assets included in this package
+are licensed under the Creative Commons Zero (CC0) license ... without the need for attribution. There are no restrictions
+on use, modification, or redistribution of these assets."
+Contents: explosion-1-a..g (32x32 ring pop, 48x48, 64x64, 80x80, 128x128, 192x192 screen flash), bonus explosion-b (80x48). Sheets + single frames + preview GIFs.

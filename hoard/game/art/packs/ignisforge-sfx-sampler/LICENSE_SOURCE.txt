@@ -1,0 +1,11 @@
+Source page: https://opengameart.org/content/ignisforge-free-sfx-sampler-43-synthesized-retro-sound-effects
+Title: IgnisForge Free SFX Sampler - 43 Synthesized Retro Sound Effects
+Author (submitter): ignisforge
+License(s) listed in the page's License field: CC0
+License links: href='http://creativecommons.org/publicdomain/zero/1.0/'
+Copyright/Attribution notice: field-name-field-copyright-notice field-type-text-long field-label-above"> Copyright/Attribution Notice:&nbsp; Credit &#039;IgnisForge&#039; with a link to https://ignisforge.itch.io is appreciated but not required (CC0). File(s):&nbsp; <a href="https://opengameart.org/sites/default/files/ignisforge-oga-sampler-cc0_7.zip" type="application/zip; length=1211210" data-fid="260239" target="_blank" download="ignisfor
+Retrieved: 2026-10-21 via curl of the page above.
+
+Page description:
+ 43 free, game-ready sound effects: coins, lasers, explosions, jumps, powerups, hurt/damage, UI blips, jingles, plasma shots, spell zaps, horror stingers, and casino jackpots. 
+

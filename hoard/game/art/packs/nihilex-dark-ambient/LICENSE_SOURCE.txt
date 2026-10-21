@@ -1,0 +1,9 @@
+Source page: https://nihil-existentia.itch.io/free-audio-asset-collection
+Title: Free Audio Asset Collection by Nihilex
+Author: Nihilex
+Asset license: Creative Commons Zero v1.0 Universal
+
+Page description (verbatim, tags stripped):
+This is a collection of sounds I have made available as a free downloadable asset pack.  If you are looking for some sfx , ambients or musi c you may find what you are looking for here. The genres range from horror to action, drama and anything in between. The preview videos below will give you a taste of what might be expected in the pack's. The starting collection holds 30 audio assets. All of the files are in Wav format, mostly 48khz, 24bit and stereo but may vary depending on the file. This is a pay-what-you-want, free collection of royalty free sounds. All of the sounds here fall under the CC0 license.  If you want to show support you can donate or credit me in your work. Neither is required in order for you to use these sounds or any of the updates in the future.
+
+Downloaded the 'Dark Ambient Soundscape.zip' upload (242 MB, WAV+OGG) via the itch.io download flow; kept only the OGG copies. The zip carries no license file; license per the page's 'Asset license' field and description (CC0).

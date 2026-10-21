@@ -1,0 +1,12 @@
+Source page: https://opengameart.org/content/creepy-incoherent-chanting
+Title: Creepy Incoherent Chanting
+Author (submitter): OwlishMedia
+License(s) listed in the page's License field: CC0
+License links: href='http://creativecommons.org/publicdomain/zero/1.0/'
+Copyright/Attribution notice: 
+Retrieved: 2026-10-21 via curl of the page above.
+
+Page description:
+ Some weird ritual chanting gibberish I recorded. In both original and ethereal formats. 
+
+Converted from the original WAVs in Creepychanting.zip to Ogg Vorbis q5 to fit the staging size cap; no other edits.

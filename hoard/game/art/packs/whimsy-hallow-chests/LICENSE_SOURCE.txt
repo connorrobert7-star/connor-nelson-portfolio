@@ -1,0 +1,6 @@
+Whimsy Hallow Asset Pack - Chests by Crumpaloo
+Page: https://crumpaloo.itch.io/15-ready-to-use-chest-animations   (read 2026-10-21)
+License: CC0 1.0
+Evidence: Pack page "More information" table: "Asset license: Creative Commons Zero v1.0 Universal". Description: "License : https://creativecommons.org/public-domain/cc0/". Free direct download (min_price 0). The zip itself carries no license file (only a sizes/frames text file); page archived as pack_page.html.
+Notes: 48x40 big chests (21 frames each) and 32x24 small chests (11 frames each); 15 chests incl. greyscale base big+small; palette file included. Made to match Whimsy Hallow dungeon (staged at packs_staging/whimsy-hallow-dungeon).
+Staged by the casino/arcade asset scout for Hoard (private build).

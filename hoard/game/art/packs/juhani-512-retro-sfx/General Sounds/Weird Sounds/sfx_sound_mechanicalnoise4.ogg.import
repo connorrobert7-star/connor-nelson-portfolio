@@ -1,0 +1,19 @@
+[remap]
+
+importer="oggvorbisstr"
+type="AudioStreamOggVorbis"
+uid="uid://u8uw7qw3dpkd"
+path="res://.godot/imported/sfx_sound_mechanicalnoise4.ogg-5763a1c5ae57ba080b590f94baf17703.oggvorbisstr"
+
+[deps]
+
+source_file="res://art/packs/juhani-512-retro-sfx/General Sounds/Weird Sounds/sfx_sound_mechanicalnoise4.ogg"
+dest_files=["res://.godot/imported/sfx_sound_mechanicalnoise4.ogg-5763a1c5ae57ba080b590f94baf17703.oggvorbisstr"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

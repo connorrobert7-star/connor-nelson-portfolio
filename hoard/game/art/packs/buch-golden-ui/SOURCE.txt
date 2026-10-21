@@ -1,0 +1,5 @@
+Golden UI by Buch - https://opengameart.org/content/golden-ui  (fetched 2026-10-21)
+OpenGameArt "License(s): CC0" field on the page. Attribution instructions on the page:
+"NOT REQUIRED, though appreciated: credit me as Buch and link back to my OGA profile page".
+Files: https://opengameart.org/sites/default/files/ui_split.png (the sprite sheet), ui_preview_upscaled.png (2x mock-up). ui.psd not downloaded.
+Note from the page: "the fonts used in the banner, window titles and small texts are not included".

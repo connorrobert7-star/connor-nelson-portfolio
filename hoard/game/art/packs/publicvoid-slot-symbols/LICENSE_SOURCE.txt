@@ -1,0 +1,6 @@
+Pixel Art Slot Machine Sprites by Public Void Interactive
+Page: https://public-void-interactive.itch.io/pixel-art-slots-symbols   (read 2026-10-21)
+License: CC0 1.0
+Evidence: Pack page: "Asset license: Creative Commons Zero v1.0 Universal"; "Assets are published under public domain (CC0) and are yours to keep and use however you please". No license file in zip.
+Notes: 32x32 reel symbols: 7, bar1/2/3, bell, cherry, grapes, lemon, orange, watermelon.
+Staged by the casino/arcade asset scout for Hoard (private build).

@@ -1,0 +1,7 @@
+No license file ships with these fonts; the terms are on each itch.io page (fetched 2026-10-21):
+m5x7  https://managore.itch.io/m5x7   page text: "free to use but attribution appreciated"; page metadata: "Asset license: Creative Commons Zero v1.0 Universal"
+m6x11 https://managore.itch.io/m6x11  page text: "free to use with attribution"  (no license metadata; custom terms)
+      m6x11plus is the extended version (use font size 18, 36, 54)
+m3x6  https://managore.itch.io/m3x6   page text: "free to use with attribution"  (no license metadata; custom terms)
+All three: "a font by Daniel Linssen". Credit line for m6x11/m3x6: Font by Daniel Linssen (managore.itch.io).
+Use font size 16, 32, 48 (m5x7, m3x6, m6x11) for pixel-exact rendering.

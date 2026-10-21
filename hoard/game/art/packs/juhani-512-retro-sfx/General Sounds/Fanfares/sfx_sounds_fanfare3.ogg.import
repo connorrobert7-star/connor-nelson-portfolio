@@ -1,0 +1,19 @@
+[remap]
+
+importer="oggvorbisstr"
+type="AudioStreamOggVorbis"
+uid="uid://d0f3ff07yapec"
+path="res://.godot/imported/sfx_sounds_fanfare3.ogg-7392e2db8e6db3d6578757138f8c04e9.oggvorbisstr"
+
+[deps]
+
+source_file="res://art/packs/juhani-512-retro-sfx/General Sounds/Fanfares/sfx_sounds_fanfare3.ogg"
+dest_files=["res://.godot/imported/sfx_sounds_fanfare3.ogg-7392e2db8e6db3d6578757138f8c04e9.oggvorbisstr"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

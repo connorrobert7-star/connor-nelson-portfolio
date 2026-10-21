@@ -1,0 +1,19 @@
+[remap]
+
+importer="oggvorbisstr"
+type="AudioStreamOggVorbis"
+uid="uid://bgpxh26lko408"
+path="res://.godot/imported/menu tick.ogg-67fe0abfb7233ae394b13f96a4084308.oggvorbisstr"
+
+[deps]
+
+source_file="res://art/packs/mikeask-menu-tick/menu tick.ogg"
+dest_files=["res://.godot/imported/menu tick.ogg-67fe0abfb7233ae394b13f96a4084308.oggvorbisstr"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

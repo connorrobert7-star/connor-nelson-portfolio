@@ -1,0 +1,19 @@
+[remap]
+
+importer="oggvorbisstr"
+type="AudioStreamOggVorbis"
+uid="uid://dhfgnmjnw5jte"
+path="res://.godot/imported/Magic5.ogg-804bfd76f62c616fdfa838fbb261d788.oggvorbisstr"
+
+[deps]
+
+source_file="res://art/packs/ninja-adventure/Audio/Sounds/Magic & Skill/Magic5.ogg"
+dest_files=["res://.godot/imported/Magic5.ogg-804bfd76f62c616fdfa838fbb261d788.oggvorbisstr"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

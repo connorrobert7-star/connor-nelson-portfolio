@@ -1,0 +1,19 @@
+[remap]
+
+importer="oggvorbisstr"
+type="AudioStreamOggVorbis"
+uid="uid://dxu0qx1oep0t6"
+path="res://.godot/imported/Bounce.ogg-e5a8aae513e0f2e82fd3f8104b8641df.oggvorbisstr"
+
+[deps]
+
+source_file="res://art/packs/ninja-adventure/Audio/Sounds/Jump & Bounce/Bounce.ogg"
+dest_files=["res://.godot/imported/Bounce.ogg-e5a8aae513e0f2e82fd3f8104b8641df.oggvorbisstr"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

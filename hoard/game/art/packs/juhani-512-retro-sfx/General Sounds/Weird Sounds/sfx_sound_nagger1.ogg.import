@@ -1,0 +1,19 @@
+[remap]
+
+importer="oggvorbisstr"
+type="AudioStreamOggVorbis"
+uid="uid://d1k2gbnr6juxa"
+path="res://.godot/imported/sfx_sound_nagger1.ogg-d2b5dbe302687b3c4532c5423a5b3bdd.oggvorbisstr"
+
+[deps]
+
+source_file="res://art/packs/juhani-512-retro-sfx/General Sounds/Weird Sounds/sfx_sound_nagger1.ogg"
+dest_files=["res://.godot/imported/sfx_sound_nagger1.ogg-d2b5dbe302687b3c4532c5423a5b3bdd.oggvorbisstr"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

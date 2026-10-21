@@ -1,0 +1,19 @@
+[remap]
+
+importer="oggvorbisstr"
+type="AudioStreamOggVorbis"
+uid="uid://cvkxwxxkdxsmn"
+path="res://.godot/imported/sfx_damage_hit10.ogg-7eb3612e42ceceaab0b1fd99cd7abce1.oggvorbisstr"
+
+[deps]
+
+source_file="res://art/packs/juhani-512-retro-sfx/General Sounds/Simple Damage Sounds/sfx_damage_hit10.ogg"
+dest_files=["res://.godot/imported/sfx_damage_hit10.ogg-7eb3612e42ceceaab0b1fd99cd7abce1.oggvorbisstr"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

@@ -1,0 +1,6 @@
+DawnLike 16x16 Universal Rogue-like tileset v1.81 by DragonDePlatino, palette by DawnBringer (DB16)
+Page: https://opengameart.org/content/dawnlike-16x16-universal-rogue-like-tileset-v181  (OGA license field: CC-BY 4.0)
+README.txt inside the zip: "Dawnlike is registered under a CC-BY 4.0 license, meaning that you are free to redistribute
+or edit any part of this tileset as long as you do not take the credit for it ... If you use this tileset you must
+accredit DawnBringer." Also asks (as a request) that the Platino sprite in Characters/Reptile*.png be hidden in the game.
+Required credit: "DawnLike tileset by DragonDePlatino (CC-BY 4.0), DB16 palette by DawnBringer".

@@ -1,0 +1,19 @@
+[remap]
+
+importer="oggvorbisstr"
+type="AudioStreamOggVorbis"
+uid="uid://buxgn2ly1pogv"
+path="res://.godot/imported/Hit1.ogg-cba909a60ac36c63ef7df797bdba7dc1.oggvorbisstr"
+
+[deps]
+
+source_file="res://art/packs/ninja-adventure/Audio/Sounds/Hit & Impact/Hit1.ogg"
+dest_files=["res://.godot/imported/Hit1.ogg-cba909a60ac36c63ef7df797bdba7dc1.oggvorbisstr"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

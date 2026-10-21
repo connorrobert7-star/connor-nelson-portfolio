@@ -1,0 +1,11 @@
+Source page: https://opengameart.org/content/coins-sound-effects-library
+Title: Coins Sound Effects Library
+Author (submitter): Little Robot Sound Factory
+License(s) listed in the page's License field: CC-BY 3.0
+License links: href='http://creativecommons.org/licenses/by/3.0/'
+Copyright/Attribution notice: field-name-field-copyright-notice field-type-text-long field-label-above"> Copyright/Attribution Notice:&nbsp; Attribute Little Robot Sound Factory, and provide this link where possible: www.littlerobotsoundfactory.com
+Retrieved: 2026-10-21 via curl of the page above.
+
+Page description:
+ Coins Sound Effects Library is a realistic representation of Coins and Gems sound effects for creating a nice tactile experience when picking up gold, purchasing, ect. It contains: 
+

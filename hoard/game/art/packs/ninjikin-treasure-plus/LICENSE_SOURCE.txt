@@ -1,0 +1,6 @@
+Treasure+ by SciGho (ninjikin)
+Page: https://ninjikin.itch.io/treasure   (read 2026-10-21)
+License: CC-BY 4.0
+Evidence: Pack page: "Asset license: Creative Commons Attribution v4.0 International"; description ends "...CC-BY 4.0". No license file in the zip; page archived as pack_page.html.
+Notes: CREDIT: Treasure+ by SciGho (https://ninjikin.itch.io/treasure), CC-BY 4.0. 16x16: coin piles growing 1->heap (gold/silver/copper), bars, cash stacks, rings, chalices, idols, crowns, chests+mimic, gems in 4 colors/4 cuts, paintings, dragons; Shine_Sheet = 11 sparkle animations + glint sweep.
+Staged by the casino/arcade asset scout for Hoard (private build).

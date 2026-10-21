@@ -1,0 +1,6 @@
+Tiny RPG - Dark Dwellers GUI by Gabriel "tiopalada" Lima
+https://tiopalada.itch.io/tiny-rpg-dark-dwellers-gui  (upload 20251126darkDwellers_v_1_0.zip, downloaded 2026-10-21)
+License: CC0 1.0. README.html inside reads: 'Tiny RPG - Dark Dwellers by Gabriel "tiopalada" Lima is marked CC0 1.0' (links creativecommons.org/publicdomain/zero/1.0/).
+Page metadata: "Asset license: Creative Commons Zero v1.0 Universal".
+Author's non-binding request on the page: do not use the pack to feed LLM/AI models or for crypto projects.
+Sheets ending -Sheet.png are horizontal strips of states (rest, hover, clicked, disabled[, equipped]).

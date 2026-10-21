@@ -1,0 +1,464 @@
+[
+ {
+  "pack": "0x72-dungeontileset-ii",
+  "license": "CC0 1.0",
+  "credit": "DungeonTileset II by 0x72, Extended by Niji, Dark Dungeon by kosinaz (CC0)",
+  "page": "https://0x72.itch.io/dungeontileset-ii"
+ },
+ {
+  "pack": "whimsy-hallow-dungeon",
+  "license": "CC0 1.0",
+  "credit": "Whimsy Hallow by Crumpaloo (CC0)",
+  "page": "https://crumpaloo.itch.io/whimsy-hallow"
+ },
+ {
+  "pack": "shattered-pixel-dungeon",
+  "license": "GPL-3.0",
+  "credit": "Shattered Pixel Dungeon art and audio by Evan Debenham, Pixel Dungeon by Watabou, music by Kristjan Haaristo, sound effects by Celesti (GPL-3.0); Freesound samples by JoelAudio, saturdaysoundguy, InspectorJ, Taira Komori, timmy h123 (CC-BY) and others (CC0)",
+  "page": "https://github.com/00-Evan/shattered-pixel-dungeon"
+ },
+ {
+  "pack": "kenney-1-bit-pack",
+  "license": "CC0 1.0",
+  "credit": "1-Bit Pack by Kenney (CC0)",
+  "page": "https://kenney.nl/assets/1-bit-pack"
+ },
+ {
+  "pack": "kenney-roguelike-indoors",
+  "license": "CC0 1.0",
+  "credit": "Roguelike Indoors by Kenney (CC0)",
+  "page": "https://kenney.nl/assets/roguelike-indoors"
+ },
+ {
+  "pack": "kenney-roguelike-caves-dungeons",
+  "license": "CC0 1.0",
+  "credit": "Roguelike Caves & Dungeons by Kenney (CC0)",
+  "page": "https://kenney.nl/assets/roguelike-caves-dungeons"
+ },
+ {
+  "pack": "kenney-tiny-town",
+  "license": "CC0 1.0",
+  "credit": "Tiny Town by Kenney (CC0)",
+  "page": "https://kenney.nl/assets/tiny-town"
+ },
+ {
+  "pack": "kenney-tiny-dungeon",
+  "license": "CC0 1.0",
+  "credit": "Tiny Dungeon by Kenney (CC0)",
+  "page": "https://kenney.nl/assets/tiny-dungeon"
+ },
+ {
+  "pack": "dawnlike",
+  "license": "CC-BY 4.0",
+  "credit": "DawnLike tileset by DragonDePlatino, DB16 palette by DawnBringer (CC-BY 4.0)",
+  "page": "https://opengameart.org/content/dawnlike-16x16-universal-rogue-like-tileset-v181"
+ },
+ {
+  "pack": "spriteshift-purple-dungeon",
+  "license": "CC0 1.0",
+  "credit": "Purple Dungeon TileSet by Spriteshift (CC0)",
+  "page": "https://spriteshift.itch.io/purple-dungeon-tileset"
+ },
+ {
+  "pack": "shade-puny-dungeon",
+  "license": "CC0 1.0",
+  "credit": "Puny Dungeon by Shade (CC0)",
+  "page": "https://opengameart.org/content/16x16-puny-dungeon-tileset"
+ },
+ {
+  "pack": "ninja-adventure",
+  "license": "CC0 1.0",
+  "credit": "Ninja Adventure by Pixel-boy and AAA (CC0)",
+  "page": "https://pixel-boy.itch.io/ninja-adventure-asset-pack"
+ },
+ {
+  "pack": "dcss-altars-features",
+  "license": "CC0 1.0",
+  "credit": "Dungeon Crawl Stone Soup tiles (CC0)",
+  "page": "https://opengameart.org/content/dungeon-crawl-32x32-tiles-supplemental"
+ },
+ {
+  "pack": "vk-candles-with-eyes",
+  "license": "CC0 1.0",
+  "credit": "Candles with eyes by vk (CC0)",
+  "page": "https://opengameart.org/content/candles-oil-lamp-and-eye-with-varied-stands"
+ },
+ {
+  "pack": "puny-characters",
+  "license": "CC0 1.0",
+  "credit": "Puny Characters by Shade (CC0)",
+  "page": "https://merchant-shade.itch.io/16x16-puny-characters"
+ },
+ {
+  "pack": "grafxkid-critters-penguin",
+  "license": "CC0 1.0",
+  "credit": "Sprites by GrafxKid, penguin edit by Zombie Rat (CC0)",
+  "page": "https://opengameart.org/content/super-random-sprites"
+ },
+ {
+  "pack": "tiny-creatures",
+  "license": "CC0 1.0",
+  "credit": "Tiny Creatures by Clint Bellanger (CC0)",
+  "page": "https://opengameart.org/content/tiny-creatures"
+ },
+ {
+  "pack": "megowhat-little-lamb",
+  "license": "CC0 1.0",
+  "credit": "Little Lamb by megowhat (CC0)",
+  "page": "https://opengameart.org/content/little-lamb"
+ },
+ {
+  "pack": "chasersgaming-pixel-poker",
+  "license": "CC0 1.0",
+  "credit": "Pixel Poker by Chasersgaming (CC0)",
+  "page": "https://opengameart.org/content/asset-pack-pixel-poker"
+ },
+ {
+  "pack": "kenney-pixel-platformer-characters",
+  "license": "CC0 1.0",
+  "credit": "Pixel Platformer by Kenney (CC0)",
+  "page": "https://kenney.nl/assets/pixel-platformer"
+ },
+ {
+  "pack": "whimsy-hallow-chests",
+  "license": "CC0 1.0",
+  "credit": "Whimsy Hallow Chests by Crumpaloo (CC0)",
+  "page": "https://crumpaloo.itch.io/15-ready-to-use-chest-animations"
+ },
+ {
+  "pack": "carnageddon-demonic-chest",
+  "license": "CC0 1.0",
+  "credit": "Demonic chest by carnageddon (CC0)",
+  "page": "https://opengameart.org/content/demonic-chest-0"
+ },
+ {
+  "pack": "ninjikin-treasure-plus",
+  "license": "CC-BY 4.0",
+  "credit": "Treasure+ by SciGho (https://ninjikin.itch.io/treasure), CC-BY 4.0",
+  "page": "https://ninjikin.itch.io/treasure"
+ },
+ {
+  "pack": "bonsaiheldin-chests-32",
+  "license": "CC-BY 4.0",
+  "credit": "Treasure chests by Bonsaiheldin (http://bonsaiheld.org), CC-BY 4.0",
+  "page": "https://opengameart.org/content/treasure-chests-32x32"
+ },
+ {
+  "pack": "bonsaiheldin-gold-icons",
+  "license": "CC0 1.0",
+  "credit": "Gold treasure icons by Bonsaiheldin (CC0)",
+  "page": "https://opengameart.org/content/gold-treasure-icons-16x16"
+ },
+ {
+  "pack": "greatdocbrown-coins-gems",
+  "license": "CC0 1.0",
+  "credit": "Coins & Gems by greatdocbrown (CC0)",
+  "page": "https://greatdocbrown.itch.io/coins-gems-etc"
+ },
+ {
+  "pack": "karsiori-gems",
+  "license": "CC0 1.0",
+  "credit": "Pixel Art Gems by karsiori (CC0)",
+  "page": "https://karsiori.itch.io/free-pixel-art-gem-pack"
+ },
+ {
+  "pack": "karsiori-neon-signs",
+  "license": "CC0 1.0",
+  "credit": "Pixel Art Neon Signs by karsiori (CC0)",
+  "page": "https://karsiori.itch.io/free-pixel-art-neon-signs"
+ },
+ {
+  "pack": "kenney-playing-cards",
+  "license": "CC0 1.0",
+  "credit": "Playing Cards Pack by Kenney (CC0)",
+  "page": "https://kenney.nl/assets/playing-cards-pack"
+ },
+ {
+  "pack": "vircon32-slot-machine",
+  "license": "CC-BY 4.0",
+  "credit": "\"Pixel art slot machine\" by Vircon32 (Carra), CC-BY 4.0",
+  "page": "https://opengameart.org/content/pixel-art-slot-machine"
+ },
+ {
+  "pack": "draganas-prize-wheel-64",
+  "license": "CC0 1.0",
+  "credit": "Wheel Fortune by draganasgamesart (CC0)",
+  "page": "https://opengameart.org/content/wheel-fortune"
+ },
+ {
+  "pack": "publicvoid-slot-symbols",
+  "license": "CC0 1.0",
+  "credit": "Slot symbols by Public Void Interactive (CC0)",
+  "page": "https://public-void-interactive.itch.io/pixel-art-slots-symbols"
+ },
+ {
+  "pack": "evercrazy-coin-gem-8x8",
+  "license": "CC0 1.0",
+  "credit": "8x8 coins by EverCrazy (CC0)",
+  "page": "https://opengameart.org/content/8x8-free-coin-gem-collection"
+ },
+ {
+  "pack": "foozle-lucifer-pickups",
+  "license": "CC0 1.0",
+  "credit": "Lucifer Pickups by Foozle (CC0)",
+  "page": "https://foozlecc.itch.io/lucifer-pickups"
+ },
+ {
+  "pack": "lpc-animated-coins",
+  "license": "CC-BY 3.0 (also offered as CC-BY-SA 3.0, GPL 2.0, GPL 3.0; Hoard uses CC-BY 3.0)",
+  "credit": "Animated Coins by Clint Bellanger (CC-BY 3.0)",
+  "page": "https://opengameart.org/content/animated-coins"
+ },
+ {
+  "pack": "laredgames-coins-gems",
+  "license": "CC0 1.0",
+  "credit": "Gems / Coins by La Red Games (CC0)",
+  "page": "https://laredgames.itch.io/gems-coins-free"
+ },
+ {
+  "pack": "tiopalada-dark-dwellers-gui",
+  "license": "CC0 1.0",
+  "credit": "Tiny RPG Dark Dwellers GUI by tiopalada (CC0)",
+  "page": "https://tiopalada.itch.io/tiny-rpg-dark-dwellers-gui"
+ },
+ {
+  "pack": "flatus-generic-dark-pixel-ui",
+  "license": "CC0 1.0",
+  "credit": "Generic Dark Pixel UI by Flatus (CC0)",
+  "page": "https://flatus.itch.io/generic-dark-pixel-ui"
+ },
+ {
+  "pack": "buch-golden-ui",
+  "license": "CC0 1.0",
+  "credit": "Golden UI by Buch (CC0)",
+  "page": "https://opengameart.org/content/golden-ui"
+ },
+ {
+  "pack": "shikashi-fantasy-icons",
+  "license": "CC-BY 4.0",
+  "credit": "Icons by Matt Firth (shikashipx), based on designs from game-icons.net, CC-BY 4.0",
+  "page": "https://shikashipx.itch.io/shikashis-fantasy-icons-pack"
+ },
+ {
+  "pack": "kyrise-rpg-icons-16",
+  "license": "CC-BY 4.0",
+  "credit": "Icons by Kyrise (kyrise.itch.io), CC-BY 4.0",
+  "page": "https://kyrise.itch.io/kyrises-free-16x16-rpg-icon-pack"
+ },
+ {
+  "pack": "tiopalada-emoji-pack-1",
+  "license": "CC0 1.0",
+  "credit": "Tiny RPG Emoji Pack by tiopalada (CC0)",
+  "page": "https://tiopalada.itch.io/tiny-rpg-emoji-pack-i"
+ },
+ {
+  "pack": "kenney-cursor-pixel-pack",
+  "license": "CC0 1.0",
+  "credit": "Cursor Pixel Pack by Kenney (CC0)",
+  "page": "https://kenney.nl/assets/cursor-pixel-pack"
+ },
+ {
+  "pack": "kenney-ui-pack-pixel-adventure",
+  "license": "CC0 1.0",
+  "credit": "UI Pack Pixel Adventure by Kenney (CC0)",
+  "page": "https://kenney.nl/assets/ui-pack-pixel-adventure"
+ },
+ {
+  "pack": "kenney-emotes-pack",
+  "license": "CC0 1.0",
+  "credit": "Emotes Pack by Kenney (CC0)",
+  "page": "https://kenney.nl/assets/emotes-pack"
+ },
+ {
+  "pack": "font-m5x7",
+  "license": "CC0 1.0",
+  "credit": "m5x7 by Daniel Linssen (CC0)",
+  "page": "https://managore.itch.io/m5x7"
+ },
+ {
+  "pack": "font-monogram",
+  "license": "CC0 1.0",
+  "credit": "monogram by Vinicius Menezio (CC0)",
+  "page": "https://datagoblin.itch.io/monogram"
+ },
+ {
+  "pack": "google-pixel-fonts-ofl",
+  "license": "OFL-1.1",
+  "credit": "Jacquard 12, Jacquarda Bastarda 9, Jersey 10, Micro 5 by Sarah Cadigan-Fried; Pixelify Sans by Stefie Justprince; Silkscreen by Jason Kottke; Tiny5 by Stefan Schmidt (SIL OFL 1.1)",
+  "page": "https://fonts.google.com/specimen/Jacquard+12"
+ },
+ {
+  "pack": "foozle-lucifer-effects",
+  "license": "CC0 1.0",
+  "credit": "Lucifer Effects by Foozle (CC0)",
+  "page": "https://foozlecc.itch.io/lucifer-effects"
+ },
+ {
+  "pack": "ansimuz-explosions",
+  "license": "CC0 1.0",
+  "credit": "Explosion Animations by ansimuz (CC0)",
+  "page": "https://ansimuz.itch.io/explosion-animations-pack"
+ },
+ {
+  "pack": "srzolda-magic-summons",
+  "license": "CC-BY 4.0",
+  "credit": "Magic Summons by SrZolda (CC-BY 4.0)",
+  "page": "https://srzolda.itch.io/magic-summons"
+ },
+ {
+  "pack": "m484-explosion-set-1",
+  "license": "CC0 1.0",
+  "credit": "Explosion Set 1 by Master484 (CC0)",
+  "page": "https://opengameart.org/content/explosion-set-1-m484-games"
+ },
+ {
+  "pack": "kenney-particle-pack",
+  "license": "CC0 1.0",
+  "credit": "Particle Pack by Kenney (CC0)",
+  "page": "https://kenney.nl/assets/particle-pack"
+ },
+ {
+  "pack": "sbs-animated-transitions",
+  "license": "CC0 1.0",
+  "credit": "Animated Transitions by Screaming Brain Studios (CC0)",
+  "page": "https://screamingbrainstudios.itch.io/animated-transitions-pack"
+ },
+ {
+  "pack": "kenney-interface-sounds",
+  "license": "CC0 1.0",
+  "credit": "Interface Sounds by Kenney (CC0)",
+  "page": "https://kenney.nl/assets/interface-sounds"
+ },
+ {
+  "pack": "kenney-ui-audio",
+  "license": "CC0 1.0",
+  "credit": "UI Audio by Kenney (CC0)",
+  "page": "https://kenney.nl/assets/ui-audio"
+ },
+ {
+  "pack": "kenney-casino-audio",
+  "license": "CC0 1.0",
+  "credit": "Casino Audio by Kenney (CC0)",
+  "page": "https://kenney.nl/assets/casino-audio"
+ },
+ {
+  "pack": "kenney-impact-sounds",
+  "license": "CC0 1.0",
+  "credit": "Impact Sounds by Kenney (CC0)",
+  "page": "https://kenney.nl/assets/impact-sounds"
+ },
+ {
+  "pack": "kenney-rpg-audio",
+  "license": "CC0 1.0",
+  "credit": "RPG Audio by Kenney (CC0)",
+  "page": "https://kenney.nl/assets/rpg-audio"
+ },
+ {
+  "pack": "kenney-music-jingles",
+  "license": "CC0 1.0",
+  "credit": "Music Jingles by Kenney (CC0)",
+  "page": "https://kenney.nl/assets/music-jingles"
+ },
+ {
+  "pack": "kenney-digital-audio",
+  "license": "CC0 1.0",
+  "credit": "Digital Audio by Kenney (CC0)",
+  "page": "https://kenney.nl/assets/digital-audio"
+ },
+ {
+  "pack": "lrsf-coins-library",
+  "license": "CC-BY 3.0",
+  "credit": "Coins Sound Effects by Little Robot Sound Factory - www.littlerobotsoundfactory.com (CC-BY 3.0)",
+  "page": "https://opengameart.org/content/coins-sound-effects-library"
+ },
+ {
+  "pack": "owlishmedia-creepy-chanting",
+  "license": "CC0 1.0",
+  "credit": "Creepy Incoherent Chanting by OwlishMedia (CC0)",
+  "page": "https://opengameart.org/content/creepy-incoherent-chanting"
+ },
+ {
+  "pack": "ignisforge-sfx-sampler",
+  "license": "CC0 1.0",
+  "credit": "IgnisForge SFX (CC0)",
+  "page": "https://opengameart.org/content/ignisforge-free-sfx-sampler-43-synthesized-retro-sound-effects"
+ },
+ {
+  "pack": "nihilex-dark-ambient",
+  "license": "CC0 1.0",
+  "credit": "Dark ambient by Nihilex (CC0)",
+  "page": "https://nihil-existentia.itch.io/free-audio-asset-collection"
+ },
+ {
+  "pack": "mumusi-cathedral-of-shadows",
+  "license": "CC-BY 4.0",
+  "credit": "Music by mumusi_c21 - https://mumusi-c21.itch.io (CC-BY 4.0)",
+  "page": "https://mumusi-c21.itch.io/cathedral-of-shadows"
+ },
+ {
+  "pack": "freesound-cc0-picks",
+  "license": "CC0 1.0",
+  "credit": "Freesound sounds by tony_bear, leocb, aghirlandaio, monotraum, poenia, markystar, TheWoodlandNomad, univ_lyon3, Henaway, ameslynn, fennelliott, 170129, qubodup, SnowFightStudios, timothyd4y (CC0)",
+  "page": "https://freesound.org/people/tony_bear/sounds/274007/"
+ },
+ {
+  "pack": "juhani-512-retro-sfx",
+  "license": "CC0 1.0",
+  "credit": "Retro SFX by Juhani Junkala / SubspaceAudio (CC0)",
+  "page": "https://opengameart.org/content/512-sound-effects-8-bit-style"
+ },
+ {
+  "pack": "luke-8bit-coin-sounds",
+  "license": "CC0 1.0",
+  "credit": "10 8bit coin sounds by Luke.RUSTLTD (CC0)",
+  "page": "https://opengameart.org/content/10-8bit-coin-sounds"
+ },
+ {
+  "pack": "fisheefects",
+  "license": "CC0 1.0",
+  "credit": "Fisheefects by Memoraphile @ You're Perfect Studio (CC0)",
+  "page": "https://opengameart.org/content/fisheefects"
+ },
+ {
+  "pack": "bart-heartbeat-sounds",
+  "license": "CC0 1.0",
+  "credit": "Heartbeat sounds by bart (CC0)",
+  "page": "https://opengameart.org/content/heartbeat-sounds"
+ },
+ {
+  "pack": "mikeask-menu-tick",
+  "license": "CC0 1.0",
+  "credit": "Menu select tick by mikeask (CC0)",
+  "page": "https://opengameart.org/content/menu-select-tick"
+ },
+ {
+  "pack": "antumdeluge-scrapes",
+  "license": "CC0 1.0",
+  "credit": "Scrapes by AntumDeluge (CC0)",
+  "page": "https://opengameart.org/content/scrapes"
+ },
+ {
+  "pack": "themightyglider-breaking-rock",
+  "license": "CC0 1.0",
+  "credit": "Breaking Rock by themightyglider (CC0)",
+  "page": "https://opengameart.org/content/breaking-rock"
+ },
+ {
+  "pack": "wobbleboxx-levelup-coin",
+  "license": "CC0 1.0",
+  "credit": "Level up, power up, Coin get by wobbleboxx (CC0)",
+  "page": "https://opengameart.org/content/level-up-power-up-coin-get-13-sounds"
+ },
+ {
+  "pack": "rubberduck-80-rpg-sfx",
+  "license": "CC0 1.0",
+  "credit": "80 CC0 RPG SFX by rubberduck (CC0)",
+  "page": "https://opengameart.org/content/80-cc0-rpg-sfx"
+ },
+ {
+  "pack": "ove-melaa-select",
+  "license": "CC-BY 3.0",
+  "credit": "\"High Stakes, Low Chances\" and \"Dead, Buried and Cold\" written and produced by Ove Melaa (Omsofware@hotmail.com), CC-BY 3.0",
+  "page": "https://opengameart.org/content/oves-essential-game-audio-pack-collection-160-files-updated"
+ }
+]

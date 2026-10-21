@@ -1,0 +1,19 @@
+[remap]
+
+importer="oggvorbisstr"
+type="AudioStreamOggVorbis"
+uid="uid://ctfmmu6cvookj"
+path="res://.godot/imported/sfx_menu_move1.ogg-f4c78af0c876f32a53c5cbe9dc42f6a9.oggvorbisstr"
+
+[deps]
+
+source_file="res://art/packs/juhani-512-retro-sfx/General Sounds/Menu Sounds/sfx_menu_move1.ogg"
+dest_files=["res://.godot/imported/sfx_menu_move1.ogg-f4c78af0c876f32a53c5cbe9dc42f6a9.oggvorbisstr"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

@@ -1,0 +1,5 @@
+Tiny RPG - Emoji Pack I by Gabriel "tiopalada" Lima
+https://tiopalada.itch.io/tiny-rpg-emoji-pack-i  (upload emojiPackI.zip, downloaded 2026-10-21)
+License: CC0 1.0. README.html inside: 'Tiny RPG - Emoji Pack I by Gabriel "tiopalada" Lima is marked with CC0 1.0'.
+32 animated emotion bubbles, 32x32 frames, 5 columns x 4 rows per sheet (160x128): pop-in, idle loop, pop-out.
+Author's non-binding request: do not use to feed LLM/AI models or for crypto projects.

@@ -1,0 +1,11 @@
+Source page: https://opengameart.org/content/10-8bit-coin-sounds
+Title: 10 8bit coin sounds
+Author (submitter): Luke.RUSTLTD
+License(s) listed in the page's License field: CC0
+License links: href='http://creativecommons.org/publicdomain/zero/1.0/'
+Copyright/Attribution notice: 
+Retrieved: 2026-10-21 via curl of the page above.
+
+Page description:
+ 10 8bit coin sounds done in CFXR 
+

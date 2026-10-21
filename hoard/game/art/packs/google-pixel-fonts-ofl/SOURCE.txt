@@ -1,0 +1,10 @@
+Pixel fonts hosted on Google Fonts, all SIL Open Font License 1.1 (OFL.txt in each folder, from github.com/google/fonts/tree/main/ofl/<name>)
+Downloaded 2026-10-21 from raw.githubusercontent.com/google/fonts/main/ofl/<name>/
+  jacquard12          Jacquard 12 (Sarah Cadigan-Fried, Soft Type)   pixel blackletter; crisp at 24 px. https://fonts.google.com/specimen/Jacquard+12
+  jacquardabastarda9  Jacquarda Bastarda 9 (Sarah Cadigan-Fried)     smaller blackletter; 12 or 16 px. https://fonts.google.com/specimen/Jacquarda+Bastarda+9
+  jersey10            Jersey 10 (Sarah Cadigan-Fried)                condensed bold numerals; 20 px. https://fonts.google.com/specimen/Jersey+10
+  micro5              Micro 5 (Sarah Cadigan-Fried)                  5 px caps; 10 px. https://fonts.google.com/specimen/Micro+5
+  pixelifysans        Pixelify Sans (Stefie Justprince)              variable weight. https://fonts.google.com/specimen/Pixelify+Sans
+  silkscreen          Silkscreen (Jason Kottke)                      all-caps labels; 8 or 16 px. https://fonts.google.com/specimen/Silkscreen
+  tiny5               Tiny5 (Stefan Schmidt)                         5 px lowercase; 8 px. https://fonts.google.com/specimen/Tiny5
+OFL: bundle freely with the game; do not sell the font files alone; renamed modifications may not use the Reserved Font Name.

@@ -1,0 +1,6 @@
+Gold treasure icons 16x16 by Bonsaiheldin
+Page: https://opengameart.org/content/gold-treasure-icons-16x16   (read 2026-10-21)
+License: CC0
+Evidence: Credits.txt inside the zip (kept here): "This work is released to the Public Domain / CC0 license." OGA page License(s): CC0.
+Notes: 16x16 DB16 palette: coin, coin stacks of 2/4/8/16, chalice, ingots, gold chest, crown, sword in gold pile.
+Staged by the casino/arcade asset scout for Hoard (private build).

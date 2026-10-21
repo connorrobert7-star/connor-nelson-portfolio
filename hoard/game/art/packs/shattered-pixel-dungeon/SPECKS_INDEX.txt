@@ -1,0 +1,11 @@
+Shattered Pixel Dungeon effect sprites, by Evan Debenham (00-Evan); based on Pixel Dungeon by Watabou
+Source: https://github.com/00-Evan/shattered-pixel-dungeon  (cloned at refs/spd, commit 57a4e06a4c, 2026-10-06)
+Files: core/src/main/assets/effects/{effects,specks,fireball-short,fireball-tall}.png
+License: GPL-3.0 (LICENSE.txt at the repo root, copied here). The repo ships art and code under the same GPL-3.0.
+Frame maps (from the GPL source, for reference when rebuilding; do not paste code):
+ specks.png 8x8 cells, index: 0 HEALING plus, 1 STAR, 2 LIGHT sparkle, 3 QUESTION, 4 UP arrow, 5 SCREAM, 6 BONE, 7 WOOL,
+   8 ROCK, 9 NOTE, 10 CHANGE, 11 HEART, 12 BUBBLE, 13 STEAM, 14 COIN, 15 DOWN arrow
+   (effects/Speck.java; DISCOVER, EVOKE, DUST, SMOKE, CALM, FORGE etc. reuse these cells with tint/scale/motion)
+ effects.png: ripple ring, lightning, wound, exclamation, chains, death/light/health rays (effects/Effects.java)
+ fireball-*.png: green ghost-flame frames (effects/Fireball.java)
+ Procedural reference worth rebuilding: effects/Flare.java (the radiating-ray burst used on item reveals), effects/particles/*.java.

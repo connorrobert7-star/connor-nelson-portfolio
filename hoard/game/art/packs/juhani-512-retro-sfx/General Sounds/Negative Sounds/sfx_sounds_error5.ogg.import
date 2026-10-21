@@ -1,0 +1,19 @@
+[remap]
+
+importer="oggvorbisstr"
+type="AudioStreamOggVorbis"
+uid="uid://clc5hej41wjkm"
+path="res://.godot/imported/sfx_sounds_error5.ogg-7c01adbc17a1e21486edb9c4a7159bdf.oggvorbisstr"
+
+[deps]
+
+source_file="res://art/packs/juhani-512-retro-sfx/General Sounds/Negative Sounds/sfx_sounds_error5.ogg"
+dest_files=["res://.godot/imported/sfx_sounds_error5.ogg-7c01adbc17a1e21486edb9c4a7159bdf.oggvorbisstr"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

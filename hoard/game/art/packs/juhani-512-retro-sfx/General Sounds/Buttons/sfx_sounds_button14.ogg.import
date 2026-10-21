@@ -1,0 +1,19 @@
+[remap]
+
+importer="oggvorbisstr"
+type="AudioStreamOggVorbis"
+uid="uid://b4eiuw2bsq81"
+path="res://.godot/imported/sfx_sounds_button14.ogg-91723e6bd22d68b2063cd92ffef4f8ec.oggvorbisstr"
+
+[deps]
+
+source_file="res://art/packs/juhani-512-retro-sfx/General Sounds/Buttons/sfx_sounds_button14.ogg"
+dest_files=["res://.godot/imported/sfx_sounds_button14.ogg-91723e6bd22d68b2063cd92ffef4f8ec.oggvorbisstr"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

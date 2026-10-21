@@ -1,0 +1,19 @@
+[remap]
+
+importer="oggvorbisstr"
+type="AudioStreamOggVorbis"
+uid="uid://laa8fsdbk60p"
+path="res://.godot/imported/sfx_sounds_impact6.ogg-79d460d4ef3bfe5edb5793474dfba299.oggvorbisstr"
+
+[deps]
+
+source_file="res://art/packs/juhani-512-retro-sfx/General Sounds/Impacts/sfx_sounds_impact6.ogg"
+dest_files=["res://.godot/imported/sfx_sounds_impact6.ogg-79d460d4ef3bfe5edb5793474dfba299.oggvorbisstr"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

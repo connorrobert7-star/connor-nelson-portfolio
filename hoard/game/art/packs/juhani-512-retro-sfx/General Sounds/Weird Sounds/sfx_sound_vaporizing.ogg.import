@@ -1,0 +1,19 @@
+[remap]
+
+importer="oggvorbisstr"
+type="AudioStreamOggVorbis"
+uid="uid://df1a4pulwpglc"
+path="res://.godot/imported/sfx_sound_vaporizing.ogg-ab65b27e2f4986f9ae984c04a79ecc5d.oggvorbisstr"
+
+[deps]
+
+source_file="res://art/packs/juhani-512-retro-sfx/General Sounds/Weird Sounds/sfx_sound_vaporizing.ogg"
+dest_files=["res://.godot/imported/sfx_sound_vaporizing.ogg-ab65b27e2f4986f9ae984c04a79ecc5d.oggvorbisstr"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

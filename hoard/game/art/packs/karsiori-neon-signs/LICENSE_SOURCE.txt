@@ -1,0 +1,6 @@
+FREE Pixel Art Neon Sign Pack - Animated by karsiori
+Page: https://karsiori.itch.io/free-pixel-art-neon-signs   (read 2026-10-21)
+License: CC0 1.0
+Evidence: Read Me inside the zip (kept here): "License info: CC0, you can use this asset pack however you want, in your commercial or non-commercial projects." Page: "Asset license: Creative Commons Zero v1.0 Universal".
+Notes: 20 animated neon signs (flicker on/off), multiple colors each. Staged spritesheets only (per-frame PNG folders dropped).
+Staged by the casino/arcade asset scout for Hoard (private build).

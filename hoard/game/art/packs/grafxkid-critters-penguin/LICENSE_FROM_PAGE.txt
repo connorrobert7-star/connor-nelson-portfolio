@@ -1,0 +1,11 @@
+GrafxKid CC0 sprite sheets from OpenGameArt (fetched 2026-10-21). No license files ship with the PNGs;
+each OGA page's "License(s)" field reads "CC0" and its "Copyright/Attribution Notice" reads "Credit me as GrafxKid" (a request; CC0 does not require it).
+  Crazy Critters OGA ver.png        https://opengameart.org/content/crazy-critters          License(s): CC0
+  super_random_sprites.png          https://opengameart.org/content/super-random-sprites    License(s): CC0  (penguin 16x16, fairy, skeleton, orange fruit guy)
+  TL_Creatures.png                  https://opengameart.org/content/various-creatures       License(s): CC0
+  Smaller_spritepack.png            https://opengameart.org/content/mini-character-pack     License(s): CC0
+  mini_fantasy_sprites_oga_ver.png  https://opengameart.org/content/mini-fantasy-sprites    License(s): CC0
+Penguin edit by Zombie Rat (derivative of GrafxKid's Super Random Sprites penguin):
+  penguin_edit.png, penguin_edit_preview.png  https://opengameart.org/content/super-random-penguin-edit  License(s): CC0
+  Copyright/Attribution Notice on that page: "Original by GrafxKid". 24x32 frames, 4 directions + swim.
+Note: the GrafxKid sheets are RGB with an opaque checkerboard/solid background that must be keyed out.

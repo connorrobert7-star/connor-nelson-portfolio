@@ -1,0 +1,6 @@
+Coins & Gems & Chests & More (v2.0) by greatdocbrown
+Page: https://greatdocbrown.itch.io/coins-gems-etc   (read 2026-10-21)
+License: CC0 1.0
+Evidence: Pack page: "Asset license: Creative Commons Zero v1.0 Universal"; description: "CC0 Licence You can copy, modify, distribute and perform the work, even for commercial purposes, all without asking permission." No license file in downloads; page archived as pack_page.html.
+Notes: Mostly 16x16, Rosy-42 palette. Coins (animated gold/silver/bronze), bills, stars, hearts, gems (4 colors, animated), chests + wrapped gift boxes with open frames, keys, locks, ??? mystery orbs (animated), bags.
+Staged by the casino/arcade asset scout for Hoard (private build).

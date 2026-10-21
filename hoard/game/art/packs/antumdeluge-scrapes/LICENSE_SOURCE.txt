@@ -1,0 +1,11 @@
+Source page: https://opengameart.org/content/scrapes
+Title: Scrapes
+Author (submitter): AntumDeluge
+License(s) listed in the page's License field: CC0
+License links: href='http://creativecommons.org/publicdomain/zero/1.0/'
+Copyright/Attribution notice: 
+Retrieved: 2026-10-21 via curl of the page above.
+
+Page description:
+ Scraping sounds made by dragging an object across a cinder block. Originally created for Stendhal . Edited with Audacity . 
+

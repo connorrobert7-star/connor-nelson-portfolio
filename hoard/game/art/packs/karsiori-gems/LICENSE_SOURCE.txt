@@ -1,0 +1,6 @@
+FREE Pixel Art Gems Pack - Animated by karsiori
+Page: https://karsiori.itch.io/free-pixel-art-gem-pack   (read 2026-10-21)
+License: CC0 1.0
+Evidence: Read Me inside the zip (kept here): "License info: CC0, you can use this asset pack however you want, in your commercial or non-commercial projects." Page: "Asset license: Creative Commons Zero v1.0 Universal".
+Notes: 10 gems (18x30..28x28) + 44x44 gem cluster, each in 8 colors (turquoise, light green, blue, purple, lilac, red, gold, dark blue), ~11-frame shine loops; separate Spark animation. Staged spritesheets only (per-frame PNG folders dropped).
+Staged by the casino/arcade asset scout for Hoard (private build).

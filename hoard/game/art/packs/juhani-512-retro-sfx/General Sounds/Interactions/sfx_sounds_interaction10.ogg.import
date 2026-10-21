@@ -1,0 +1,19 @@
+[remap]
+
+importer="oggvorbisstr"
+type="AudioStreamOggVorbis"
+uid="uid://1a5xvs4kcyuf"
+path="res://.godot/imported/sfx_sounds_interaction10.ogg-9987893559f40cb881c92018fe386e2e.oggvorbisstr"
+
+[deps]
+
+source_file="res://art/packs/juhani-512-retro-sfx/General Sounds/Interactions/sfx_sounds_interaction10.ogg"
+dest_files=["res://.godot/imported/sfx_sounds_interaction10.ogg-9987893559f40cb881c92018fe386e2e.oggvorbisstr"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

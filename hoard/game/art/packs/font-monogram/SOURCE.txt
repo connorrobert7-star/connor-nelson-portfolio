@@ -1,0 +1,4 @@
+monogram v1.1.0 by Vinicius Menezio (datagoblin)
+https://datagoblin.itch.io/monogram  (upload monogram.zip, downloaded 2026-10-21)
+License: CC0. credits.txt inside: "Monogram is a free and Creative Commons Zero pixel font, made by Vinicius Menezio (@vmenezio)."
+Page metadata: "Asset license: Creative Commons Zero v1.0 Universal". Monospace; ttf at size 16; bitmap png + json also included.

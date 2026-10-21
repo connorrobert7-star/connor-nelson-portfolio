@@ -1,0 +1,62 @@
+Freesound CC0 picks for Hoard. Each file is the public HQ preview (128 kbps MP3) of a Freesound sound whose page states the Creative Commons 0 license (link http://creativecommons.org/publicdomain/zero/1.0/). Originals (WAV/FLAC) need a free Freesound login: open each page and press Download for full quality. Retrieved 2026-10-21.
+
+274007_prize_wheel.mp3
+  page: https://freesound.org/people/tony_bear/sounds/274007/
+  title/author: prize wheel by tony_bear
+  license link on page: http://creativecommons.org/publicdomain/zero/1.0/
+752284_Spin_the_wheel_clicks.mp3
+  page: https://freesound.org/people/leocb/sounds/752284/
+  title/author: Spin the wheel clicks by leocb
+  license link on page: http://creativecommons.org/publicdomain/zero/1.0/
+415074_slot_machine_reels_sound_m4a.mp3
+  page: https://freesound.org/people/aghirlandaio/sounds/415074/
+  title/author: slot machine reels sound.m4a by aghirlandaio
+  license link on page: http://creativecommons.org/publicdomain/zero/1.0/
+376195_toy_ratchet_wav.mp3
+  page: https://freesound.org/people/monotraum/sounds/376195/
+  title/author: toy ratchet.wav by monotraum
+  license link on page: http://creativecommons.org/publicdomain/zero/1.0/
+347840_fishing_reel_wav.mp3
+  page: https://freesound.org/people/fennelliott/sounds/347840/
+  title/author: fishing reel.wav by fennelliott
+  license link on page: http://creativecommons.org/publicdomain/zero/1.0/
+408252_fishing_reel_wav.mp3
+  page: https://freesound.org/people/170129/sounds/408252/
+  title/author: fishing reel.wav by 170129
+  license link on page: http://creativecommons.org/publicdomain/zero/1.0/
+195997_Strange_Chant.mp3
+  page: https://freesound.org/people/qubodup/sounds/195997/
+  title/author: Strange Chant by qubodup
+  license link on page: http://creativecommons.org/publicdomain/zero/1.0/
+669797_Dark_Chanting_mp3.mp3
+  page: https://freesound.org/people/SnowFightStudios/sounds/669797/
+  title/author: Dark Chanting.mp3 by SnowFightStudios
+  license link on page: http://creativecommons.org/publicdomain/zero/1.0/
+473790_Monk_Chanting.mp3
+  page: https://freesound.org/people/timothyd4y/sounds/473790/
+  title/author: Monk Chanting by timothyd4y
+  license link on page: http://creativecommons.org/publicdomain/zero/1.0/
+127979_Scratching_Paper_mp3.mp3
+  page: https://freesound.org/people/Henaway/sounds/127979/
+  title/author: Scratching Paper.mp3 by Henaway
+  license link on page: http://creativecommons.org/publicdomain/zero/1.0/
+274746_Scratching_2_wav.mp3
+  page: https://freesound.org/people/ameslynn/sounds/274746/
+  title/author: Scratching 2.wav by ameslynn
+  license link on page: http://creativecommons.org/publicdomain/zero/1.0/
+363089_Coins_Being_Poured.mp3
+  page: https://freesound.org/people/TheWoodlandNomad/sounds/363089/
+  title/author: Coins Being Poured by TheWoodlandNomad
+  license link on page: http://creativecommons.org/publicdomain/zero/1.0/
+443091_LICHTLE_Marion_2018_2019_ArcadeCoins_wav.mp3
+  page: https://freesound.org/people/univ_lyon3/sounds/443091/
+  title/author: LICHTLE_Marion_2018_2019_ArcadeCoins.wav by univ_lyon3
+  license link on page: http://creativecommons.org/publicdomain/zero/1.0/
+709623_Casino_RouletteSound_ball_damping.mp3
+  page: https://freesound.org/people/poenia/sounds/709623/
+  title/author: Casino_RouletteSound_ball-damping by poenia
+  license link on page: http://creativecommons.org/publicdomain/zero/1.0/
+79088_AkasakaPachinkoParlorLunchtime_4micsStereoExpanded_wav.mp3
+  page: https://freesound.org/people/markystar/sounds/79088/
+  title/author: AkasakaPachinkoParlorLunchtime_4micsStereoExpanded.wav by markystar
+  license link on page: http://creativecommons.org/publicdomain/zero/1.0/

@@ -1,0 +1,19 @@
+[remap]
+
+importer="oggvorbisstr"
+type="AudioStreamOggVorbis"
+uid="uid://b6ptcg6my6i70"
+path="res://.godot/imported/sfx_sounds_powerup7.ogg-7c247f15680d8afa43f70160ddcb3bd1.oggvorbisstr"
+
+[deps]
+
+source_file="res://art/packs/juhani-512-retro-sfx/General Sounds/Positive Sounds/sfx_sounds_powerup7.ogg"
+dest_files=["res://.godot/imported/sfx_sounds_powerup7.ogg-7c247f15680d8afa43f70160ddcb3bd1.oggvorbisstr"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

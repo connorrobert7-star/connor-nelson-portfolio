@@ -1,0 +1,19 @@
+[remap]
+
+importer="oggvorbisstr"
+type="AudioStreamOggVorbis"
+uid="uid://bfafwytv1y0sq"
+path="res://.godot/imported/sfx_coin_single6.ogg-cf7da3ed47a98581f0dfd4bfe485cb6a.oggvorbisstr"
+
+[deps]
+
+source_file="res://art/packs/juhani-512-retro-sfx/General Sounds/Coins/sfx_coin_single6.ogg"
+dest_files=["res://.godot/imported/sfx_coin_single6.ogg-cf7da3ed47a98581f0dfd4bfe485cb6a.oggvorbisstr"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

@@ -1,0 +1,6 @@
+Gems / Coins Free by La Red Games
+Page: https://laredgames.itch.io/gems-coins-free   (read 2026-10-21)
+License: CC0 1.0
+Evidence: Pack page: "Asset license: Creative Commons Zero v1.0 Universal"; "You can use this asset for personal and commercial purpose. Credit is not required but would be appreciated. Modify as you will." No license file in zip.
+Notes: 16x16 animated: gold/silver/red coins; yellow, blue, gray, red, green gems (gray gem = ready-made 'common').
+Staged by the casino/arcade asset scout for Hoard (private build).

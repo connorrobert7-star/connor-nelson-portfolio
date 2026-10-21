@@ -1,0 +1,19 @@
+[remap]
+
+importer="oggvorbisstr"
+type="AudioStreamOggVorbis"
+uid="uid://bby58t7ukdewx"
+path="res://.godot/imported/sfx_sound_depressurizing.ogg-d2906ef300369206f4d6c3e2cb375491.oggvorbisstr"
+
+[deps]
+
+source_file="res://art/packs/juhani-512-retro-sfx/General Sounds/Weird Sounds/sfx_sound_depressurizing.ogg"
+dest_files=["res://.godot/imported/sfx_sound_depressurizing.ogg-d2906ef300369206f4d6c3e2cb375491.oggvorbisstr"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

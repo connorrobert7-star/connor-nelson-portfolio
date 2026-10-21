@@ -1,0 +1,19 @@
+[remap]
+
+importer="oggvorbisstr"
+type="AudioStreamOggVorbis"
+uid="uid://jagjurxsns3w"
+path="res://.godot/imported/Heal3.ogg-f735f302ff7989bcfe207980f85fb81a.oggvorbisstr"
+
+[deps]
+
+source_file="res://art/packs/ninja-adventure/Audio/Sounds/Magic & Skill/Heal3.ogg"
+dest_files=["res://.godot/imported/Heal3.ogg-f735f302ff7989bcfe207980f85fb81a.oggvorbisstr"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

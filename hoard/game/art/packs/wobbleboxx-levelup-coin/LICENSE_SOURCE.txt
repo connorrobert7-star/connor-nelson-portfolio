@@ -1,0 +1,12 @@
+Source page: https://opengameart.org/content/level-up-power-up-coin-get-13-sounds
+Title: Level up, power up, Coin get (13 Sounds)
+Author (submitter): wobbleboxx
+License(s) listed in the page's License field: CC0
+License links: href='http://creativecommons.org/publicdomain/zero/1.0/'
+Copyright/Attribution notice: field-name-field-copyright-notice field-type-text-long field-label-above"> Copyright/Attribution Notice:&nbsp; This pack is released under the public domain CC0 license.
+Retrieved: 2026-10-21 via curl of the page above.
+
+Page description:
+ This small sound fx pack contains 13 sounds that can be used for all kinds of level up, power up, get, check, click, ding, bat, hit, and much more... 
+
+Converted from the original AIFF files in SoundPack01.zip to Ogg Vorbis q6 (Godot cannot import AIFF); no other edits.

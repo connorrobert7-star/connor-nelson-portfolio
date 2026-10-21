@@ -1,0 +1,6 @@
+Animated Coins by Clint Bellanger (LPC)
+Page: https://opengameart.org/content/animated-coins   (read 2026-10-21)
+License: CC-BY 3.0 / CC-BY-SA 3.0 / GPL 3.0 / GPL 2.0 (pick one)
+Evidence: OGA page License(s): CC-BY 3.0, CC-BY-SA 3.0, GPL 3.0, GPL 2.0. Made for Liberated Pixel Cup. Page archived as pack_page.html.
+Notes: CREDIT: Clint Bellanger. 32x32 frames, 8-frame spin with bob, shadow and shine stripe; gold, silver, copper.
+Staged by the casino/arcade asset scout for Hoard (private build).
