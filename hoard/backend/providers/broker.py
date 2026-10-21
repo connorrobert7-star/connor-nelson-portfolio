@@ -5,14 +5,50 @@ Sizing rule (the owner's): for a $5 pull, divide by the quote and send the share
 to three decimals, never rounded up. Whatever the fill costs, the rest stays as cash.
 """
 
-from datetime import datetime, time
+from datetime import datetime, time, timedelta, tzinfo
 from decimal import ROUND_DOWN, ROUND_HALF_EVEN, Decimal
-from zoneinfo import ZoneInfo
+from functools import cache
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-NEW_YORK = ZoneInfo("America/New_York")
 OPEN, CLOSE = time(9, 30), time(16, 0)
 QTY_STEP = Decimal("0.001")
 CENT = Decimal("0.01")
+
+
+class _Eastern(tzinfo):
+    """US Eastern time by the current DST rule, for Pythons without tzdata (the browser demo).
+    Daylight time runs from 2:00 on the second Sunday of March to 2:00 on the first Sunday
+    of November."""
+
+    @staticmethod
+    def _sunday(year: int, month: int, nth: int) -> datetime:
+        first = datetime(year, month, 1)
+        return first + timedelta(days=(6 - first.weekday()) % 7 + 7 * (nth - 1), hours=2)
+
+    def dst(self, dt: datetime | None) -> timedelta:
+        if dt is None:
+            return timedelta(0)
+        naive = dt.replace(tzinfo=None)
+        start, end = self._sunday(dt.year, 3, 2), self._sunday(dt.year, 11, 1)
+        return timedelta(hours=1) if start <= naive < end else timedelta(0)
+
+    def utcoffset(self, dt: datetime | None) -> timedelta:
+        return timedelta(hours=-5) + self.dst(dt)
+
+    def tzname(self, dt: datetime | None) -> str:
+        return "EDT" if self.dst(dt) else "EST"
+
+    def fromutc(self, dt: datetime) -> datetime:
+        standard = dt + timedelta(hours=-5)
+        return standard + self.dst(standard.replace(tzinfo=self))
+
+
+@cache
+def new_york() -> tzinfo:
+    try:
+        return ZoneInfo("America/New_York")
+    except ZoneInfoNotFoundError:
+        return _Eastern()
 
 
 class BrokerError(RuntimeError):
@@ -33,7 +69,7 @@ def to_cents(dollars: Decimal | float | str) -> int:
 
 def us_market_open(now: datetime | None = None) -> bool:
     """Regular US hours on a weekday. Holidays come from the broker when it can tell."""
-    now = (now or datetime.now(NEW_YORK)).astimezone(NEW_YORK)
+    now = (now or datetime.now(new_york())).astimezone(new_york())
     return now.weekday() < 5 and OPEN <= now.time() < CLOSE
 
 

@@ -10,7 +10,7 @@ from pathlib import Path
 import pytest
 
 from backend.providers import NotConfigured, live, load_broker
-from backend.providers.broker import NEW_YORK, FixtureBroker, share_count, us_market_open
+from backend.providers.broker import FixtureBroker, _Eastern, new_york, share_count, us_market_open
 from backend.providers.fixtures import FixtureMarket
 
 PROVIDERS = Path(__file__).resolve().parent
@@ -49,6 +49,7 @@ def test_share_count_never_rounds_up_over_many_prices():
 
 
 def test_market_hours():
+    NEW_YORK = new_york()
     assert us_market_open(datetime(2026, 10, 21, 10, 0, tzinfo=NEW_YORK))
     assert not us_market_open(datetime(2026, 10, 21, 9, 29, tzinfo=NEW_YORK))
     assert not us_market_open(datetime(2026, 10, 21, 16, 0, tzinfo=NEW_YORK))
@@ -233,3 +234,13 @@ def test_moomoo_reports_a_rejection(monkeypatch):
     rec = MoomooBroker(paper=True, wait_seconds=0).buy("VTI", 500, "t")
     assert rec["status"] == "rejected"
     assert "FAILED" in rec["message"]
+
+
+def test_the_built_in_eastern_rule_matches_tzdata():
+    from datetime import UTC, timedelta
+
+    zone, fallback = new_york(), _Eastern()
+    moment = datetime(2026, 1, 1, tzinfo=UTC)
+    while moment.year < 2028:
+        assert moment.astimezone(zone).utcoffset() == moment.astimezone(fallback).utcoffset()
+        moment += timedelta(hours=7)
