@@ -1,0 +1,72 @@
+{
+  "fight_seconds": 120,
+  "room_coins": [10, 14, 18, 28],
+  "targets": [220, 320, 560, 1000],
+  "depth_growth": 1.7,
+  "max_depth": 12,
+  "base_mult": 1,
+  "melee": 22,
+  "spots": {"leader": [90, 170], "followers": [[140, 150], [140, 200], [165, 175]], "enemy_x": 400, "enemy_y": [100, 230]},
+  "party": {
+    "leader": {"hp": 60, "dmg": 8, "rate": 0.8, "range": 220, "speed": 0,
+               "sprite": {"sheet": "res://art/packs/0x72-dungeontileset-ii/0x72_DungeonTilesetII_v1.7/0x72_DungeonTilesetII_v1.7.png", "rect": [128, 164, 16, 28], "frames": 4, "step": 16}},
+    "follower": {"hp": 50, "dmg": 6, "rate": 0.7, "range": 22, "speed": 80},
+    "followers": [
+      {"id": "cat", "sprite": {"sheet": "res://art/packs/ninja-adventure/Actor/Animal/Cat/SpriteSheet.png", "rect": [0, 0, 16, 16], "frames": 2, "step": 16}},
+      {"id": "frog", "sprite": {"sheet": "res://art/packs/ninja-adventure/Actor/Animal/Frog/SpriteSheet.png", "rect": [0, 0, 16, 16], "frames": 2, "step": 16}},
+      {"id": "racoon", "sprite": {"sheet": "res://art/packs/ninja-adventure/Actor/Animal/Racoon/SpriteSheet.png", "rect": [0, 0, 16, 16], "frames": 2, "step": 16}}
+    ],
+    "smite": {"dmg": 12, "cooldown": 0.22},
+    "bomb": {"dmg": 60, "radius": 46,
+             "sprite": {"sheet": "res://art/packs/shattered-pixel-dungeon/sprites/items.png", "rect": [0, 80, 16, 16]}},
+    "down_s": 3.0,
+    "buff_dmg": 1.3
+  },
+  "enemies": {
+    "tiny_zombie": {"hp": 26, "dmg": 2, "rate": 1.0, "speed": 36, "chips": 12, "sprite": {"rect": [368, 16, 16, 16], "frames": 4, "step": 16}},
+    "goblin": {"hp": 22, "dmg": 2, "rate": 0.8, "speed": 54, "chips": 12, "sprite": {"rect": [432, 40, 16, 16], "frames": 4, "step": 16}},
+    "imp": {"hp": 18, "dmg": 2, "rate": 0.6, "speed": 66, "chips": 10, "sprite": {"rect": [432, 64, 16, 16], "frames": 4, "step": 16}},
+    "skelet": {"hp": 34, "dmg": 3, "rate": 1.0, "speed": 42, "chips": 14, "sprite": {"rect": [432, 88, 16, 16], "frames": 4, "step": 16}},
+    "chort": {"hp": 40, "dmg": 3, "rate": 1.0, "speed": 46, "chips": 16, "sprite": {"rect": [432, 273, 16, 23], "frames": 4, "step": 16}},
+    "masked_orc": {"hp": 50, "dmg": 4, "rate": 1.1, "speed": 40, "chips": 20, "sprite": {"rect": [432, 153, 16, 23], "frames": 4, "step": 16}},
+    "orc_warrior": {"hp": 56, "dmg": 4, "rate": 1.0, "speed": 40, "chips": 22, "sprite": {"rect": [432, 177, 16, 23], "frames": 4, "step": 16}},
+    "wogol": {"hp": 44, "dmg": 3, "rate": 0.9, "speed": 54, "chips": 20, "sprite": {"rect": [432, 249, 16, 23], "frames": 4, "step": 16}},
+    "necromancer": {"hp": 40, "dmg": 3, "rate": 1.2, "speed": 32, "chips": 24, "sprite": {"rect": [368, 225, 16, 23], "frames": 4, "step": 16}},
+    "leech": {"hp": 70, "dmg": 2, "rate": 1.0, "speed": 22, "chips": 30, "drain": 4, "sprite": {"rect": [368, 369, 16, 23], "frames": 4, "step": 16}},
+    "big_demon": {"hp": 480, "dmg": 12, "rate": 5.5, "speed": 18, "chips": 220, "boss": true, "telegraph_s": 1.2, "slam_radius": 44,
+                  "sprite": {"rect": [144, 428, 32, 36], "frames": 4, "step": 32}}
+  },
+  "enemy_sheet": "res://art/packs/0x72-dungeontileset-ii/0x72_DungeonTilesetII_v1.7/0x72_DungeonTilesetII_v1.7.png",
+  "rooms": [
+    {"id": "sewers", "enemies": ["tiny_zombie", "goblin", "imp", "goblin"],
+     "tiles": "res://art/packs/shattered-pixel-dungeon/environment/tiles_sewers.png",
+     "music": "res://art/packs/shattered-pixel-dungeon/music/sewers_1.ogg"},
+    {"id": "prison", "enemies": ["skelet", "chort", "imp", "skelet", "goblin"],
+     "tiles": "res://art/packs/shattered-pixel-dungeon/environment/tiles_prison.png",
+     "music": "res://art/packs/shattered-pixel-dungeon/music/prison_1.ogg"},
+    {"id": "halls", "enemies": ["orc_warrior", "masked_orc", "wogol", "necromancer", "chort", "skelet"],
+     "tiles": "res://art/packs/shattered-pixel-dungeon/environment/tiles_halls.png",
+     "music": "res://art/packs/shattered-pixel-dungeon/music/halls_1.ogg"},
+    {"id": "boss", "enemies": ["big_demon"], "boss": true,
+     "tiles": "res://art/packs/shattered-pixel-dungeon/environment/tiles_halls.png",
+     "music": "res://art/packs/shattered-pixel-dungeon/music/halls_tense.ogg"}
+  ],
+  "leech_room": 1,
+  "idols": {
+    "bell": {"kind": "mult", "value": 4, "icon": {"sheet": "res://art/packs/kyrise-rpg-icons-16/spritesheet/spritesheet_16x16.png", "rect": [48, 80, 16, 16]}},
+    "green_fields": {"kind": "chips", "value": 30, "icon": {"sheet": "res://art/packs/kyrise-rpg-icons-16/spritesheet/spritesheet_16x16.png", "rect": [16, 144, 16, 16]}},
+    "quiet_tavern": {"kind": "mult", "value": 8, "icon": {"sheet": "res://art/packs/kyrise-rpg-icons-16/spritesheet/spritesheet_16x16.png", "rect": [160, 128, 16, 16]}},
+    "high_river": {"kind": "mult_per_follower", "value": 3, "icon": {"sheet": "res://art/packs/kyrise-rpg-icons-16/spritesheet/spritesheet_16x16.png", "rect": [0, 224, 16, 16]}},
+    "lit_shrine": {"kind": "xmult", "value": 2, "icon": {"sheet": "res://art/packs/kyrise-rpg-icons-16/spritesheet/spritesheet_16x16.png", "rect": [64, 80, 16, 16]}},
+    "streak": {"kind": "xmult", "per_week": 0.2, "max": 3, "icon": {"sheet": "res://art/packs/shattered-pixel-dungeon/sprites/sheep.png", "rect": [0, 0, 16, 16]}}
+  },
+  "omens": {
+    "packed": {"good": false, "enemy_speed": 1.35, "icon": {"sheet": "res://art/packs/kyrise-rpg-icons-16/spritesheet/spritesheet_16x16.png", "rect": [176, 128, 16, 16]}},
+    "wilting": {"good": false, "party_hp": 0.75, "icon": {"sheet": "res://art/packs/kyrise-rpg-icons-16/spritesheet/spritesheet_16x16.png", "rect": [240, 192, 16, 16]}},
+    "withered": {"good": false, "party_hp": 0.6, "icon": {"sheet": "res://art/packs/kyrise-rpg-icons-16/spritesheet/spritesheet_16x16.png", "rect": [240, 192, 16, 16]}},
+    "leech": {"good": false, "icon": {"sheet": "res://art/packs/0x72-dungeontileset-ii/0x72_DungeonTilesetII_v1.7/0x72_DungeonTilesetII_v1.7.png", "rect": [368, 369, 16, 23]}},
+    "landed": {"good": true, "icon": {"sheet": "res://art/packs/kyrise-rpg-icons-16/spritesheet/spritesheet_16x16.png", "rect": [64, 80, 16, 16]}},
+    "streak": {"good": true, "icon": {"sheet": "res://art/packs/ninja-adventure/Actor/Animal/Racoon/SpriteSheet.png", "rect": [0, 0, 16, 16]}}
+  },
+  "streak_for_follower": 2
+}

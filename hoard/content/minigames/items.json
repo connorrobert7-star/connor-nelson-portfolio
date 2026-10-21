@@ -1,0 +1,31 @@
+{
+  "set": "undercroft",
+  "items": [
+    {"id": "minigames_moth_hood", "name": "Moth hood", "tier": "common", "set": "undercroft", "slot": "hat",
+     "icon": {"sheet": "res://art/packs/kyrise-rpg-icons-16/spritesheet/spritesheet_16x16.png", "rect": [0, 176, 16, 16]}},
+    {"id": "minigames_bone_mask", "name": "Bone mask", "tier": "common", "set": "undercroft", "slot": "hat",
+     "icon": {"sheet": "res://art/packs/kyrise-rpg-icons-16/spritesheet/spritesheet_16x16.png", "rect": [112, 176, 16, 16]}},
+    {"id": "minigames_leech_charm", "name": "Leech charm", "tier": "common", "set": "undercroft", "slot": "charm",
+     "icon": {"sheet": "res://art/packs/kyrise-rpg-icons-16/spritesheet/spritesheet_16x16.png", "rect": [0, 208, 16, 16]}},
+    {"id": "minigames_ash_cloak", "name": "Ash cloak", "tier": "common", "set": "undercroft", "slot": "cloak",
+     "icon": {"sheet": "res://art/packs/shattered-pixel-dungeon/sprites/items.png", "rect": [112, 176, 16, 16]}},
+    {"id": "minigames_sewer_lantern", "name": "Sewer lantern", "tier": "common", "set": "undercroft", "slot": "charm",
+     "icon": {"sheet": "res://art/packs/kyrise-rpg-icons-16/spritesheet/spritesheet_16x16.png", "rect": [64, 80, 16, 16]}},
+    {"id": "minigames_ink_robe", "name": "Ink robe", "tier": "rare", "set": "undercroft", "slot": "cloak",
+     "icon": {"sheet": "res://art/packs/shattered-pixel-dungeon/sprites/items.png", "rect": [128, 176, 16, 16]}},
+    {"id": "minigames_drowned_ring", "name": "Drowned ring", "tier": "rare", "set": "undercroft", "slot": "charm",
+     "icon": {"sheet": "res://art/packs/kyrise-rpg-icons-16/spritesheet/spritesheet_16x16.png", "rect": [48, 256, 16, 16]}},
+    {"id": "minigames_goo_skin", "name": "Goo skin", "tier": "rare", "set": "undercroft", "slot": "follower_skin",
+     "icon": {"sheet": "res://art/packs/ninja-adventure/Actor/Monster/Slime/Slime.png", "rect": [0, 0, 16, 16]}},
+    {"id": "minigames_blue_veil", "name": "Blue veil", "tier": "rare", "set": "undercroft", "slot": "hat",
+     "icon": {"sheet": "res://art/packs/kyrise-rpg-icons-16/spritesheet/spritesheet_16x16.png", "rect": [128, 176, 16, 16]}},
+    {"id": "minigames_imp_skin", "name": "Imp skin", "tier": "epic", "set": "undercroft", "slot": "follower_skin",
+     "icon": {"sheet": "res://art/packs/0x72-dungeontileset-ii/0x72_DungeonTilesetII_v1.7/0x72_DungeonTilesetII_v1.7.png", "rect": [368, 64, 16, 16]}},
+    {"id": "minigames_ember_halo", "name": "Ember halo", "tier": "epic", "set": "undercroft", "slot": "aura",
+     "icon": {"sheet": "res://art/packs/kyrise-rpg-icons-16/spritesheet/spritesheet_16x16.png", "rect": [176, 144, 16, 16]}},
+    {"id": "minigames_ogre_horns", "name": "Ogre horns", "tier": "epic", "set": "undercroft", "slot": "hat",
+     "icon": {"sheet": "res://art/packs/kyrise-rpg-icons-16/spritesheet/spritesheet_16x16.png", "rect": [176, 176, 16, 16]}},
+    {"id": "minigames_demon_crown", "name": "Demon crown", "tier": "legendary", "set": "undercroft", "slot": "hat",
+     "icon": {"sheet": "res://art/packs/shattered-pixel-dungeon/sprites/items.png", "rect": [192, 48, 16, 16]}}
+  ]
+}
