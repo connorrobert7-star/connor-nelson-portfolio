@@ -43,7 +43,8 @@ class Engine:
         profile: dict | None = None,
     ) -> None:
         self.features = load_features()
-        self.conn = db.connect(db_path, sorted(FEATURES_DIR.glob("*/schema.sql")))
+        self.schemas = sorted(FEATURES_DIR.glob("*/schema.sql"))
+        self.conn = db.connect(db_path, self.schemas)
         self.base_today = today
         self.providers = providers or load_providers()
         self.profile = profile or load_profile()
@@ -99,5 +100,20 @@ class Engine:
     def export_db(self) -> bytes:
         return self.conn.serialize()
 
-    def import_db(self, data: bytes) -> None:
-        self.conn.deserialize(data)
+    def import_db(self, data: bytes) -> bool:
+        """Load a save. One from an older build gets the tables added since and a fresh sync.
+        If it still can't produce the state, it is dropped and the village starts fresh.
+        Returns whether the save was kept."""
+        fresh = self.conn.serialize()
+        try:
+            self.conn.deserialize(data)
+            db.apply_schema(self.conn, self.schemas)
+            with self.conn:
+                self.conn.execute("DELETE FROM meta WHERE key = 'synced_for'")
+            status, _ = self.handle("GET", "/state")
+        except Exception:
+            status = 500
+        if status == 200:
+            return True
+        self.conn.deserialize(fresh)
+        return False

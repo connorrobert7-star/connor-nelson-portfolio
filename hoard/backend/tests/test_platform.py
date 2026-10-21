@@ -88,6 +88,45 @@ def test_save_export_import(engine):
     assert other.conn.execute("SELECT COUNT(*) FROM orders").fetchone()[0] == 1
 
 
+def test_old_save_gets_new_tables(engine):
+    """A save from an earlier build, before the casino and the away queue, still loads."""
+    engine.handle("POST", "/shop/stock", body={"symbol": "VTI", "amount_cents": 2_500})
+    keep = {
+        "meta",
+        "accounts",
+        "transactions",
+        "holdings",
+        "debts",
+        "transfers",
+        "events",
+        "coin_ledger",
+        "inventory",
+        "notifications",
+        "orders",
+        "sqlite_sequence",
+    }
+    tables = [
+        r[0] for r in engine.conn.execute("SELECT name FROM sqlite_master WHERE type = 'table'")
+    ]
+    with engine.conn:
+        for name in tables:
+            if name not in keep:
+                engine.conn.execute(f"DROP TABLE {name}")
+    other = Engine(":memory:", TODAY)
+    assert other.import_db(engine.export_db())
+    assert other.conn.execute("SELECT COUNT(*) FROM orders").fetchone()[0] == 1
+    assert other.handle("GET", "/state")[0] == 200
+
+
+def test_broken_save_starts_fresh(engine):
+    with engine.conn:
+        engine.conn.execute("DROP TABLE accounts")
+        engine.conn.execute("CREATE TABLE accounts (id TEXT PRIMARY KEY)")
+    other = Engine(":memory:", TODAY)
+    assert not other.import_db(engine.export_db())
+    assert other.handle("GET", "/state")[0] == 200
+
+
 def test_real_providers_need_keys():
     import pytest
 

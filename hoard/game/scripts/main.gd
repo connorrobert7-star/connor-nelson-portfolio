@@ -40,7 +40,8 @@ func _ready() -> void:
 	hud.add_child(_overlays)
 	hud.move_child(fade, -1)
 	Game.state_changed.connect(_on_state)
-	Game.failed.connect(func(message: String) -> void: _error = message)
+	Game.failed.connect(_on_failed)
+	panel.gui_input.connect(_on_panel_input)
 	Game.event_fired.connect(_on_event)
 	_add_day_button()
 	show_panel("Waking the village...")
@@ -213,6 +214,18 @@ func _show_notifications(items: Array) -> void:
 		toast(str(n.text), Palette.GLOW, str(n.get("data", {}).get("sound", "pop")))
 	if not ids.is_empty():
 		Game.call_api("POST", "/notifications/seen", {"ids": ids})
+
+
+## Only the error's last line shows (not a whole traceback), and a tap on it clears it.
+func _on_failed(message: String) -> void:
+	var lines := message.strip_edges().split("\n", false)
+	_error = lines[-1].strip_edges() if not lines.is_empty() else message
+
+
+func _on_panel_input(event: InputEvent) -> void:
+	if (event is InputEventMouseButton or event is InputEventScreenTouch) and event.is_pressed():
+		_error = ""
+		panel.visible = false
 
 
 func show_panel(text: String) -> void:

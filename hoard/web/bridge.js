@@ -13,12 +13,7 @@
       if (!url.endsWith(suffix)) continue;
       const clean = { ...(init || {}) };
       delete clean.integrity; // the bytes on the wire are gzipped
-      const whole = spec.parts
-        ? Promise.all(spec.parts.map((p) => realFetch(p, clean).then((r) => {
-            if (!r.ok) throw new Error("Missing " + p);
-            return r.blob();
-          }))).then((blobs) => new Response(new Blob(blobs)))
-        : realFetch(spec.file, clean);
+      const whole = spec.parts ? Promise.resolve(joined(spec.parts, clean)) : realFetch(spec.file, clean);
       return whole.then((res) => {
         if (!res.ok || !spec.gz) return res;
         const body = res.body.pipeThrough(new DecompressionStream("gzip"));
@@ -27,6 +22,30 @@
     }
     return realFetch(input, init);
   };
+
+  // A file split into parts, read back as one stream: all parts download at once, and the
+  // bytes flow out in order as they arrive, so the loading bar moves the whole way.
+  function joined(parts, init) {
+    const pending = parts.map((p) => realFetch(p, init));
+    let i = 0;
+    let reader = null;
+    return new Response(new ReadableStream({
+      async pull(controller) {
+        for (;;) {
+          if (!reader) {
+            if (i >= parts.length) return controller.close();
+            const res = await pending[i];
+            if (!res.ok) throw new Error("Missing " + parts[i]);
+            reader = res.body.getReader();
+            i += 1;
+          }
+          const { done, value } = await reader.read();
+          if (!done) return controller.enqueue(value);
+          reader = null;
+        }
+      },
+    }));
+  }
 
   const DB_NAME = "hoard";
   const STORE = "saves";
