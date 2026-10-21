@@ -1,0 +1,29 @@
+{
+  "_note": "How each pose moves. The backend picks every follower's pose and bubble; the game only plays these numbers. bob in px, hz per second, droop and thin are scale factors, glance is seconds between looks (0 = never).",
+  "poses": {
+    "egg":    {"bob": 0.0, "hz": 0.0, "droop": 1.0,  "thin": 1.0,  "glance": 0,   "wobble": 1.0},
+    "chant":  {"bob": 3.0, "hz": 1.53, "droop": 1.0, "thin": 1.0,  "glance": 0,   "hop": true},
+    "bounce": {"bob": 2.0, "hz": 1.5, "droop": 1.0,  "thin": 1.0,  "glance": 6},
+    "idle":   {"bob": 1.0, "hz": 1.0, "droop": 1.0,  "thin": 1.0,  "glance": 4},
+    "droop":  {"bob": 0.6, "hz": 0.7, "droop": 0.93, "thin": 1.0,  "glance": 2.5},
+    "hungry": {"bob": 0.6, "hz": 0.8, "droop": 0.95, "thin": 0.88, "glance": 3, "shiver": 0.6},
+    "sleep":  {"bob": 0.0, "hz": 0.4, "droop": 0.9,  "thin": 1.05, "glance": 0,   "tilt": 14},
+    "veiled": {"bob": 0.0, "hz": 0.45, "droop": 0.88, "thin": 1.0, "glance": 0,   "sway": 2.0},
+    "flat":   {"bob": 0.0, "hz": 0.3, "droop": 0.72, "thin": 1.14, "glance": 0,   "shiver": 0.3}
+  },
+  "bubbles": {
+    "lit": "res://art/packs/tiopalada-emoji-pack-1/20250405emoticons-SheetLit.png",
+    "drool": "res://art/packs/tiopalada-emoji-pack-1/20250405emoticons-SheetDrooling.png",
+    "sleepy": "res://art/packs/tiopalada-emoji-pack-1/20250405emoticons-SheetSleepy.png",
+    "crying": "res://art/packs/tiopalada-emoji-pack-1/20250405emoticons-SheetCrying.png",
+    "love": "res://art/packs/tiopalada-emoji-pack-1/20250405emoticons-SheetLove.png",
+    "question": "res://art/packs/tiopalada-emoji-pack-1/20250405emoticons-SheetQuestion.png",
+    "sweat": "res://art/packs/tiopalada-emoji-pack-1/20250405emoticons-SheetSweat.png"
+  },
+  "bands": {
+    "fervent":  {"glow": 1.0,  "cultists": 12, "flame_fps": 14, "tint": [1.0, 1.0, 1.0]},
+    "content":  {"glow": 0.65, "cultists": 8,  "flame_fps": 9,  "tint": [1.0, 1.0, 1.0]},
+    "doubting": {"glow": 0.3,  "cultists": 4,  "flame_fps": 5,  "tint": [0.8, 0.78, 0.85]},
+    "mourning": {"glow": 0.08, "cultists": 2,  "flame_fps": 3,  "tint": [0.6, 0.6, 0.7]}
+  }
+}
