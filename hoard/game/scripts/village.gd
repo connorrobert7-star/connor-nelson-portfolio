@@ -188,6 +188,10 @@ func build() -> void:
 	add_npc("farmer", Vector2i(13, 26), Vector2i(13, 27))
 	add_npc("shrine_keeper", Vector2i(36, 12), Vector2i(36, 13))
 	_land()
+	# Features that own no plot (the buildings feature) dress the whole island.
+	for f in Features.all:
+		if f.plot_id() == "":
+			f.build_village(self, Rect2i())
 	_cultists()
 	_ambience()
 	Game.event_fired.connect(_on_event)
@@ -214,6 +218,9 @@ func dress() -> void:
 		if f:
 			f.dress_village(self, PLOTS[plot_id].rect)
 	_dress_land()
+	for f in Features.all:
+		if f.plot_id() == "":
+			f.dress_village(self, Rect2i())
 	_dress_crops()
 	_dress_tavern()
 	_dress_river()
