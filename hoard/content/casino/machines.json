@@ -1,0 +1,53 @@
+{
+  "_note": "Casino machines. Every price is real cents that land in the owner's own House Fund or Brokerage, the exact amount every time. Every load is finite and counted out loud: the belt and box for cases, a book for each scratch price, the wheel's wedges, the claw's heap. Only cosmetics come out. Tiers: common, rare, epic, legendary, mythic.",
+  "destinations": ["sav_1", "brk_1"],
+  "cases": [
+    {"id": "case_10", "price_cents": 1000},
+    {"id": "case_20", "price_cents": 2000},
+    {"id": "case_50", "price_cents": 5000}
+  ],
+  "belt": {"shells": {"common": 18, "rare": 6, "epic": 1}, "reloads_on": "epic"},
+  "box": {"size": 100, "specials": 2, "mythic_one_in": 4},
+  "reel": {
+    "size": 45,
+    "winner_index": 38,
+    "quiet_radius": 5,
+    "filler_weights": {"common": 52, "rare": 30, "epic": 12, "legendary": 4, "mythic": 1},
+    "near_miss": {
+      "low": {"fell": 0.15, "short": 0.15, "tease": 0.2},
+      "epic": {"tier": "legendary", "chance": 0.2},
+      "legendary": {"tier": "mythic", "chance": 0.1},
+      "tease_before": [2, 4]
+    }
+  },
+  "scratch": [
+    {"price_cents": 100, "book": {"common": 16, "rare": 4}},
+    {"price_cents": 200, "book": {"common": 14, "rare": 5, "epic": 1}},
+    {"price_cents": 500, "book": {"common": 12, "rare": 5, "epic": 2, "legendary": 1}}
+  ],
+  "wheel": {
+    "price_cents": 500,
+    "wedges": [
+      "legendary", "common", "rare", "common", "common", "rare",
+      "epic", "common", "rare", "common", "common", "common"
+    ],
+    "resets_on": "legendary"
+  },
+  "claw": {
+    "price_cents": 500,
+    "heap": {"common": 10, "rare": 4, "epic": 1},
+    "wobble": 0.04,
+    "spots": [
+      [0.18, 0.88], [0.34, 0.88], [0.5, 0.88], [0.66, 0.88], [0.82, 0.88],
+      [0.26, 0.72], [0.42, 0.72], [0.58, 0.72], [0.74, 0.72],
+      [0.34, 0.56], [0.5, 0.56], [0.66, 0.56],
+      [0.42, 0.4], [0.58, 0.4],
+      [0.5, 0.24]
+    ]
+  },
+  "draw": {
+    "cents_per_entry": 500,
+    "village_tickets": 100,
+    "prizes": ["legendary", "epic", "epic", "rare", "rare", "rare", "common", "common", "common", "common"]
+  }
+}
