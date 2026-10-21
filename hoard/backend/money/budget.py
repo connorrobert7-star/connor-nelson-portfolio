@@ -15,6 +15,11 @@ FLOOR_CENTS = 50_000
 # The player's own accounts money can land in: House Fund, Emergency Fund (the wall), Brokerage.
 OWN_ACCOUNTS = ("sav_1", "sav_2", "brk_1")
 LANDING_CATEGORIES = ("TRANSFER_OUT_SAVINGS", "TRANSFER_OUT_INVESTMENT_AND_RETIREMENT_FUNDS")
+# The same landings by kind: (own accounts, the bank's transfer category).
+LANDING_KINDS = {
+    "savings": (("sav_1", "sav_2"), "TRANSFER_OUT_SAVINGS"),
+    "brokerage": (("brk_1",), "TRANSFER_OUT_INVESTMENT_AND_RETIREMENT_FUNDS"),
+}
 BILL_HORIZON_DAYS = 14
 AVERAGE_WEEKS = 4
 UNSETTLED = ("simulated", "pending")
@@ -135,6 +140,29 @@ def landed_cents(ctx: Ctx, start: date, end: date) -> int:
         [*LANDING_CATEGORIES, start.isoformat(), end.isoformat()],
     ).fetchone()
     return game + bank
+
+
+def landed_by_kind(ctx: Ctx, start: date, end: date) -> dict[str, int]:
+    """landed_cents split by where it landed: {"savings": ..., "brokerage": ...}.
+
+    Savings is the game's transfers to sav_1/sav_2 plus the bank's savings transfers;
+    brokerage is the game's transfers to brk_1 plus the bank's investment transfers.
+    The two always add up to landed_cents for the same days."""
+    out = {}
+    for kind, (accounts, category) in LANDING_KINDS.items():
+        (game,) = ctx.conn.execute(
+            f"""SELECT COALESCE(SUM(amount_cents), 0) FROM transfers
+                WHERE status != 'failed' AND to_account IN ({_in(list(accounts))})
+                  AND created BETWEEN ? AND ?""",
+            [*accounts, start.isoformat(), end.isoformat()],
+        ).fetchone()
+        (bank,) = ctx.conn.execute(
+            """SELECT COALESCE(SUM(amount_cents), 0) FROM transactions
+               WHERE category = ? AND amount_cents > 0 AND date BETWEEN ? AND ?""",
+            [category, start.isoformat(), end.isoformat()],
+        ).fetchone()
+        out[kind] = game + bank
+    return out
 
 
 def last_landing_day(ctx: Ctx) -> date | None:

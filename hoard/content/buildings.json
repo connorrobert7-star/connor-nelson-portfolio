@@ -1,0 +1,569 @@
+{
+  "_note": "Buildings worth saving for (docs/BUILDINGS.md). Requirements are balances to hold, checked at the Sunday sync and never spent; coins build a ready tier and real days finish it. Cents everywhere. `followers` adds to the village's capacity, `unlocks` are keys other features count with buildings.unlocked(). Looks: a pack sprite {sheet, rect, scale?, glow?, extras?: [{sheet, rect, at: [dx, dy] from the main sprite's feet, scale?, flip?}]} or a drawer the game already has (land, house, facade).",
+  "streak": {
+    "discount_weeks": 6,
+    "discount": 0.2,
+    "min_cents": 1
+  },
+  "buildings": [
+    {
+      "id": "land",
+      "name": "Land",
+      "plot": "island",
+      "tiers": [
+        {
+          "tier": 1,
+          "name": "Home shore",
+          "requires": {},
+          "coins": 0,
+          "days": 0,
+          "changes": {
+            "look": {
+              "drawer": "land",
+              "parcel": "home"
+            },
+            "followers": 8,
+            "unlocks": ["land.home", "land.commons"]
+          }
+        },
+        {
+          "tier": 2,
+          "name": "East reach",
+          "requires": {
+            "savings_cents": 1000000,
+            "deposit_streak_weeks": 2
+          },
+          "coins": 500,
+          "days": 2,
+          "changes": {
+            "look": {
+              "drawer": "land",
+              "parcel": "east"
+            },
+            "followers": 4,
+            "unlocks": ["land.east", "plot.lodge"]
+          },
+          "line": "The east reach is cleared."
+        },
+        {
+          "tier": 3,
+          "name": "South meadow",
+          "requires": {
+            "savings_cents": 1500000,
+            "brokerage_cents": 4000000,
+            "deposit_streak_weeks": 6
+          },
+          "coins": 1500,
+          "days": 4,
+          "changes": {
+            "look": {
+              "drawer": "land",
+              "parcel": "south"
+            },
+            "followers": 4,
+            "unlocks": ["land.south"]
+          },
+          "line": "The south meadow is cleared."
+        },
+        {
+          "tier": 4,
+          "name": "North cliffs",
+          "requires": {
+            "savings_cents": 3000000,
+            "brokerage_cents": 6000000,
+            "deposit_streak_weeks": 13
+          },
+          "coins": 4000,
+          "days": 7,
+          "changes": {
+            "look": {
+              "drawer": "land",
+              "parcel": "north"
+            },
+            "followers": 6,
+            "unlocks": ["land.north"]
+          },
+          "line": "The north cliffs are cleared."
+        }
+      ]
+    },
+    {
+      "id": "house",
+      "name": "House",
+      "plot": "house",
+      "tiers": [
+        {
+          "tier": 1,
+          "name": "Plot",
+          "requires": {},
+          "coins": 0,
+          "days": 0,
+          "changes": {
+            "look": {
+              "drawer": "house",
+              "stage": "plot"
+            },
+            "followers": 0,
+            "unlocks": []
+          }
+        },
+        {
+          "tier": 2,
+          "name": "Foundation",
+          "requires": {
+            "house_fund_cents": 100000
+          },
+          "coins": 100,
+          "days": 1,
+          "changes": {
+            "look": {
+              "drawer": "house",
+              "stage": "foundation"
+            },
+            "followers": 0,
+            "unlocks": []
+          },
+          "line": "The foundation is poured."
+        },
+        {
+          "tier": 3,
+          "name": "Frame",
+          "requires": {
+            "house_fund_cents": 320000
+          },
+          "coins": 250,
+          "days": 2,
+          "changes": {
+            "look": {
+              "drawer": "house",
+              "stage": "frame"
+            },
+            "followers": 0,
+            "unlocks": []
+          },
+          "line": "The frame is up."
+        },
+        {
+          "tier": 4,
+          "name": "Walls",
+          "requires": {
+            "house_fund_cents": 720000
+          },
+          "coins": 500,
+          "days": 3,
+          "changes": {
+            "look": {
+              "drawer": "house",
+              "stage": "walls"
+            },
+            "followers": 0,
+            "unlocks": []
+          },
+          "line": "The walls are up."
+        },
+        {
+          "tier": 5,
+          "name": "Roof",
+          "requires": {
+            "house_fund_cents": 1280000
+          },
+          "coins": 900,
+          "days": 4,
+          "changes": {
+            "look": {
+              "drawer": "house",
+              "stage": "roof"
+            },
+            "followers": 1,
+            "unlocks": []
+          },
+          "line": "The roof is on."
+        },
+        {
+          "tier": 6,
+          "name": "Interior",
+          "requires": {
+            "house_fund_cents": 2240000
+          },
+          "coins": 1500,
+          "days": 5,
+          "changes": {
+            "look": {
+              "drawer": "house",
+              "stage": "interior"
+            },
+            "followers": 1,
+            "unlocks": []
+          },
+          "line": "The rooms are finished inside."
+        },
+        {
+          "tier": 7,
+          "name": "Finished",
+          "requires": {
+            "house_fund_cents": 4000000
+          },
+          "coins": 2500,
+          "days": 7,
+          "changes": {
+            "look": {
+              "drawer": "house",
+              "stage": "finished"
+            },
+            "followers": 2,
+            "unlocks": []
+          },
+          "line": "The house is finished."
+        }
+      ]
+    },
+    {
+      "id": "shrine",
+      "name": "Shrine",
+      "plot": "shrine",
+      "tiers": [
+        {
+          "tier": 1,
+          "name": "Altar",
+          "requires": {},
+          "coins": 0,
+          "days": 0,
+          "changes": {
+            "look": {
+              "drawer": "facade",
+              "id": "shrine",
+              "level": 1
+            },
+            "followers": 4,
+            "unlocks": []
+          }
+        },
+        {
+          "tier": 2,
+          "name": "Chapel",
+          "requires": {
+            "savings_cents": 200000,
+            "brokerage_cents": 100000,
+            "deposit_streak_weeks": 4
+          },
+          "coins": 600,
+          "days": 3,
+          "changes": {
+            "look": {
+              "sheet": "res://art/packs/ninja-adventure/Backgrounds/Tilesets/TilesetHouse.png",
+              "rect": [192, 0, 64, 48]
+            },
+            "followers": 6,
+            "unlocks": []
+          }
+        },
+        {
+          "tier": 3,
+          "name": "Temple",
+          "requires": {
+            "savings_cents": 800000,
+            "brokerage_cents": 2000000,
+            "deposit_streak_weeks": 8
+          },
+          "coins": 1800,
+          "days": 5,
+          "changes": {
+            "look": {
+              "sheet": "res://art/packs/ninja-adventure/Backgrounds/Tilesets/TilesetHouse.png",
+              "rect": [192, 0, 64, 48],
+              "scale": 1.5,
+              "glow": "#ffb347",
+              "extras": [
+                {
+                  "sheet": "res://art/packs/ninja-adventure/Backgrounds/Tilesets/TilesetHouse.png",
+                  "rect": [48, 240, 32, 32],
+                  "at": [-64, 0]
+                },
+                {
+                  "sheet": "res://art/packs/ninja-adventure/Backgrounds/Tilesets/TilesetHouse.png",
+                  "rect": [48, 240, 32, 32],
+                  "at": [64, 0],
+                  "flip": true
+                }
+              ]
+            },
+            "followers": 8,
+            "unlocks": []
+          }
+        },
+        {
+          "tier": 4,
+          "name": "Cathedral",
+          "requires": {
+            "savings_cents": 2000000,
+            "brokerage_cents": 5000000,
+            "deposit_streak_weeks": 13
+          },
+          "coins": 4500,
+          "days": 7,
+          "changes": {
+            "look": {
+              "sheet": "res://art/packs/ninja-adventure/Backgrounds/Tilesets/TilesetHouse.png",
+              "rect": [192, 0, 64, 48],
+              "scale": 2,
+              "glow": "#c08cff",
+              "extras": [
+                {
+                  "sheet": "res://art/packs/ninja-adventure/Backgrounds/Tilesets/TilesetTowers.png",
+                  "rect": [288, 32, 32, 32],
+                  "at": [-96, 0],
+                  "scale": 1.5
+                },
+                {
+                  "sheet": "res://art/packs/ninja-adventure/Backgrounds/Tilesets/TilesetTowers.png",
+                  "rect": [288, 32, 32, 32],
+                  "at": [96, 0],
+                  "scale": 1.5,
+                  "flip": true
+                },
+                {
+                  "sheet": "res://art/packs/ninja-adventure/Backgrounds/Tilesets/TilesetHouse.png",
+                  "rect": [48, 240, 32, 32],
+                  "at": [-48, 8]
+                },
+                {
+                  "sheet": "res://art/packs/ninja-adventure/Backgrounds/Tilesets/TilesetHouse.png",
+                  "rect": [48, 240, 32, 32],
+                  "at": [48, 8],
+                  "flip": true
+                }
+              ]
+            },
+            "followers": 10,
+            "unlocks": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "arcade",
+      "name": "Arcade",
+      "plot": "arcade",
+      "tiers": [
+        {
+          "tier": 1,
+          "name": "Arcade",
+          "requires": {},
+          "coins": 0,
+          "days": 0,
+          "changes": {
+            "look": {
+              "drawer": "facade",
+              "id": "arcade",
+              "level": 1
+            },
+            "followers": 0,
+            "unlocks": []
+          }
+        },
+        {
+          "tier": 2,
+          "name": "Neon hall",
+          "requires": {
+            "brokerage_cents": 3500000
+          },
+          "coins": 500,
+          "days": 2,
+          "changes": {
+            "look": {
+              "sheet": "res://art/packs/ninja-adventure/Backgrounds/Tilesets/TilesetHouse.png",
+              "rect": [256, 0, 48, 48],
+              "scale": 1.5,
+              "glow": "#ff4fd8"
+            },
+            "followers": 0,
+            "unlocks": ["arcade.flame"]
+          }
+        },
+        {
+          "tier": 3,
+          "name": "Grand arcade",
+          "requires": {
+            "brokerage_cents": 5000000,
+            "savings_cents": 1500000
+          },
+          "coins": 2000,
+          "days": 5,
+          "changes": {
+            "look": {
+              "sheet": "res://art/packs/ninja-adventure/Backgrounds/Tilesets/TilesetHouse.png",
+              "rect": [304, 0, 64, 48],
+              "scale": 2,
+              "glow": "#4ff0ff",
+              "extras": [
+                {
+                  "sheet": "res://art/packs/ninja-adventure/Backgrounds/Tilesets/TilesetHouse.png",
+                  "rect": [256, 0, 48, 48],
+                  "at": [-88, 0]
+                },
+                {
+                  "sheet": "res://art/packs/ninja-adventure/Backgrounds/Tilesets/TilesetHouse.png",
+                  "rect": [256, 0, 48, 48],
+                  "at": [88, 0],
+                  "flip": true
+                }
+              ]
+            },
+            "followers": 0,
+            "unlocks": ["arcade.flame"]
+          }
+        }
+      ]
+    },
+    {
+      "id": "tavern",
+      "name": "Tavern",
+      "plot": "tavern",
+      "tiers": [
+        {
+          "tier": 1,
+          "name": "Tavern",
+          "requires": {},
+          "coins": 0,
+          "days": 0,
+          "changes": {
+            "look": {
+              "drawer": "facade",
+              "id": "tavern",
+              "level": 1
+            },
+            "followers": 0,
+            "unlocks": []
+          }
+        },
+        {
+          "tier": 2,
+          "name": "Inn",
+          "requires": {
+            "emergency_cents": 300000,
+            "deposit_streak_weeks": 2
+          },
+          "coins": 400,
+          "days": 2,
+          "changes": {
+            "look": {
+              "sheet": "res://art/packs/ninja-adventure/Backgrounds/Tilesets/TilesetHouse.png",
+              "rect": [0, 0, 64, 48],
+              "glow": "#ffb347"
+            },
+            "followers": 4,
+            "unlocks": []
+          }
+        },
+        {
+          "tier": 3,
+          "name": "Lodge house",
+          "requires": {
+            "emergency_cents": 600000,
+            "savings_cents": 1200000
+          },
+          "coins": 1500,
+          "days": 4,
+          "changes": {
+            "look": {
+              "sheet": "res://art/packs/ninja-adventure/Backgrounds/Tilesets/TilesetHouse.png",
+              "rect": [416, 0, 48, 48],
+              "scale": 2,
+              "glow": "#ffb347",
+              "extras": [
+                {
+                  "sheet": "res://art/packs/ninja-adventure/Backgrounds/Tilesets/TilesetHouse.png",
+                  "rect": [0, 0, 64, 48],
+                  "at": [-80, 0]
+                }
+              ]
+            },
+            "followers": 6,
+            "unlocks": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "lodge",
+      "name": "Lodge",
+      "plot": "lodge",
+      "parcel": "east",
+      "tiers": [
+        {
+          "tier": 1,
+          "name": "Bunkhouse",
+          "requires": {
+            "land": 2,
+            "savings_cents": 1000000
+          },
+          "coins": 800,
+          "days": 3,
+          "changes": {
+            "look": {
+              "sheet": "res://art/packs/ninja-adventure/Backgrounds/Tilesets/TilesetHouse.png",
+              "rect": [48, 112, 48, 48]
+            },
+            "followers": 8,
+            "unlocks": []
+          }
+        },
+        {
+          "tier": 2,
+          "name": "Longhouse",
+          "requires": {
+            "land": 3,
+            "savings_cents": 1800000,
+            "brokerage_cents": 4000000
+          },
+          "coins": 2500,
+          "days": 5,
+          "changes": {
+            "look": {
+              "sheet": "res://art/packs/ninja-adventure/Backgrounds/Tilesets/TilesetHouse.png",
+              "rect": [304, 304, 48, 48],
+              "scale": 1.5,
+              "glow": "#ffb347"
+            },
+            "followers": 10,
+            "unlocks": []
+          }
+        },
+        {
+          "tier": 3,
+          "name": "Great hall",
+          "requires": {
+            "land": 4,
+            "savings_cents": 3000000,
+            "brokerage_cents": 6000000,
+            "deposit_streak_weeks": 13
+          },
+          "coins": 6000,
+          "days": 7,
+          "changes": {
+            "look": {
+              "sheet": "res://art/packs/ninja-adventure/Backgrounds/Tilesets/TilesetHouse.png",
+              "rect": [400, 112, 64, 112],
+              "scale": 1.5,
+              "glow": "#ffb347",
+              "extras": [
+                {
+                  "sheet": "res://art/packs/ninja-adventure/Backgrounds/Tilesets/TilesetHouse.png",
+                  "rect": [368, 320, 16, 32],
+                  "at": [-64, 0]
+                },
+                {
+                  "sheet": "res://art/packs/ninja-adventure/Backgrounds/Tilesets/TilesetHouse.png",
+                  "rect": [368, 320, 16, 32],
+                  "at": [64, 0]
+                }
+              ]
+            },
+            "followers": 14,
+            "unlocks": []
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,5 +1,5 @@
 {
-  "_note": "The house builds in stages as the House Fund (sav_1) grows toward the down payment. Thresholds follow the shape of Animal Crossing's loan curve: small early steps so the first stages come fast. A built stage never unbuilds.",
+  "_note": "The house's stages, for the drawing. The house is a building (content/buildings.json, building `house`): each stage after the plot is a tier whose requirement is the House Fund (sav_1) balance below, checked at the Sunday sync, then built with coins and real days. Thresholds follow the shape of Animal Crossing's loan curve: small early steps so the first stages come fast. Keep at_cents equal to the house tiers' house_fund_cents (a test checks). A built stage never unbuilds.",
   "account": "sav_1",
   "goal_cents": 4000000,
   "goal_name": "Down payment",

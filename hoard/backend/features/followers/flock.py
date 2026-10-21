@@ -17,6 +17,7 @@ from backend.core.context import Ctx
 from backend.core.dates import week_start
 from backend.core.router import ApiError
 from backend.core.services import add_coins, away, grant_item
+from backend.features import buildings
 from backend.features.week.reactions import village_reactions
 from backend.money.budget import (
     LANDING_CATEGORIES,
@@ -50,8 +51,10 @@ GIANT_SCALE = 2.2
 
 WEAR_SLOTS = ("hat", "cloak", "aura", "follower_skin")
 
-# Devotion: the loyalty the owner earns by play piles up on the altar as coins.
-# The daily cap keeps a big flock (more holdings) from earning more coins than a small one.
+# Devotion: tending the flock piles coins up on the altar. It is the flock's, not each
+# follower's: the first loyalty earned by play each day puts the day's share on the altar and
+# the rest of the day adds nothing, so a flock of one and a flock of ten (more holdings) earn
+# the same coins a day. Money never buys coins.
 DEVOTION_START = 30
 DEVOTION_DAILY_CAP = 60
 DEVOTION_PILE_CAP = 150
@@ -331,6 +334,14 @@ def sizes(ctx: Ctx, week: date | None = None) -> dict[str, float]:
     }
 
 
+def cultists(band: str, capacity: int) -> int:
+    """Nameless cultists for a Faith band: the band's share of the village's follower
+    capacity. At the founding capacity the counts are content's (12, 8, 4, 2)."""
+    look = poses()
+    at = int(look.get("cultists_at_capacity", 12)) or 1
+    return round(look["bands"][band]["cultists"] * max(0, capacity) / at)
+
+
 def scale_for(share: float) -> float:
     return GIANT_SCALE if share > GIANT_SHARE else round(0.7 + 1.3 * math.sqrt(share), 3)
 
@@ -416,13 +427,15 @@ def devotion(ctx: Ctx) -> int:
 
 
 def add_devotion(ctx: Ctx, amount: int) -> int:
-    """Loyalty earned by play piles up on the altar, at most DEVOTION_DAILY_CAP a day."""
+    """The first loyalty earned by play each day puts the day's share (DEVOTION_DAILY_CAP) on
+    the altar; later loyalty that day adds nothing. How many followers there are, or how much
+    they are tended, never changes the coins a day."""
     today = ctx.today.isoformat()
-    same_day = ctx.meta("followers_devotion_on") == today
-    gained = _meta_int(ctx, "devotion_today", 0) if same_day else 0
-    add = max(0, min(amount, DEVOTION_DAILY_CAP - gained, DEVOTION_PILE_CAP - devotion(ctx)))
+    if amount <= 0 or ctx.meta("followers_devotion_on") == today:
+        return 0
+    add = max(0, min(DEVOTION_DAILY_CAP, DEVOTION_PILE_CAP - devotion(ctx)))
     _set_meta(ctx, "devotion_on", today)
-    _set_meta(ctx, "devotion_today", gained + add)
+    _set_meta(ctx, "devotion_today", add)
     _set_meta(ctx, "devotion", devotion(ctx) + add)
     return add
 
@@ -570,6 +583,7 @@ def flock_state(ctx: Ctx) -> dict:
     veiled = grave is not None or band == MOURNING_BAND
     wearing = _wearing(ctx)
     look = poses()
+    capacity = buildings.capacity(ctx)
 
     # The personal follower.
     is_hatched = hatched(ctx)
@@ -636,7 +650,8 @@ def flock_state(ctx: Ctx) -> dict:
         "personal": personal,
         "holdings": holdings,
         "giant": giant,
-        "cultists": look["bands"][band]["cultists"],
+        "cultists": cultists(band, capacity),
+        "capacity": capacity,
         "cultist_pose": cultist_pose,
         "cultist_bubble": cultist_bubble,
         "mourning": grave is not None,

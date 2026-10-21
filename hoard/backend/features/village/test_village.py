@@ -48,7 +48,33 @@ def later() -> tuple[Engine, object]:
 # --- the house ------------------------------------------------------------------------
 
 
-def test_house_stage_thresholds():
+def _rebank(engine: Engine, monkeypatch, **extra_cents: int) -> None:
+    """The bank reports more (or less) in some accounts from the next sync on."""
+    bank = engine.providers.bank
+    real = type(bank).accounts
+
+    def accounts(anchor: date, today: date) -> list[dict]:
+        out = real(bank, anchor, today)
+        for a in out:
+            a["balance_cents"] += extra_cents.get(a["id"], 0)
+        return out
+
+    monkeypatch.setattr(bank, "accounts", accounts)
+    with engine.conn:
+        engine.conn.execute("DELETE FROM meta WHERE key = 'synced_for'")
+
+
+def _advance(engine: Engine, days: int) -> dict:
+    status, body = engine.handle("POST", "/clock/advance", body={"days": days})
+    assert status == 200, body
+    status, body = engine.handle("GET", "/state")
+    assert status == 200, body
+    return body
+
+
+def test_house_stages_are_the_house_building_tiers():
+    from backend.features.buildings import catalog
+
     stages = HOUSE["stages"]
     assert [s["id"] for s in stages] == [
         "plot",
@@ -60,22 +86,36 @@ def test_house_stage_thresholds():
         "finished",
     ]
     assert stages[-1]["at_cents"] == HOUSE["goal_cents"] == 4_000_000
-    for i, s in enumerate(stages):
-        assert house.stage_index(stages, s["at_cents"]) == i
-        if i:
-            assert house.stage_index(stages, s["at_cents"] - 1) == i - 1
-    assert house.stage_index(stages, 0) == 0
-    assert house.stage_index(stages, 10**9) == len(stages) - 1
+    tiers = catalog.building("house")["tiers"]
+    assert len(tiers) == len(stages)
+    for stage, tier in zip(stages, tiers, strict=True):
+        assert tier["name"] == stage["name"]
+        assert tier["changes"]["look"] == {"drawer": "house", "stage": stage["id"]}
+        assert tier["requires"].get("house_fund_cents", 0) == stage["at_cents"]
+        assert set(tier["requires"]) <= {"house_fund_cents"}
 
 
 def test_house_fill_rows_and_gap():
-    view = house.house_view(HOUSE, 1_000_000, built=0, seen=3)
+    view = house.house_view(HOUSE, 1_000_000, built=3, seen=3)
     assert view["stage"]["id"] == "walls" and view["next"]["id"] == "roof"
     assert view["next"]["to_go_cents"] == 280_000
     assert view["fill"] == pytest.approx(0.5)
     assert view["rows"] == 16
-    done = house.house_view(HOUSE, 4_500_000, built=0, seen=6)
+    assert not view["building"] and not view["constructing"]
+    # The streak discount moves the line the rows fill toward.
+    cheaper = house.house_view(HOUSE, 1_000_000, built=3, seen=3, need_cents=1_024_000)
+    assert cheaper["next"]["at_cents"] == 1_024_000 and cheaper["next"]["base_cents"] == 1_280_000
+    assert cheaper["next"]["to_go_cents"] == 24_000
+    assert cheaper["fill"] == pytest.approx(280 / 304, abs=1e-4)
+    done = house.house_view(HOUSE, 4_500_000, built=6, seen=6)
     assert done["done"] and done["next"] is None and done["rows"] == done["rows_total"]
+
+
+def test_money_alone_never_builds_the_house():
+    # A full House Fund with only the walls built: the roof is outlined and full, not standing.
+    view = house.house_view(HOUSE, 2_000_000, built=3, seen=3)
+    assert view["stage"]["id"] == "walls" and view["fill"] == 1.0
+    assert view["next"]["to_go_cents"] == 0 and not view["building"]
 
 
 def test_house_never_unbuilds():
@@ -88,36 +128,54 @@ def test_demo_house_opens_on_walls(engine):
     h = _village(engine)["house"]
     assert h["balance_cents"] == 845_000
     assert h["stage"]["id"] == "walls" and h["next"]["to_go_cents"] == 435_000
-    assert not h["building"]
+    assert not h["building"] and not h["constructing"] and h["progress"] == 0.0
 
 
-def test_house_stage_crossing_builds_once(engine):
-    _village(engine)
-    with engine.conn:
-        engine.conn.execute("UPDATE accounts SET balance_cents = 1300000 WHERE id = 'sav_1'")
+def test_house_stage_needs_a_sunday_coins_and_days(engine, monkeypatch):
+    _village(engine)  # Tuesday: the founding builds the walls
+    _rebank(engine, monkeypatch, sav_1=455_000)  # the House Fund reaches the roof's line
     h = _village(engine)["house"]
+    assert h["stage"]["id"] == "walls" and h["fill"] == 1.0 and not h["building"]
+    assert engine.handle("POST", "/buildings/build", body={"building_id": "house"})[0] == 409
+
+    s = _advance(engine, 5)  # Sunday: the check finds it
+    assert s["today"] == "2026-10-25"
+    entry = next(b for b in s["buildings"]["list"] if b["id"] == "house")
+    assert entry["next"]["ready"] and entry["next"]["coins"] == 900
+    with engine.conn:
+        add_coins(engine.ctx(), 900, "test")
+    status, body = engine.handle("POST", "/buildings/build", body={"building_id": "house"})
+    assert status == 200, body
+    h = _village(engine)["house"]
+    assert h["stage"]["id"] == "walls" and h["constructing"] and h["progress"] == 0.0
+
+    s = _advance(engine, 3)
+    h = s["village"]["house"]
+    assert h["constructing"] and h["progress"] == 0.75 and h["stage"]["id"] == "walls"
+    s = _advance(engine, 1)  # four days after it started, the roof is on
+    h = s["village"]["house"]
     assert h["stage"]["id"] == "roof" and h["building"] and h["seen_index"] == 3
+    assert not h["constructing"]
+    beats = [a for a in s["away"] if a["kind"] in ("building_done", "house_stage")]
+    assert [(b["kind"], b["payload"]["building_id"], b["payload"]["tier"]) for b in beats] == [
+        ("building_done", "house", 5)
+    ]
+    assert beats[0]["payload"]["text"] == "The roof is on."
+
     status, body = engine.handle("POST", "/village/seen", body={"parts": ["house"]})
     assert status == 200 and not body["village"]["house"]["building"]
     # The money leaves again: the roof stays on.
-    with engine.conn:
-        engine.conn.execute("UPDATE accounts SET balance_cents = 900000 WHERE id = 'sav_1'")
+    _rebank(engine, monkeypatch, sav_1=-400_000)
     h = _village(engine)["house"]
-    assert h["stage"]["id"] == "roof" and h["balance_cents"] == 900_000
+    assert h["stage"]["id"] == "roof" and h["balance_cents"] < 720_000
 
 
-def test_overnight_stage_queues_an_away_beat(engine):
-    _village(engine)
+def test_old_save_keeps_its_house(engine):
+    """A save from before the house was a building keeps its high-water stage as built."""
     with engine.conn:
-        engine.conn.execute("UPDATE accounts SET balance_cents = 1300000 WHERE id = 'sav_1'")
-    with engine.conn:
-        house_ctx = engine.ctx()
-        from backend.features.village import village_day
-
-        village_day(house_ctx, house_ctx.today)
-    beats = [a for a in engine.handle("GET", "/state")[1]["away"] if a["kind"] == "house_stage"]
-    assert [b["payload"]["stage"] for b in beats] == ["roof"]
-    assert "!" not in beats[0]["payload"]["text"]
+        engine.conn.execute("INSERT INTO meta (key, value) VALUES ('village_house_built', '5')")
+    h = _village(engine)["house"]
+    assert h["stage"]["id"] == "interior" and not h["building"]
 
 
 # --- the wall ------------------------------------------------------------------------

@@ -14,6 +14,7 @@ from backend.content import CONTENT
 from backend.core.context import Ctx
 from backend.core.dates import week_start
 from backend.core.router import ApiError
+from backend.features import buildings
 from backend.features.week.reactions import village_reactions
 from backend.money.budget import landed_cents
 
@@ -44,8 +45,10 @@ def item(item_id: str) -> dict | None:
 # --- the lantern -----------------------------------------------------------------------
 
 
-def flames_per_day() -> int:
-    return int(content("games")["flames_per_day"])
+def flames_per_day(ctx: Ctx) -> int:
+    """Full-pay flames a day: the content's base, plus one for each built arcade tier that
+    unlocks a flame (the Neon hall, the Grand arcade). Built tiers never unbuild."""
+    return int(content("games")["flames_per_day"]) + buildings.unlocked(ctx, "arcade.flame")
 
 
 def flames_used(ctx: Ctx, day: date | None = None) -> int:
@@ -58,7 +61,7 @@ def flames_used(ctx: Ctx, day: date | None = None) -> int:
 
 
 def flames_left(ctx: Ctx) -> int:
-    return max(0, flames_per_day() - flames_used(ctx))
+    return max(0, flames_per_day(ctx) - flames_used(ctx))
 
 
 # --- the real week, as yes/no facts ------------------------------------------------------

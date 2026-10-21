@@ -20,6 +20,8 @@
     "question": "res://art/packs/tiopalada-emoji-pack-1/20250405emoticons-SheetQuestion.png",
     "sweat": "res://art/packs/tiopalada-emoji-pack-1/20250405emoticons-SheetSweat.png"
   },
+  "_cultists": "A band's cultists are counted at cultists_at_capacity; the flock scales them with the village's follower capacity (the sum over built tiers in content/buildings.json), so at the founding capacity of 12 the counts are as written.",
+  "cultists_at_capacity": 12,
   "bands": {
     "fervent":  {"glow": 1.0,  "cultists": 12, "flame_fps": 14, "tint": [1.0, 1.0, 1.0]},
     "content":  {"glow": 0.65, "cultists": 8,  "flame_fps": 9,  "tint": [1.0, 1.0, 1.0]},

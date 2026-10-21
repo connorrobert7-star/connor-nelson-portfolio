@@ -2,9 +2,11 @@
 
 GET /state gets a `village` section. POST /village/seen is sent after the game has
 played what changed (a house stage going up, bricks falling, sockets filling, a ruin
-restored), so each of those plays once. A daily hook keeps the house's high-water
-stage, writes down filled sockets and restored ruins, and queues the overnight beats
-for the "while you were out" scene. Nothing here moves money or grants coins.
+restored), so each of those plays once. The house is a building now (its stages are
+built with coins and days once the House Fund holds them at a Sunday check; see
+backend/features/buildings); a finished stage queues the buildings' `building_done` beat.
+A daily hook writes down filled sockets and restored ruins and queues their overnight
+beats for the "while you were out" scene. Nothing here moves money or grants coins.
 """
 
 import json
@@ -17,20 +19,13 @@ from backend.core.hooks import daily
 from backend.core.router import route
 from backend.core.services import away, owned_items
 from backend.core.state import View, section
+from backend.features import buildings
 from backend.features.village import bundles, house, wall
 from backend.money.budget import landed_cents, last_landing_day
 
 TIER_RANK = {"common": 0, "rare": 1, "epic": 2, "legendary": 3, "mythic": 4}
 TROPHY_SLOTS = 6
 FAITH_BANDS = ((2, "fervent"), (6, "content"), (13, "doubting"))
-STAGE_LINES = {
-    "foundation": "The foundation is poured.",
-    "frame": "The frame is up.",
-    "walls": "The walls are up.",
-    "roof": "The roof is on.",
-    "interior": "The rooms are finished inside.",
-    "finished": "The house is finished.",
-}
 
 
 @cache
@@ -85,11 +80,8 @@ def _payday(ctx: Ctx) -> bool:
 
 
 def _init(ctx: Ctx) -> None:
-    """First look at a save: what stands now counts as already seen."""
-    if ctx.meta(house.BUILT_KEY) is None:
-        house.record_built(ctx)
-    if ctx.meta(house.SEEN_KEY) is None:
-        ctx.set_meta(house.SEEN_KEY, ctx.meta(house.BUILT_KEY) or "0")
+    """First look at a save: the wall as it stands counts as already seen. (The house's
+    first look is the buildings feature's founding.)"""
     if ctx.meta(wall.SEEN_KEY) is None:
         ctx.set_meta(
             wall.SEEN_KEY, str(wall.wall_state(ctx, bundles.bundle_config())["balance_cents"])
@@ -128,8 +120,7 @@ def village_seen(ctx: Ctx, parts: list | None = None) -> dict:
     _init(ctx)
     which = set(parts or ("house", "wall", "bundles"))
     if "house" in which:
-        _, built = house.record_built(ctx)
-        ctx.set_meta(house.SEEN_KEY, str(built))
+        buildings.mark_seen(ctx, house.BUILDING)
     if "wall" in which:
         balance = wall.wall_state(ctx, bundles.bundle_config())["balance_cents"]
         ctx.set_meta(wall.SEEN_KEY, str(balance))
@@ -141,21 +132,9 @@ def village_seen(ctx: Ctx, parts: list | None = None) -> dict:
 
 @daily(order=70)
 def village_day(ctx: Ctx, day: date) -> None:
-    """Overnight: keep the high-water house stage, write down sockets, restore ruins."""
+    """Overnight: write down sockets and restore ruins. (House stages finish in the
+    buildings feature's hook, which queues their beat.)"""
     _init(ctx)
-    before, now = house.record_built(ctx)
-    stages = house.house_config()["stages"]
-    for i in range(before + 1, now + 1):
-        stage = stages[i]
-        away(
-            ctx,
-            "house_stage",
-            priority=20,
-            stage=stage["id"],
-            name=stage["name"],
-            at_cents=stage["at_cents"],
-            text=STAGE_LINES.get(stage["id"], f"{stage['name']} is built."),
-        )
     for ruin in bundles.sync(ctx):
         away(
             ctx,

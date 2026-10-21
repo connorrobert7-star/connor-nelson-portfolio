@@ -30,7 +30,7 @@ def minigames_state(ctx: Ctx, view: View) -> dict:
     return {
         "minigames": {
             "flames": {
-                "max": rules.flames_per_day(),
+                "max": rules.flames_per_day(ctx),
                 "left": rules.flames_left(ctx),
                 "used_today": rules.flames_used(ctx),
             },
