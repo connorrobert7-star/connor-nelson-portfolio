@@ -43,13 +43,13 @@ book contents, wheel price and wedges, claw price and heap size.
 
 | Route | Body | Returns |
 | --- | --- | --- |
-| `GET /casino/catalog` | | `{items, sets, tiers}` (static) |
+| `GET /casino/catalog` | | `{items, sets, tiers, trophies: [{id, name, items}]}` (static) |
 | `POST /casino/case` | `case_id, to_account` | `{money, shell: {tier, source: "belt"\|"box"}, item, reel: [{item_id, tier}], winner_index, near_miss_tier}` |
 | `POST /casino/scratch` | `price_cents, to_account` | `{money, item, tier, symbols: [9 tier strings]}` |
 | `POST /casino/wheel` | `to_account` | `{money, wedge_index, item}` |
 | `POST /casino/claw` | `to_account, drop_x` (0 to 1) | `{money, grabbed: {slot_index, tier}, item}` |
 | `POST /casino/tradeup` | `inventory_ids` (10 ids, same tier, not legendary or mythic) | `{item}` |
-| `POST /casino/equip` | `item_id` | `{equipped: {slot: item_id}}` |
+| `POST /casino/equip` | `item_id` (a casino piece or a trophy) | `{equipped: {slot: item_id}}` |
 
 `reel` is about 45 cards with the winner at `winner_index` (about 38). Every route that grants an item
 also emits `ctx.emit("item", item_id=..., name=..., tier=...)`.
@@ -67,6 +67,7 @@ casino: {
   claw: {price_cents, heap: [{slot_index, tier, x, y}]},  # x, y in 0..1 across the glass
   draw: {week_start, entries, tickets_total, draws_on, last: {week, won: [item_id]} | null},
   owned: {item_id: count}, inventory: [{inventory_id, item_id}], equipped: {slot: item_id},
+  trophies: {item_id: count},                            # owned pieces from the trophy shelves
   dealer: {name: "Vex", line: "Twenty-five shells. One purple."}   # what he says right now
 }
 ```
@@ -83,6 +84,10 @@ casino: {
   cosmetic (first draws are the best tier). Cosmetics only.
 - **Trade-up**: ten owned items of one tier (common, rare or epic) become one random item of the next
   tier. Legendary can't be traded up, so mythic only comes from the box.
+- **Trophy shelves**: the other features' cosmetics (`content/gate`, `content/minigames`,
+  `content/followers` `items.json`) get their own spreads at the back of the book, one per file, in the
+  same shape. Owned ones show in color and can be worn; missing ones are silhouettes. They never go in
+  the press.
 
 ## Godot (`game/features/casino/`)
 

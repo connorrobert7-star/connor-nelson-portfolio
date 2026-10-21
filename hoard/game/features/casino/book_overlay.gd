@@ -7,7 +7,13 @@ extends Overlay
 ## and outline, with a count when there's more than one; what you're missing is a dark
 ## silhouette. Ribbons on the edge flip between sets.
 ##
-## Tap a piece you own and the leader on the stage below puts it on (POST /casino/equip).
+## After the casino's sets come the trophy shelves, one spread per other catalog (the gate's
+## boss drops, the undercroft's, the flock's), each on its own colored ribbon: owned pieces in
+## color in brass-cornered pockets (big ones for the gate's eight), missing ones as
+## silhouettes. They can be worn; they never go in the press.
+##
+## Tap a piece you own and the leader on the stage below (the 0x72 wizard) puts it on
+## (POST /casino/equip).
 ## Tap the press and its rail opens: tap ten pieces of one color into it, pull the lever, and
 ## the press stamps them into one piece of the next color (POST /casino/tradeup), which pops
 ## out in its rarity's light and lands in its pocket. Gold and red bounce off the rail.
@@ -22,13 +28,12 @@ const FONT_BIG := PACKS + "google-pixel-fonts-ofl/jersey10/Jersey10-Regular.ttf"
 const GLOW_TEX := PACKS + "kenney-particle-pack/PNG (Transparent)/circle_05.png"
 const STAR_TEX := PACKS + "kenney-particle-pack/PNG (Transparent)/star_06.png"
 const SMOKE_TEX := PACKS + "kenney-particle-pack/PNG (Transparent)/smoke_04.png"
-const LEADER_TEX := "res://art/leader.png"
 
 const TIERS := ["common", "rare", "epic", "legendary", "mythic"]
 const NEXT := {"common": "rare", "rare": "epic", "epic": "legendary"}
-const LEFT_TIERS := ["common", "rare"]
-const RIGHT_TIERS := ["epic", "legendary", "mythic"]
 const SET_COLORS := [Palette.TEAL, Palette.PINK]
+# Trophy shelves' ribbons: rusted bronze for the gate, bile for the undercroft, bone for the flock.
+const SHELF_COLORS := {"gate": Color("b0703a"), "minigames": Palette.BILE, "followers": Color("d8cbb2")}
 const LAMP := Color("ffe6c4")
 const BRASS := Color("a07a3a")
 const BRASS_LIT := Color("f0cf8a")
@@ -40,7 +45,10 @@ const BOOK := Rect2(36, 4, 408, 184)
 const PAGE_L := Rect2(42, 9, 196, 174)
 const PAGE_R := Rect2(242, 9, 196, 174)
 const PITCH := 36.0
-const TAB := Vector2(18, 34)
+const BIG_PITCH := 72.0
+const TAB := Vector2(18, 27)
+const TAB_TOP := 30.0
+const TAB_GAP := 3.0
 const STAGE := Rect2(2, 194, 98, 76)
 const FEET := Vector2(50, 262)
 const RAIL := Rect2(104, 222, 218, 36)
@@ -51,15 +59,26 @@ const LEVER := Rect2(424, 196, 56, 74)
 const OUT := Vector2(372, 260)
 const PIVOT := Vector2(440, 258)
 
-# Where each worn piece sits on the leader (1x, feet at 0,0). Aura and cloak go behind.
-const PIECE_AT := {
-	"aura": Vector2(0, -18),
-	"cloak": Vector2(0, -6),
-	"hat": Vector2(0, -27),
-	"charm": Vector2(14, -10),
-	"follower_skin": Vector2(-15, -7),
+# The owner's character on the book's stage: the 0x72 wizard (wizzard_m idle, 4 frames).
+const WIZARD := PACKS + "0x72-dungeontileset-ii/0x72_DungeonTilesetII_v1.7/0x72_DungeonTilesetII_v1.7.png"
+const WIZARD_IDLE := Rect2(128, 164, 16, 28)
+const FIG_SCALE := 3.0
+
+# Where each worn piece sits (1x, feet at 0,0), how many pixels wide it is, and its glow.
+# The aura goes behind the body. WORLD is the walking leader; STAGE the wizard in the book.
+const WORLD_LOOK := {
+	"aura": {"at": Vector2(0, -18), "px": 32.0, "glow": 34.0, "back": true},
+	"cloak": {"at": Vector2(0, -6), "px": 16.0, "glow": 14.0},
+	"hat": {"at": Vector2(0, -27), "px": 16.0, "glow": 14.0},
+	"charm": {"at": Vector2(14, -10), "px": 16.0, "glow": 14.0},
 }
-const BEHIND := ["aura"]
+const STAGE_LOOK := {
+	"aura": {"at": Vector2(1, -9), "px": 24.0, "glow": 16.0, "back": true},
+	"cloak": {"at": Vector2(-3, -7), "px": 14.0, "glow": 8.0, "back": true},
+	"hat": {"at": Vector2(1, -16), "px": 12.0, "glow": 8.0},
+	"charm": {"at": Vector2(-10, -14), "px": 7.0, "glow": 6.0},
+	"follower_skin": {"at": Vector2(13, -4), "px": 9.0, "glow": 7.0},
+}
 
 # What each tier's reveal does (docs/INFLUENCES.md, the CS:GO reveal table).
 const REVEAL := {
@@ -142,7 +161,6 @@ var traded := 0
 var last_trade: Dictionary = {}
 
 var _changed := false
-var _skip := false
 var _root := Control.new()
 var _bookart: BookArt
 var _spreads: Array[Control] = []
@@ -154,6 +172,8 @@ var _figure := Node2D.new()
 var _fig_back := Node2D.new()
 var _fig_front := Node2D.new()
 var _fig_sprite := Sprite2D.new()
+var _fig_frames: Array[Texture2D] = []
+var _fig_t := 0.0
 var _fig_pieces: Dictionary = {}
 var _press: PressArt
 var _rail_layer := Control.new()
@@ -208,6 +228,7 @@ func _load() -> void:
 func _read_state() -> void:
 	var cz: Dictionary = Game.state.get("casino", {})
 	owned = (cz.get("owned", {}) as Dictionary).duplicate()
+	owned.merge(cz.get("trophies", {}) as Dictionary)
 	inventory = (cz.get("inventory", []) as Array).duplicate()
 	equipped = (cz.get("equipped", {}) as Dictionary).duplicate()
 
@@ -247,8 +268,13 @@ func items_on_page() -> Array[String]:
 # --- building ------------------------------------------------------------------------
 
 func _build_spreads() -> void:
+	var casino_sets := 0
+	for st: Dictionary in sets:
+		if not st.get("trophy", false):
+			casino_sets += 1
 	for si in sets.size():
 		var set_id := str(sets[si].id)
+		var trophy: bool = sets[si].get("trophy", false)
 		var spread := SpreadArt.new()
 		spread.size = Vector2(480, 270)
 		spread.visible = false
@@ -257,38 +283,58 @@ func _build_spreads() -> void:
 		_spreads.append(spread)
 		var head := BookOverlay.words(spread, str(sets[si].get("name", set_id)), Vector2(PAGE_L.get_center().x, PAGE_L.position.y + 7), Color(Palette.MUTED, 0.85))
 		head.name = "Heading"
-		for side in 2:
-			var pg: Rect2 = PAGE_L if side == 0 else PAGE_R
-			var tiers: Array = LEFT_TIERS if side == 0 else RIGHT_TIERS
-			var y := pg.position.y + 16.0
-			for tier: String in tiers:
-				var ids: Array[String] = []
-				for id: String in items:
-					var it: Dictionary = items[id]
-					if str(it.set) == set_id and str(it.tier) == tier:
-						ids.append(id)
-				if ids.is_empty():
-					continue
-				var rows := ceili(ids.size() / 5.0)
-				var cols := ceili(float(ids.size()) / rows)
-				spread.markers.append({"pos": Vector2(pg.position.x + 4, y + rows * PITCH / 2.0 - 5), "tier": tier})
-				for i in ids.size():
-					var r := i / cols
-					var c := i % cols
-					var in_row := mini(cols, ids.size() - r * cols)
-					var x0 := pg.get_center().x - in_row * PITCH / 2.0
-					var cell := Cell.new()
-					cell.position = Vector2(x0 + c * PITCH + 2.0, y + r * PITCH + 2.0)
-					spread.add_child(cell)
-					cell.setup(items[ids[i]], _icon(ids[i]), _mat(tier), _mat("sil"), _mat("rim"))
-					_cells[ids[i]] = cell
-					_cell_set[ids[i]] = si
-				y += rows * PITCH + 4.0
-		# A ribbon for each set on the book's edge.
+		# Each color is a block of pockets, five to a row; the blocks split across the two
+		# pages as evenly as the rows allow. A small trophy shelf (the gate's eight) gets big
+		# mounted pockets, two to a row, if they fit.
+		var on_shelf := 0
+		for id: String in items:
+			if BookOverlay.page_key(items[id]) == set_id:
+				on_shelf += 1
+		var blocks := _blocks(set_id, 2)
+		var split := BookOverlay.split_blocks(blocks)
+		var big := trophy and on_shelf <= 8 and _fits(blocks, split, BIG_PITCH)
+		if not big:
+			blocks = _blocks(set_id, 5)
+			split = BookOverlay.split_blocks(blocks)
+		var pitch := BIG_PITCH if big else PITCH
+		for b in blocks.size():
+			var pg: Rect2 = PAGE_L if b < split else PAGE_R
+			var first_on_page := b == 0 or b == split
+			if first_on_page:
+				var rows_here := 0
+				for k in range(0 if b < split else split, split if b < split else blocks.size()):
+					rows_here += int(blocks[k].rows)
+				var on_page := split if b < split else blocks.size() - split
+				var room := pg.size.y - 16.0
+				var used := rows_here * pitch + (on_page - 1) * 4.0
+				blocks[b]["y"] = pg.position.y + 16.0 + (maxf(0.0, room - used) / 2.0 if trophy else 0.0)
+			else:
+				blocks[b]["y"] = float(blocks[b - 1].y) + int(blocks[b - 1].rows) * pitch + 4.0
+			var ids: Array[String] = []
+			ids.assign(blocks[b].ids)
+			var tier := str(blocks[b].tier)
+			var y: float = blocks[b].y
+			var rows := int(blocks[b].rows)
+			var cols := ceili(float(ids.size()) / rows)
+			spread.markers.append({"pos": Vector2(pg.position.x + 4, y + rows * pitch / 2.0 - 5), "tier": tier})
+			for i in ids.size():
+				var r := i / cols
+				var c := i % cols
+				var in_row := mini(cols, ids.size() - r * cols)
+				var x0 := pg.get_center().x - in_row * pitch / 2.0
+				var cell := Cell.new()
+				cell.position = Vector2(x0 + (c + 0.5) * pitch, y + (r + 0.5) * pitch) - Vector2(16, 16)
+				cell.base = 2.0 if big else 1.0
+				cell.scale = Vector2.ONE * cell.base
+				spread.add_child(cell)
+				cell.setup(items[ids[i]], _icon(ids[i]), _mat(tier), _mat("sil"), _mat("rim"))
+				_cells[ids[i]] = cell
+				_cell_set[ids[i]] = si
+		# A ribbon for each spread on the book's edge, the trophies' a little apart.
 		var tab := Tab.new()
 		tab.index = si
-		tab.color = SET_COLORS[si % SET_COLORS.size()]
-		tab.position = Vector2(BOOK.end.x - 4, 22 + si * (TAB.y + 6))
+		tab.color = SHELF_COLORS.get(set_id, Palette.MUTED) if trophy else SET_COLORS[si % SET_COLORS.size()]
+		tab.position = Vector2(BOOK.end.x - 4, TAB_TOP + si * (TAB.y + TAB_GAP) + (6.0 if si >= casino_sets else 0.0))
 		tab.size = TAB
 		var emblem := _emblem(set_id)
 		if not emblem.is_empty():
@@ -298,11 +344,58 @@ func _build_spreads() -> void:
 		_tabs.append(tab)
 
 
+## A spread's pockets by color, `per_row` to a row at most: [{tier, ids, rows}].
+func _blocks(set_id: String, per_row: int) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	for tier: String in TIERS:
+		var ids: Array[String] = []
+		for id: String in items:
+			var it: Dictionary = items[id]
+			if BookOverlay.page_key(it) == set_id and str(it.tier) == tier:
+				ids.append(id)
+		if not ids.is_empty():
+			out.append({"tier": tier, "ids": ids, "rows": ceili(ids.size() / float(per_row))})
+	return out
+
+
+## Whether both pages hold their blocks at this pitch.
+static func _fits(blocks: Array[Dictionary], split: int, pitch: float) -> bool:
+	var left := 0.0
+	var right := 0.0
+	for b in blocks.size():
+		var h := int(blocks[b].rows) * pitch + 4.0
+		if b < split:
+			left += h
+		else:
+			right += h
+	return maxf(left, right) - 4.0 <= PAGE_L.size.y - 16.0
+
+
+## Where the left page ends: the index of the first block on the right page, chosen so the
+## two pages hold as close to the same number of rows as they can (cheaper colors left).
+static func split_blocks(blocks: Array[Dictionary]) -> int:
+	if blocks.size() <= 1:
+		return blocks.size()
+	var total := 0
+	for b in blocks:
+		total += int(b.rows)
+	var best := 1
+	var best_gap := 1 << 20
+	var left := 0
+	for k in range(1, blocks.size()):
+		left += int(blocks[k - 1].rows)
+		var gap := absi(total - 2 * left)
+		if gap < best_gap:
+			best_gap = gap
+			best = k
+	return best
+
+
 func _emblem(set_id: String) -> Dictionary:
 	var best: Dictionary = {}
 	for id: String in items:
 		var it: Dictionary = items[id]
-		if str(it.set) == set_id and (best.is_empty() or TIERS.find(it.tier) > TIERS.find(best.tier)):
+		if BookOverlay.page_key(it) == set_id and (best.is_empty() or TIERS.find(it.tier) > TIERS.find(best.tier)):
 			best = it
 	return best
 
@@ -313,12 +406,17 @@ func _build_stage() -> void:
 	_stage.size = STAGE.size
 	_root.add_child(_stage)
 	_figure.position = FEET - STAGE.position
-	_figure.scale = Vector2(2, 2)
+	_figure.scale = Vector2(FIG_SCALE, FIG_SCALE)
 	_stage.add_child(_figure)
 	_figure.add_child(_fig_back)
-	_fig_sprite.texture = load(LEADER_TEX)
-	_fig_sprite.hframes = 6
-	_fig_sprite.offset = Vector2(0, -14)
+	for i in 4:
+		var a := AtlasTexture.new()
+		a.atlas = load(WIZARD)
+		a.region = Rect2(WIZARD_IDLE.position + Vector2(i * 16, 0), WIZARD_IDLE.size)
+		a.filter_clip = true
+		_fig_frames.append(a)
+	_fig_sprite.texture = _fig_frames[0]
+	_fig_sprite.offset = Vector2(0, -WIZARD_IDLE.size.y / 2.0)
 	_figure.add_child(_fig_sprite)
 	_figure.add_child(_fig_front)
 
@@ -370,7 +468,7 @@ func _refresh() -> void:
 		var dim := false
 		if mode == Mode.FEED:
 			var left := int(owned.get(id, 0)) - fed
-			dim = not NEXT.has(c.tier) or left <= 0 or (rail_tier != "" and rail_tier != c.tier) or rail.size() >= 10
+			dim = c.trophy or not NEXT.has(c.tier) or left <= 0 or (rail_tier != "" and rail_tier != c.tier) or rail.size() >= 10
 		c.show_state(int(owned.get(id, 0)), fed, worn.has(id), dim)
 	_press.open_target = 1.0 if mode != Mode.LOOK or not rail.is_empty() else 0.0
 	_press.rail_on = mode == Mode.FEED
@@ -410,7 +508,7 @@ func _refresh_worn() -> void:
 func _tradeable_tier() -> String:
 	var per: Dictionary = {}
 	for id: String in owned:
-		if items.has(id):
+		if items.has(id) and not BookOverlay.is_trophy(items[id]):
 			var tier := str(items[id].tier)
 			per[tier] = int(per.get(tier, 0)) + int(owned[id])
 	for tier: String in ["epic", "rare", "common"]:
@@ -462,8 +560,20 @@ func _flip_to(index: int) -> void:
 
 
 func _dress_figure() -> void:
-	_fig_pieces = BookOverlay.dress_pieces(_fig_back, _fig_front, equipped, items, true)
+	_fig_pieces = BookOverlay.dress_pieces(_fig_back, _fig_front, equipped, items, STAGE_LOOK)
 	_refresh_worn()
+
+
+func _process(delta: float) -> void:
+	_fig_t += delta
+	if not _fig_frames.is_empty():
+		_fig_sprite.texture = _fig_frames[int(_fig_t * 7.0) % _fig_frames.size()]
+	var charm := piece_on_leader("charm")
+	if charm:
+		charm.position.y = STAGE_LOOK.charm.at.y + roundf(sin(_fig_t * 2.2) * 1.0)
+	var aura := piece_on_leader("aura")
+	if aura and aura.has_node("Turn"):
+		(aura.get_node("Turn") as Node2D).rotation = _fig_t * 0.8
 
 
 # --- input ---------------------------------------------------------------------------
@@ -485,7 +595,6 @@ func _unhandled_key_input(event: InputEvent) -> void:
 
 func _tap(at: Vector2) -> void:
 	if mode == Mode.BUSY:
-		_skip = true
 		return
 	if items.is_empty():
 		_close()
@@ -496,7 +605,7 @@ func _tap(at: Vector2) -> void:
 			return
 	for id: String in _cells:
 		var c: Cell = _cells[id]
-		if _cell_set[id] == page and Rect2(c.global_position - Vector2(2, 2), Vector2(36, 36)).has_point(at):
+		if _cell_set[id] == page and c.get_global_rect().grow(2.0 * c.base).has_point(at):
 			_tap_cell(c)
 			return
 	if mode == Mode.FEED:
@@ -537,7 +646,8 @@ func _tap_cell(c: Cell) -> void:
 
 func _name_at(c: Cell) -> void:
 	var col: Color = Palette.RARITY[c.tier]
-	CasinoFx.float_text(_fx, c.global_position + Vector2(16, -6), str(c.item.name), col, 8)
+	var r := c.get_global_rect()
+	CasinoFx.float_text(_fx, Vector2(r.get_center().x, r.position.y - 6), str(c.item.name), col, 8)
 
 
 # --- wearing -------------------------------------------------------------------------
@@ -558,8 +668,8 @@ func _equip(c: Cell) -> void:
 	c.wiggle()
 	_name_at(c)
 	BookOverlay.sound(SND_WHOOSH, 1.2, -12.0)
-	var to: Vector2 = _figure.global_position + PIECE_AT.get(slot, Vector2(0, -16)) * 2.0
-	var fly := await _fly(_icon(str(c.item.id)), Rect2(c.global_position, Vector2(32, 32)), Rect2(to - Vector2(16, 16), Vector2(32, 32)), 0.32, 26.0)
+	var to: Vector2 = _figure.global_position + (STAGE_LOOK.get(slot, {}).get("at", Vector2(0, -10)) as Vector2) * FIG_SCALE
+	var fly := await _fly(_icon(str(c.item.id)), c.get_global_rect(), Rect2(to - Vector2(16, 16), Vector2(32, 32)), 0.32, 26.0)
 	fly.queue_free()
 	_dress_figure()
 	var piece := piece_on_leader(slot)
@@ -582,8 +692,8 @@ func _hop() -> void:
 	var tw := _figure.create_tween()
 	tw.tween_property(_figure, "position", home + Vector2(0, -6), 0.09).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	tw.tween_property(_figure, "position", home, 0.12).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-	tw.tween_property(_figure, "scale", Vector2(2.2, 1.8), 0.05)
-	tw.tween_property(_figure, "scale", Vector2(2, 2), 0.08)
+	tw.tween_property(_figure, "scale", Vector2(FIG_SCALE * 1.1, FIG_SCALE * 0.9), 0.05)
+	tw.tween_property(_figure, "scale", Vector2(FIG_SCALE, FIG_SCALE), 0.08)
 
 
 # --- the trade-up press --------------------------------------------------------------
@@ -606,8 +716,8 @@ func _toggle_feed() -> void:
 func _feed(c: Cell) -> void:
 	var tier := c.tier
 	var col: Color = Palette.RARITY[tier]
-	if not NEXT.has(tier):
-		# The mouth is welded shut for gold and red: it flies at it and bounces off.
+	if c.trophy or not NEXT.has(tier):
+		# The mouth is welded shut for gold, red and trophies: they fly at it and bounce off.
 		_bounce(c, true)
 		return
 	var fed := 0
@@ -715,7 +825,6 @@ func _pull() -> void:
 		return
 	mode = Mode.BUSY
 	moment = "pull"
-	_skip = false
 	var tier := str(rail[0].tier)
 	var next: String = NEXT[tier]
 	var ids: Array = []
@@ -869,18 +978,34 @@ func _close() -> void:
 
 # --- shared helpers (the draw overlay and the leader use these too) -------------------
 
+## Every piece the book shows, by id: the casino's own and the trophy shelves' (those carry
+## a `shelf`, the feature they come from).
 static func load_catalog() -> Dictionary:
 	if _catalog.is_empty():
 		var res: Array = await Game.call_api("GET", "/casino/catalog")
 		if res[1] == "" and _catalog.is_empty():
 			for it: Dictionary in res[0].get("items", []):
 				_catalog[str(it.id)] = it
-			_sets = res[0].get("sets", [])
+			_sets = (res[0].get("sets", []) as Array).duplicate()
+			for shelf: Dictionary in res[0].get("trophies", []):
+				_sets.append({"id": str(shelf.id), "name": str(shelf.get("name", "")), "trophy": true})
+				for it: Dictionary in shelf.get("items", []):
+					_catalog[str(it.id)] = it
 	return _catalog
 
 
+## The book's spreads in order: the casino's sets, then a trophy shelf per other catalog.
 static func catalog_sets() -> Array:
 	return _sets
+
+
+## Which spread a piece lives on.
+static func page_key(item: Dictionary) -> String:
+	return str(item.get("shelf", item.get("set", "")))
+
+
+static func is_trophy(item: Dictionary) -> bool:
+	return item.has("shelf")
 
 
 static func icon_of(item: Dictionary) -> AtlasTexture:
@@ -940,8 +1065,10 @@ static func glow_sprite(parent: Node, pos: Vector2, color: Color, radius: float,
 	return s
 
 
+## The pack font, crisp. Set on the shared resource, as the other features do: a duplicate
+## shares the glyph cache and paints the wrong letters.
 static func font(path: String) -> FontFile:
-	var f: FontFile = (load(path) as FontFile).duplicate()
+	var f: FontFile = load(path)
 	f.antialiasing = TextServer.FONT_ANTIALIASING_NONE
 	f.hinting = TextServer.HINTING_NONE
 	f.subpixel_positioning = TextServer.SUBPIXEL_POSITIONING_DISABLED
@@ -1038,35 +1165,34 @@ static func shake(c: Control, strength: float, seconds: float) -> void:
 
 
 ## Put the worn pieces on a figure of the leader: `back` draws behind the leader's sprite,
-## `front` over it. Positions are the leader's own (1x, feet at 0,0). Returns slot -> piece.
-static func dress_pieces(back: Node2D, front: Node2D, worn: Dictionary, catalog: Dictionary, in_figure: bool) -> Dictionary:
+## `front` over it, placed by `look` (WORLD_LOOK or STAGE_LOOK). Returns slot -> piece.
+static func dress_pieces(back: Node2D, front: Node2D, worn: Dictionary, catalog: Dictionary, look: Dictionary) -> Dictionary:
 	for n: Node in back.get_children() + front.get_children():
 		n.queue_free()
 	var made: Dictionary = {}
 	for slot: String in ["aura", "cloak", "follower_skin", "hat", "charm"]:
 		var it: Dictionary = catalog.get(str(worn.get(slot, "")), {})
-		if it.is_empty() or (slot == "follower_skin" and not in_figure):
+		if it.is_empty() or not look.has(slot):
 			continue
+		var spec: Dictionary = look[slot]
 		var col: Color = Palette.RARITY.get(str(it.tier), Palette.CREAM)
 		var tex := icon_of(it)
-		var fit := 16.0 / tex.region.size.x
+		var fit: float = float(spec.px) / tex.region.size.x
 		var holder := Node2D.new()
-		holder.position = PIECE_AT[slot]
-		(back if slot in BEHIND else front).add_child(holder)
-		# The overlay's figure is drawn at 2x: small pieces go back to their own pixel size there.
-		var small := slot == "charm" or slot == "follower_skin"
+		holder.position = spec.at
+		(back if spec.get("back", false) else front).add_child(holder)
 		if slot == "aura":
-			glow_sprite(holder, Vector2(0, 4), col, 34.0, 0.55)
-			fit *= 1.5 if in_figure else 2.0
+			glow_sprite(holder, Vector2(0, float(spec.px) / 8.0), col, float(spec.glow), 0.55)
 		else:
-			glow_sprite(holder, Vector2.ZERO, col, 10.0 if small and in_figure else 14.0, 0.35)
-		if small and in_figure:
-			fit *= 0.5
+			glow_sprite(holder, Vector2.ZERO, col, float(spec.glow), 0.35)
 		var s := Sprite2D.new()
 		s.texture = tex
 		s.scale = Vector2(fit, fit)
 		if slot == "aura":
-			s.modulate = Color(1, 1, 1, 0.8)
+			# An aura is light: its pack colors glow (additive), its dark pixels vanish, and it turns.
+			s.material = additive()
+			s.modulate = Color(1, 1, 1, 0.6)
+			s.name = "Turn"
 		holder.add_child(s)
 		made[slot] = holder
 	return made
@@ -1103,13 +1229,16 @@ class Worn extends Node2D:
 		var catalog: Dictionary = await BookOverlay.load_catalog()
 		if not is_inside_tree():
 			return
-		_pieces = BookOverlay.dress_pieces(self, front, _last, catalog, false)
+		_pieces = BookOverlay.dress_pieces(self, front, _last, catalog, BookOverlay.WORLD_LOOK)
 
 	func _process(delta: float) -> void:
 		_t += delta
 		var charm: Variant = _pieces.get("charm")
 		if charm is Node2D and is_instance_valid(charm):
-			(charm as Node2D).position.y = BookOverlay.PIECE_AT.charm.y + roundf(sin(_t * 2.2) * 1.5)
+			(charm as Node2D).position.y = BookOverlay.WORLD_LOOK.charm.at.y + roundf(sin(_t * 2.2) * 1.5)
+		var aura: Variant = _pieces.get("aura")
+		if aura is Node2D and is_instance_valid(aura) and (aura as Node2D).has_node("Turn"):
+			((aura as Node2D).get_node("Turn") as Node2D).rotation = _t * 0.8
 
 
 # --- pieces of the book ------------------------------------------------------------------
@@ -1248,6 +1377,9 @@ class Tab extends Control:
 class Cell extends Control:
 	var item: Dictionary = {}
 	var tier := ""
+	var trophy := false
+	## 2 for a small trophy shelf's big mounted pockets, else 1.
+	var base := 1.0
 	var count := 0
 	var fed := 0
 	var worn := false
@@ -1272,6 +1404,7 @@ class Cell extends Control:
 	func setup(it: Dictionary, tex: Texture2D, outline_mat: Material, sil_mat: Material, rim_mat: Material) -> void:
 		item = it
 		tier = str(it.tier)
+		trophy = BookOverlay.is_trophy(it)
 		_home = position
 		var col: Color = Palette.RARITY[tier]
 		var big := tier == "legendary" or tier == "mythic"
@@ -1356,8 +1489,8 @@ class Cell extends Control:
 			_clip.size.y = v
 			_icon.position.y = -(32.0 - v), 0.0, 32.0, seconds)
 		var pop := create_tween()
-		pop.tween_property(self, "scale", Vector2(1.3, 1.3), 0.08)
-		pop.tween_property(self, "scale", Vector2.ONE, 0.22).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		pop.tween_property(self, "scale", Vector2.ONE * 1.3 * base, 0.08)
+		pop.tween_property(self, "scale", Vector2.ONE * base, 0.22).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 	func shiver() -> void:
 		var tw := create_tween()
@@ -1371,8 +1504,8 @@ class Cell extends Control:
 		tw.tween_property(self, "rotation", -0.14, 0.08)
 		tw.tween_property(self, "rotation", 0.0, 0.08)
 		var s := create_tween()
-		s.tween_property(self, "scale", Vector2(1.15, 1.15), 0.06)
-		s.tween_property(self, "scale", Vector2.ONE, 0.16)
+		s.tween_property(self, "scale", Vector2.ONE * 1.15 * base, 0.06)
+		s.tween_property(self, "scale", Vector2.ONE * base, 0.16)
 
 	func _process(delta: float) -> void:
 		_t += delta
@@ -1392,6 +1525,16 @@ class Cell extends Control:
 		draw_rect(Rect2(32, -1, 1, 34), Color("3a2d44"))
 		# The rarity bar along the bottom, like the reel's cards.
 		draw_rect(Rect2(1, 30, 30, 2), Color(col, 0.95 if have else 0.3))
+		if trophy:
+			# Mounted: brass brackets on the corners of a trophy's pocket.
+			var b := BookOverlay.BRASS if have else BookOverlay.BRASS.darkened(0.55)
+			for corner: Vector2 in [Vector2(-2, -2), Vector2(30, -2), Vector2(-2, 30), Vector2(30, 30)]:
+				var hy := corner.y if corner.y < 0 else corner.y + 3
+				var vx := corner.x if corner.x < 0 else corner.x + 3
+				draw_rect(Rect2(corner.x, hy, 4, 1), b)
+				draw_rect(Rect2(vx, corner.y, 1, 4), b)
+				if have:
+					draw_rect(Rect2(vx, hy, 1, 1), BookOverlay.BRASS_LIT)
 		if worn:
 			draw_rect(Rect2(-2, -2, 36, 1), Palette.CREAM)
 			draw_rect(Rect2(-2, 33, 36, 1), Palette.CREAM)
@@ -1773,7 +1916,6 @@ class Showcase extends Control:
 		tier = str(it.get("tier", "common"))
 		_tex = tex
 		_shader = shader
-		set_anchors_preset(Control.PRESET_FULL_RECT)
 		size = Vector2(480, 270)
 		mouse_filter = Control.MOUSE_FILTER_STOP
 

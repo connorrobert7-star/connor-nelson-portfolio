@@ -12,7 +12,8 @@ func run(kit: TourKit) -> void:
 
 
 ## Fill the inventory the way the owner would: real $1 and $5 scratch tickets and a few
-## cases, each landing its exact price in the House Fund. (Setup, not the thing under test.)
+## cases, each landing its exact price in the House Fund, and a won dungeon run for a trophy.
+## (Setup, not the thing under test.)
 func _stock_up(kit: TourKit) -> void:
 	var before := _balance("sav_1")
 	var spent := 0
@@ -28,9 +29,13 @@ func _stock_up(kit: TourKit) -> void:
 		var res: Array = await Game.call_api("POST", "/casino/case", {"case_id": "case_10", "to_account": "sav_1"})
 		if res[1] == "":
 			spent += 1000
+	var run: Array = await Game.call_api("POST", "/minigames/start", {"game": "dungeon"})
+	if run[1] == "":
+		await Game.call_api("POST", "/minigames/finish", {"run_id": int(run[0].run_id), "result": {"rooms_cleared": 4, "doors_broken": 4}})
 	await Game.refresh()
 	kit.check(_balance("sav_1") == before + spent, "every ticket and case landed its exact price in the House Fund (+%d cents)" % spent)
 	kit.check(_owned_total() >= 25, "the inventory has pieces to show (%d)" % _owned_total())
+	kit.check((Game.state.casino.get("trophies", {}) as Dictionary).size() >= 1, "the dungeon's boss dropped a trophy")
 
 
 func _book(kit: TourKit) -> void:
@@ -117,10 +122,61 @@ func _book(kit: TourKit) -> void:
 	await kit.wait(0.4)
 	kit.check(book.rail.is_empty() and book.mode == BookOverlay.Mode.LOOK, "tapping the press again sends the pieces home")
 
+	await _trophies(kit, book)
+
 	# Tap the dark margin to put the book down.
 	await kit.tap_screen(_screen(kit, Vector2(10, 100)))
 	await kit.until(func() -> bool: return kit.overlay() == null, 3.0)
 	kit.check(kit.overlay() == null and not Game.busy, "tapping outside the book closes it")
+
+
+## The trophy shelves at the back of the book: the gate's, the undercroft's and the flock's
+## pieces, owned in color, missing as silhouettes, wearable, never pressed.
+func _trophies(kit: TourKit, book: BookOverlay) -> void:
+	var shelves: Array[int] = []
+	for i in book.sets.size():
+		if book.sets[i].get("trophy", false):
+			shelves.append(i)
+	kit.check(shelves.size() == 3, "three trophy shelves follow the casino's sets (%d)" % shelves.size())
+	var held: Dictionary = Game.state.casino.get("trophies", {})
+	for si in shelves:
+		var id := str(book.sets[si].id)
+		await kit.tap_control(book.tab_control(si))
+		await kit.until(func() -> bool: return book.page == si and book.moment == "look", 3.0)
+		await kit.wait(0.35)
+		await kit.shot("book_10_trophies_%s" % id)
+		var ids := book.items_on_page()
+		var right := ids.size() > 0
+		for k in ids:
+			var c: BookOverlay.Cell = book.cell_control(k)
+			var have := int(held.get(k, 0)) > 0
+			right = right and c.trophy and (c._clip.visible == have) and (c._sil.visible != have)
+		kit.check(right, "the %s shelf: %d pieces, owned in color, missing as silhouettes" % [id, ids.size()])
+	# Wear an owned trophy: it goes on the wizard like any other piece.
+	var mine := ""
+	for k: String in held:
+		if book.items.has(k) and int(held[k]) > 0:
+			mine = k
+	if mine == "":
+		kit.check(false, "no trophy to wear")
+		return
+	var slot := str(book.items[mine].slot)
+	await _go_to_page_of(kit, book, mine)
+	await kit.tap_control(book.cell_control(mine))
+	await kit.until(func() -> bool: return str(Game.state.casino.equipped.get(slot, "")) == mine and book.moment == "look", 5.0)
+	kit.check(str(Game.state.casino.equipped.get(slot, "")) == mine, "tapping the %s trophy wears it" % mine)
+	kit.check(book.piece_on_leader(slot) != null, "the trophy shows on the wizard")
+	await kit.wait(0.4)
+	await kit.shot("book_11_trophy_worn")
+	# The press won't take it.
+	await kit.tap_screen(_screen(kit, BookOverlay.PRESS.get_center()))
+	await kit.until(func() -> bool: return book.moment == "feed", 2.0)
+	await kit.tap_control(book.cell_control(mine))
+	await kit.wait(0.3)
+	kit.check(book.rail.is_empty(), "a trophy bounces off the press")
+	await kit.shot("book_12_trophy_bounces")
+	await kit.tap_screen(_screen(kit, BookOverlay.PRESS.get_center()))
+	await kit.wait(0.3)
 
 
 func _trade_up(kit: TourKit, book: BookOverlay, tier: String) -> void:
@@ -189,19 +245,45 @@ func _world(kit: TourKit) -> void:
 	if worn:
 		await kit.until(func() -> bool: return worn._pieces.has("hat") or Game.state.casino.equipped.get("hat", "") == "", 3.0)
 		kit.check(worn._pieces.has("hat") or str(Game.state.casino.equipped.get("hat", "")) == "", "the hat is on the leader's head in the village")
+	# Up close on the leader (the camera moved onto them, the map's edge limits lifted).
 	var cam := kit.level().camera
-	cam.zoom = Vector2(2.5, 2.5)
-	await kit.wait(0.2)
+	var limits := [cam.limit_left, cam.limit_top, cam.limit_right, cam.limit_bottom]
+	cam.limit_left = -100000
+	cam.limit_top = -100000
+	cam.limit_right = 100000
+	cam.limit_bottom = 100000
+	var home := cam.global_position
+	var off := cam.offset
+	cam.offset = Vector2.ZERO
+	cam.global_position = kit.level().leader.global_position + Vector2(0, -12)
+	cam.zoom = Vector2(3, 3)
+	await kit.wait(0.3)
 	await kit.shot("book_09_world_leader")
 	cam.zoom = Vector2.ONE
+	cam.offset = off
+	cam.global_position = home
+	cam.limit_left = limits[0]
+	cam.limit_top = limits[1]
+	cam.limit_right = limits[2]
+	cam.limit_bottom = limits[3]
 
 
 ## The weekly draw: this week's tickets, then Sunday comes and last week's ten are drawn.
 func _draw(kit: TourKit) -> void:
 	await kit.go_to("village", Village.SPAWN)
+	# A bigger week: four $50 cases, each landing exactly $50 in the Brokerage.
+	var brk := _balance("brk_1")
+	var tickets_before := int(Game.state.casino.draw.entries)
+	var landed := 0
+	for i in 4:
+		var res: Array = await Game.call_api("POST", "/casino/case", {"case_id": "case_50", "to_account": "brk_1"})
+		if res[1] == "":
+			landed += 5000
+	await Game.refresh()
+	kit.check(landed > 0 and _balance("brk_1") == brk + landed, "each $50 case landed exactly $50 in the Brokerage (+%d cents)" % landed)
 	var dr: Dictionary = Game.state.casino.draw
 	var entries := int(dr.entries)
-	kit.check(entries >= 21, "every $5 that landed this week is a ticket (%d)" % entries)
+	kit.check(entries == tickets_before + landed / 500, "every $5 that landed this week is a ticket (%d)" % entries)
 	var od := DrawOverlay.new()
 	kit.main.open_overlay(od)
 	await kit.until(func() -> bool: return od.moment == "look", 6.0)

@@ -35,7 +35,12 @@ def croupier_lines(ctx: Ctx, state: dict) -> dict:
 
 @route("GET", "/casino/catalog")
 def get_catalog(ctx: Ctx) -> dict:
-    return {"items": catalog.items(), "sets": catalog.sets(), "tiers": catalog.tiers()}
+    return {
+        "items": catalog.items(),
+        "sets": catalog.sets(),
+        "tiers": catalog.tiers(),
+        "trophies": catalog.trophy_shelves(),
+    }
 
 
 @route("POST", "/casino/case")

@@ -102,6 +102,27 @@ def test_catalog_route(client):
     assert [t["id"] for t in body["tiers"]] == list(TIERS)
     assert body["tiers"][4]["color"] == "#ff2e3a"
     assert len(body["sets"]) == 2
+    assert [s["id"] for s in body["trophies"]] == ["gate", "minigames", "followers"]
+
+
+def test_trophy_shelves_are_the_other_catalogs():
+    shelves = catalog.trophy_shelves()
+    assert [s["name"] for s in shelves] == ["Trophies of the Gate", "The Undercroft", "The Flock"]
+    casino_ids = set(catalog.items_by_id())
+    for shelf in shelves:
+        raw = json.loads((GAME.parent / "content" / shelf["id"] / "items.json").read_text())
+        assert [i["id"] for i in shelf["items"]] == [i["id"] for i in raw["items"]]
+        for i in shelf["items"]:
+            assert set(i) == {*catalog.SHAPE, "shelf"} and i["shelf"] == shelf["id"]
+            assert i["id"] not in casino_ids
+            assert i["tier"] in TIERS and i["slot"] in SLOTS, i["id"]
+            sheet = GAME / i["icon"]["sheet"].removeprefix("res://")
+            x, y, w, h = i["icon"]["rect"]
+            width, height = png_size(sheet)
+            assert w > 0 and h > 0 and x + w <= width and y + h <= height, i["id"]
+    assert catalog.wearable("gate_maw_mask")["shelf"] == "gate"
+    assert catalog.wearable("hollow_ash_cowl")["set"] == "hollow_choir"
+    assert catalog.wearable("nope") is None
 
 
 def test_machines_are_the_contract():
@@ -566,6 +587,27 @@ def test_equip_replaces_the_slot_and_trading_away_unequips(ctx):
     assert [r["item_id"] for r in flagged] == [hats[0]]
     machines.trade_up(ctx, first)
     assert machines.equipped(ctx) == {}
+
+
+def test_trophies_show_in_the_book_and_can_be_worn_but_never_pressed(client, engine):
+    with engine.conn:
+        ctx = engine.ctx()
+        mask = grant_item(ctx, "gate_maw_mask", via="gate:debt_card")
+        hood = _give(ctx, "minigames_moth_hood", 10)
+    casino = client.get("/state").json()["casino"]
+    assert casino["trophies"] == {"gate_maw_mask": 1, "minigames_moth_hood": 10}
+    assert casino["owned"] == {} and casino["inventory"] == []
+    assert client.post("/casino/equip", json={"item_id": "followers_hood_gilt"}).status_code == 409
+    out = client.post("/casino/equip", json={"item_id": "gate_maw_mask"}).json()
+    assert out == {"equipped": {"hat": "gate_maw_mask"}}
+    flagged = engine.conn.execute("SELECT id FROM inventory WHERE equipped = 1").fetchall()
+    assert [r["id"] for r in flagged] == [mask]
+    # Trophies don't go in the press, even ten of one color.
+    r = client.post("/casino/tradeup", json={"inventory_ids": hood})
+    assert r.status_code == 409 and r.json()["detail"] == "Only casino pieces go in the hopper."
+    casino = client.get("/state").json()["casino"]
+    assert casino["equipped"] == {"hat": "gate_maw_mask"}
+    assert casino["trophies"]["minigames_moth_hood"] == 10
 
 
 # --- The weekly draw ------------------------------------------------------------------

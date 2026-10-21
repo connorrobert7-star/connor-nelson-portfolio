@@ -329,6 +329,16 @@ def owned(ctx: Ctx) -> Counter:
     )
 
 
+def owned_trophies(ctx: Ctx) -> Counter:
+    """The other features' cosmetics the owner holds (the book's trophy shelves)."""
+    known = catalog.trophies_by_id()
+    return Counter(
+        r["item_id"]
+        for r in ctx.conn.execute("SELECT item_id FROM inventory")
+        if r["item_id"] in known
+    )
+
+
 def equipped(ctx: Ctx) -> dict[str, str]:
     return {
         r["slot"]: r["item_id"]
@@ -338,14 +348,13 @@ def equipped(ctx: Ctx) -> dict[str, str]:
 
 def sync_equipped(ctx: Ctx) -> None:
     """Drop anything no longer owned, and mirror the slots onto inventory.equipped."""
-    have = owned(ctx)
+    have = owned(ctx) + owned_trophies(ctx)
     for slot, item_id in equipped(ctx).items():
         if not have[item_id]:
             ctx.conn.execute("DELETE FROM casino_equipped WHERE slot = ?", [slot])
-    casino_ids = list(catalog.items_by_id())
+    ids = [*catalog.items_by_id(), *catalog.trophies_by_id()]
     ctx.conn.execute(
-        f"UPDATE inventory SET equipped = 0 WHERE item_id IN ({','.join('?' * len(casino_ids))})",
-        casino_ids,
+        f"UPDATE inventory SET equipped = 0 WHERE item_id IN ({','.join('?' * len(ids))})", ids
     )
     for item_id in equipped(ctx).values():
         ctx.conn.execute(
@@ -356,10 +365,10 @@ def sync_equipped(ctx: Ctx) -> None:
 
 
 def equip(ctx: Ctx, item_id: str) -> dict:
-    piece = catalog.item(item_id)
+    piece = catalog.wearable(item_id)
     if piece is None:
         raise ApiError(422, "There's no piece like that.")
-    if not owned(ctx)[item_id]:
+    if not (owned(ctx) + owned_trophies(ctx))[item_id]:
         raise ApiError(409, "You don't have that one yet.")
     ctx.conn.execute(
         """INSERT INTO casino_equipped (slot, item_id) VALUES (?, ?)
@@ -460,6 +469,7 @@ def room_state(ctx: Ctx) -> dict:
         "wheel": wheel,
         "claw": {"price_cents": m["claw"]["price_cents"], "heap": pile},
         "owned": dict(sorted(have.items())),
+        "trophies": dict(sorted(owned_trophies(ctx).items())),
         "inventory": inventory,
         "equipped": equipped(ctx),
         "dealer": {"name": dealer.NAME, "line": line, "before": before},

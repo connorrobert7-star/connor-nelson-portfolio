@@ -73,3 +73,48 @@ def case(case_id: str) -> dict | None:
 
 def book(price_cents: int) -> dict | None:
     return next((b for b in machines()["scratch"] if b["price_cents"] == price_cents), None)
+
+
+# --- Trophy shelves -------------------------------------------------------------------
+# The other features' cosmetics get pages at the back of the collection book: owned in
+# color, missing as silhouettes, wearable, never traded up. (feature id, heading if the
+# file doesn't name its set.)
+TROPHY_SHELVES = (
+    ("gate", "Trophies of the Gate"),
+    ("minigames", "The Undercroft"),
+    ("followers", "The Flock"),
+)
+SHAPE = ("id", "name", "tier", "set", "slot", "icon")
+
+
+@cache
+def _shelves() -> tuple[dict, ...]:
+    out = []
+    for feature, heading in TROPHY_SHELVES:
+        path = CONTENT / feature / "items.json"
+        if not path.exists():
+            continue
+        raw = json.loads(path.read_text())
+        rows = raw if isinstance(raw, list) else raw.get("items", [])
+        named = raw.get("sets", {}) if isinstance(raw, dict) else {}
+        name = heading
+        if isinstance(named, dict) and len(named) == 1:
+            name = next(iter(named.values())).get("name", heading)
+        pieces = [{**{k: r[k] for k in SHAPE}, "shelf": feature} for r in rows]
+        if pieces:
+            out.append({"id": feature, "name": name, "items": pieces})
+    return tuple(out)
+
+
+def trophy_shelves() -> list[dict]:
+    return list(_shelves())
+
+
+@cache
+def trophies_by_id() -> dict[str, dict]:
+    return {i["id"]: i for s in _shelves() for i in s["items"]}
+
+
+def wearable(item_id: str) -> dict | None:
+    """A piece the book can put on the leader: a casino piece or a trophy."""
+    return item(item_id) or trophies_by_id().get(item_id)
