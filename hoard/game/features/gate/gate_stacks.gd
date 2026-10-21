@@ -161,20 +161,20 @@ func spend(i: int) -> void:
 	tw.tween_property(s, "scale", Vector2(0.0, 1.4), 0.12)
 
 
-## No: the discs turn grey and the lamp clicks off.
+## No: the stack stays where it is and shakes its head.
 func refuse(i: int) -> void:
 	charge_i = -1
 	charge = 0.0
 	if i < 0 or i >= _stacks.size():
 		return
 	var s := _stacks[i]
-	_lamps[i].visible = false
 	Sfx.play_path("res://art/packs/shattered-pixel-dungeon/sounds/click.mp3", 0.7, -6.0)
+	var x := s.position.x
 	var tw := s.create_tween()
-	tw.tween_property(s, "modulate", Color(0.4, 0.38, 0.45), 0.25)
-	tw.parallel().tween_property(s, "position:x", s.position.x + 3, 0.04)
-	tw.tween_property(s, "position:x", s.position.x - 3, 0.06)
-	tw.tween_property(s, "position:x", s.position.x, 0.05)
+	for k in 3:
+		tw.tween_property(s, "position:x", x + 3, 0.04)
+		tw.tween_property(s, "position:x", x - 3, 0.06)
+	tw.tween_property(s, "position:x", x, 0.05)
 
 
 func fold() -> void:

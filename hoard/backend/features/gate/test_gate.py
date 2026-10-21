@@ -307,3 +307,70 @@ def test_money_in_words():
     assert say_money(305) == "Three oh five"
     assert say_money(120000) == "Twelve hundred dollars"
     assert say_money(99) == "Ninety-nine cents"
+
+
+def test_seen_takes_bad_input_cleanly(engine):
+    s = _advance(engine, 3)
+    heal = _boss(s, "debt_card")["heal"]
+    for body in (
+        {"heals": ["abc"]},
+        {"heals": [None]},
+        {"heals": [[1]]},
+        {"heals": [{"id": 1}]},
+        {"heals": [1.5]},
+        {"heals": [10**30]},
+        {"heals": [True]},
+        {"kills": [{"debt_id": "debt_card"}]},
+        {"kills": [7]},
+        {"heals": "1"},
+        {"kills": "debt_card"},
+    ):
+        status, res = engine.handle("POST", "/gate/seen", body=body)
+        assert status == 422, (body, status, res)
+    # Nothing was marked by the bad calls.
+    assert _boss(_state(engine), "debt_card")["heal"]["id"] == heal["id"]
+    # Empty, unknown and already-seen ids are a no-op.
+    assert engine.handle("POST", "/gate/seen", body={})[0] == 200
+    assert engine.handle("POST", "/gate/seen", body={"heals": [], "kills": []})[0] == 200
+    status, res = engine.handle("POST", "/gate/seen", body={"heals": [999], "kills": ["nope"]})
+    assert status == 200 and res["seen"] == 0
+    status, res = engine.handle("POST", "/gate/seen", body={"heals": [heal["id"]]})
+    assert status == 200 and res["seen"] == 1
+    status, res = engine.handle("POST", "/gate/seen", body={"heals": [heal["id"], heal["id"]]})
+    assert status == 200 and res["seen"] == 0
+
+
+def test_heal_plays_once_across_the_gate_and_the_away_scene(engine):
+    # Played at the gate: gone from the away queue too.
+    s = _advance(engine, 3)
+    heal = _boss(s, "debt_card")["heal"]
+    beats = [a for a in s["away"] if a["kind"] == "gate_heal"]
+    assert len(beats) == 1 and beats[0]["payload"]["heal_id"] == heal["id"]
+    engine.handle("POST", "/gate/seen", body={"heals": [heal["id"]]})
+    s = _state(engine)
+    assert _boss(s, "debt_card")["heal"] is None
+    assert not [a for a in s["away"] if a["kind"] == "gate_heal"]
+    # Next month, played in the away scene first: the gate doesn't play it again.
+    s = _advance(engine, 31)
+    beats = [a for a in s["away"] if a["kind"] == "gate_heal"]
+    assert _boss(s, "debt_card")["heal"] is not None and beats
+    engine.handle("POST", "/away/seen", body={"ids": [a["id"] for a in s["away"]]})
+    assert _boss(_state(engine), "debt_card")["heal"] is None
+
+
+def test_bank_kill_plays_once_across_the_gate_and_the_away_scene(engine):
+    _state(engine)
+    _set_hp(engine, "debt_car", 0)
+    gate.bank_kills(engine.ctx())
+    s = _state(engine)
+    assert _boss(s, "debt_car")["kill"]["shown"] is False
+    beat = next(a for a in s["away"] if a["kind"] == "gate_kill")
+    engine.handle("POST", "/away/seen", body={"ids": [beat["id"]]})
+    assert _boss(_state(engine), "debt_car")["kill"]["shown"] is True
+    # And the other way round.
+    _set_hp(engine, "debt_card", 0)
+    gate.bank_kills(engine.ctx())
+    engine.handle("POST", "/gate/seen", body={"kills": ["debt_card"]})
+    s = _state(engine)
+    assert _boss(s, "debt_card")["kill"]["shown"] is True
+    assert not [a for a in s["away"] if a["kind"] == "gate_kill"]

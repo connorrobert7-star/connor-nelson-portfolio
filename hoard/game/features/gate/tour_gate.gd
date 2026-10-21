@@ -76,10 +76,15 @@ func run(kit: TourKit) -> void:
 	var big := _stack_index(gate, 25000)
 	kit.check(big >= 0 and not gate.stacks().affordable(big), "the $250 stack is dark once today's cap is near")
 	await _hold(kit, gate.stacks().stack_pos(big), 0.6)
-	await kit.wait(0.5)
+	await kit.until(func() -> bool: return gate.beat == "refused", 4.0)
+	await kit.wait(0.15)
+	kit.check(gate.beat == "refused", "the payment is refused")
+	kit.check(gate.stacks() != null and gate.stacks()._stacks[big].scale.x > 0.9, "the refused stack stays where it is")
+	kit.check(gate._gate_lift == 0.0, "the gate stays shut on a refusal")
 	await kit.shot("gate_08_refused")
 	await _settle(kit, gate)
 	kit.check(int(_card().hp_cents) == hp1 and int(Game.state.extra.extra_cents) == extra1, "a refusal changes nothing")
+	kit.check(gate.mode() == GateLevel.Mode.AIM and gate.stacks() != null and gate.stacks().amounts.size() > big, "after a refusal the same stacks stay out")
 
 	# Days pass: the bank pays the card's minimum on its due day, and interest heals it.
 	await kit.reset_to_village()
@@ -101,6 +106,17 @@ func run(kit: TourKit) -> void:
 	kit.check(_card().get("heal") == null, "the heal played once and is marked seen")
 	kit.check((Game.state.away as Array).filter(func(a: Dictionary) -> bool: return str(a.kind) == "gate_hit").is_empty(), "the bank's hit played and is marked seen")
 	kit.check(gate.boss_node("debt_card").painted() == Money.fmt(int(_card().hp_cents)), "after the beats the bar shows the real balance")
+	kit.check((Game.state.away as Array).filter(func(a: Dictionary) -> bool: return str(a.kind) == "gate_heal").is_empty(), "the heal played at the gate is gone from the away queue")
+	# Out and back in: nothing plays twice.
+	await kit.reset_to_village()
+	await kit.go_to("gate", Room.ENTRANCE)
+	gate = kit.level() as GateLevel
+	var replayed := false
+	for k in 90:
+		replayed = replayed or gate.beat == "heal" or gate.beat == "bank_hit"
+		await kit.frames(2)
+	kit.check(not replayed, "walking out and back in doesn't replay the heal or the bank's hit")
+	await _settle(kit, gate)
 
 	# Pay the card down, a day at a time, until it dies.
 	var day_button: Button = kit.main._day_button

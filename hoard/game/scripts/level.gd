@@ -96,7 +96,7 @@ func _process(_delta: float) -> void:
 			travel.emit(door.level, door.spawn)
 			return
 	var it := nearest_interactable()
-	main.show_prompt("E  " + (it.label as Callable).call() if not it.is_empty() else "")
+	main.show_prompt(str((it.label as Callable).call()) if not it.is_empty() else "")
 	for zone: Dictionary in _zones:
 		if (zone.rect as Rect2).has_point(leader.position):
 			main.show_panel((zone.text as Callable).call())

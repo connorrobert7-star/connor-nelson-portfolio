@@ -341,10 +341,11 @@ func _beat_poses(p: Dictionary, _seconds: float) -> void:
 ## The personal follower spots you, runs over and hugs.
 func _beat_hug(p: Dictionary, seconds: float) -> void:
 	var leader := Sprite2D.new()
-	leader.texture = preload("res://art/leader.png")
-	leader.hframes = 6
-	leader.frame = 0
-	leader.offset = Vector2(0, -14)
+	leader.texture = Leader.SHEET
+	leader.region_enabled = true
+	leader.region_rect = Rect2(Leader.IDLE, Leader.FRAME)
+	leader.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	leader.offset = Vector2(0, -Leader.FRAME.y / 2.0)
 	leader.position = Vector2(200, 210)
 	leader.scale = Vector2(3, 3)
 	_scene.add_child(leader)

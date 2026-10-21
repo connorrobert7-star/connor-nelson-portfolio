@@ -68,6 +68,9 @@ const PARCELS := {
 const START_PARCELS := ["home", "commons"]
 ## Cultists that move into a gated parcel when it opens.
 const SETTLERS_PER_PARCEL := 2
+## The crowd when the state has no follower count, and the most the island draws.
+const CROWD_FALLBACK := 9
+const CROWD_MAX := 40
 
 const ARCADE := Rect2i(2, 8, 6, 4)
 const TAVERN := Rect2i(11, 8, 4, 4)
@@ -139,6 +142,7 @@ var _land_shown := false  # the first dress opens parcels without a show
 var _revealing := false
 var _closed_px: Array[Rect2] = []
 var _settlers: Dictionary = {}  # parcel id -> Array[VillageCultist]
+var _crowd: Array[VillageCultist] = []  # the square's and the commons' cultists
 var _labels: Array[Label] = []  # painted numbers and words in the world (fade under the HUD)
 
 
@@ -918,10 +922,39 @@ func _fields_bed() -> void:
 			_under.add_child(s)
 
 
-## Nine cultists: five wander the square, four the commons. Each parcel that opens gets its own.
+## The flock's nameless cultists (state.followers.cultists, which grows with the follower
+## room the buildings make), five to the square for every four on the commons. Settlers in
+## opened parcels count toward it. Without the field: nine, plus the settlers.
 func _cultists() -> void:
-	for i in 9:
-		_add_cultist(i, PLAZA_ROAM if i < 5 else COMMONS_ROAM)
+	_dress_crowd()
+	Game.state_changed.connect(_dress_crowd)
+
+
+## How many cultists the village has: the state's count, capped; -1 when it doesn't say.
+static func crowd_size() -> int:
+	var f: Variant = Game.state.get("followers")
+	if f is Dictionary and (f as Dictionary).get("cultists") != null:
+		return clampi(int((f as Dictionary).cultists), 0, CROWD_MAX)
+	return -1
+
+
+func _settled() -> int:
+	var n := 0
+	for id: String in _settlers:
+		n += (_settlers[id] as Array).size()
+	return n
+
+
+func _dress_crowd() -> void:
+	var total := crowd_size()
+	var want := CROWD_FALLBACK if total < 0 else maxi(0, total - _settled())
+	while _crowd.size() < want:
+		var i := _crowd.size()
+		_crowd.append(_add_cultist(i, PLAZA_ROAM if i % 9 < 5 else COMMONS_ROAM))
+	while _crowd.size() > want:
+		var c: VillageCultist = _crowd.pop_back()
+		cultists.erase(c)
+		c.queue_free()
 
 
 func _add_cultist(look: int, roam: Rect2i, at := Vector2.INF) -> VillageCultist:
@@ -949,7 +982,11 @@ func _settle(parcel_id: String, open: bool, show: bool) -> void:
 		return
 	var p: VillageParcel = parcels[parcel_id]
 	var roam := p.rect.grow(-2)
-	for i in SETTLERS_PER_PARCEL:
+	# With a follower count, settlers come out of it while it lasts.
+	var n := SETTLERS_PER_PARCEL
+	if crowd_size() >= 0:
+		n = clampi(crowd_size() - _settled(), 0, SETTLERS_PER_PARCEL)
+	for i in n:
 		var at := Vector2(roam.get_center() * TILE) + Vector2((i - 0.5) * 40, 8)
 		var c := _add_cultist(cultists.size() + i, roam, at)
 		have.append(c)
@@ -957,6 +994,7 @@ func _settle(parcel_id: String, open: bool, show: bool) -> void:
 			VillageArt.burst(props, at + Vector2(0, -6), Color(0.85, 0.8, 0.75), 12, 40, 0.5)
 			c.poke()
 	_settlers[parcel_id] = have
+	_dress_crowd()
 
 
 const PACKS_AUDIO_CASINO := "freesound-cc0-picks/79088_AkasakaPachinkoParlorLunchtime_4micsStereoExpanded_wav.mp3"

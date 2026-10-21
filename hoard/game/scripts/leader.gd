@@ -4,6 +4,13 @@ extends Node2D
 
 const SPEED := 72.0
 const FOOT := Rect2(-5, -4, 10, 4)
+## The owner's 0x72 wizard (wizzard_m): 4 idle frames, then 4 run frames, 16x28 each.
+const SHEET := preload("res://art/packs/0x72-dungeontileset-ii/0x72_DungeonTilesetII_v1.7/0x72_DungeonTilesetII_v1.7.png")
+const IDLE := Vector2(128, 164)
+const RUN := Vector2(192, 164)
+const FRAME := Vector2(16, 28)
+const IDLE_FPS := 6.0
+const RUN_FPS := 10.0
 
 var is_walkable: Callable  # func(Rect2) -> bool, set by the level
 ## Where a click or tap sent the leader. INF when not walking to a point.
@@ -13,14 +20,16 @@ signal arrived
 var _stuck_t := 0.0
 
 var _sprite := Sprite2D.new()
-var _facing := 0  # 0 down, 1 up, 2 side
+var _running := false
 var _anim_t := 0.0
 
 
 func _ready() -> void:
-	_sprite.texture = preload("res://art/leader.png")
-	_sprite.hframes = 6
-	_sprite.offset = Vector2(0, -14)
+	_sprite.texture = SHEET
+	_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	_sprite.region_enabled = true
+	_sprite.region_rect = Rect2(IDLE, FRAME)
+	_sprite.offset = Vector2(0, -FRAME.y / 2.0)  # bottom of the frame on the feet
 	add_child(_sprite)
 	BookOverlay.dress_leader(self, _sprite)  # what the collection book put on (features/casino)
 
@@ -48,15 +57,15 @@ func _physics_process(delta: float) -> void:
 				_stuck_t = 0.0
 				target = Vector2.INF
 				arrived.emit()
-		if absf(dir.x) > absf(dir.y):
-			_facing = 2
+		if absf(dir.x) > 0.1:
 			_sprite.flip_h = dir.x < 0
-		else:
-			_facing = 1 if dir.y < 0 else 0
-		_anim_t += delta
-	else:
+	var running := dir != Vector2.ZERO
+	if running != _running:
+		_running = running
 		_anim_t = 0.0
-	_sprite.frame = _facing * 2 + (int(_anim_t * 6.0) % 2)
+	_anim_t += delta
+	var frame := int(_anim_t * (RUN_FPS if _running else IDLE_FPS)) % 4
+	_sprite.region_rect = Rect2((RUN if _running else IDLE) + Vector2(frame * FRAME.x, 0), FRAME)
 
 
 ## Walk to a point (from a click or tap).

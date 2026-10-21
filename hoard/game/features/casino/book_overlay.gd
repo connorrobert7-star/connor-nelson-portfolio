@@ -67,10 +67,10 @@ const FIG_SCALE := 3.0
 # Where each worn piece sits (1x, feet at 0,0), how many pixels wide it is, and its glow.
 # The aura goes behind the body. WORLD is the walking leader; STAGE the wizard in the book.
 const WORLD_LOOK := {
-	"aura": {"at": Vector2(0, -18), "px": 32.0, "glow": 34.0, "back": true},
-	"cloak": {"at": Vector2(0, -6), "px": 16.0, "glow": 14.0},
-	"hat": {"at": Vector2(0, -27), "px": 16.0, "glow": 14.0},
-	"charm": {"at": Vector2(14, -10), "px": 16.0, "glow": 14.0},
+	"aura": {"at": Vector2(0, -11), "px": 28.0, "glow": 28.0, "back": true},
+	"cloak": {"at": Vector2(0, -4), "px": 10.0, "glow": 9.0},
+	"hat": {"at": Vector2(1, -17), "px": 13.0, "glow": 11.0},
+	"charm": {"at": Vector2(12, -10), "px": 11.0, "glow": 10.0},
 }
 const STAGE_LOOK := {
 	"aura": {"at": Vector2(1, -9), "px": 24.0, "glow": 16.0, "back": true},

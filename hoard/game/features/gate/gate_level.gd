@@ -47,7 +47,6 @@ var _trophies := Node2D.new()
 var _leaf := Sprite2D.new()
 var _gate_lift := 0.0
 var _gate_lamps: Array[Sprite2D] = []
-var _gate_bubble := SpeechBubble.new()
 var _fountains: Array[Sprite2D] = []
 var _cultists: Array[Sprite2D] = []
 var _music := AudioStreamPlayer.new()
@@ -61,9 +60,11 @@ var _hinted_stack := false
 var _boss_hand: Sprite2D
 var _beats_running := false
 var _intro_done := false
-var _played_heals: Dictionary = {}
-var _played_hits: Dictionary = {}
-var _played_kills: Dictionary = {}
+## Beats already played this session, kept across visits so walking out and back in
+## before the next /state can't replay one.
+static var _played_heals: Dictionary = {}
+static var _played_hits: Dictionary = {}
+static var _played_kills: Dictionary = {}
 var _rng := RandomNumberGenerator.new()
 static var _met: Dictionary = {}
 
@@ -103,9 +104,6 @@ func build() -> void:
 	_build_darkness()
 	_fx.z_index = 50
 	add_child(_fx)
-	_gate_bubble.position = Vector2(318, 172)
-	_gate_bubble.z_index = 90
-	add_child(_gate_bubble)
 	add_child(_music)
 	_beat.stream = load(HEARTBEAT)
 	_beat.volume_db = -4.0
@@ -343,7 +341,7 @@ func _candle(region: Rect2, feet: Vector2) -> void:
 	add_child(flame)
 	flame.z_index = 12
 	if absf(feet.x - 240.0) < 60.0:
-		_gate_lamps.append(flame)  # the gate's lamps: they go dark on "Not this week."
+		_gate_lamps.append(flame)  # the gate's lamps
 
 	var tw := flame.create_tween().set_loops()
 	tw.tween_property(flame, "modulate:a", 0.3, randf_range(0.12, 0.3))
@@ -749,20 +747,23 @@ func _fire() -> void:
 	var amount := _stacks.amount(i)
 	var from := _stacks.stack_pos(i)
 	_unzoom()
-	_stacks.spend(i)
-	_open_gate()
-	# The leader throws it: a hop toward the gate.
-	var y0 := leader.position.y
-	var lt := leader.create_tween()
-	lt.tween_property(leader, "position:y", y0 - 7.0, 0.08).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	lt.tween_property(leader, "position:y", y0, 0.14).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
+	# The stack and the gate wait for the answer: nothing leaves until the money moved.
 	var res: Array = await Game.call_api("POST", "/gate/attack", {"debt_id": boss.debt_id, "amount_cents": amount})
 	if not is_inside_tree():
 		Game.busy = false
 		return
-	if res[1] != "":
-		await _refuse(str(res[1]), i)
+	var refused: bool = res[1] != ""
+	if refused:
+		await _refuse(i, boss)
 	else:
+		if _stacks:
+			_stacks.spend(i)
+		_open_gate()
+		# The leader throws it: a hop toward the gate.
+		var y0 := leader.position.y
+		var lt := leader.create_tween()
+		lt.tween_property(leader, "position:y", y0 - 7.0, 0.08).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		lt.tween_property(leader, "position:y", y0, 0.14).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
 		await _strike(boss, from, res[0])
 	await Game.refresh()
 	if not is_inside_tree():
@@ -771,8 +772,11 @@ func _fire() -> void:
 	Game.busy = false
 	_mode = Mode.IDLE
 	if boss and is_instance_valid(boss) and _bosses.values().has(boss) and float(boss.data.hp_cents) > 0:
-		_target = null
-		aim(boss)
+		if not refused:
+			_target = null
+		aim(boss)  # after a refusal the same stacks stay out
+		if refused and _stacks and _stacks.amounts != boss.data.get("amounts", []):
+			_show_stacks()
 	else:
 		_cancel_aim()
 	_queue_beats()
@@ -879,27 +883,15 @@ func _close_gate() -> void:
 	)
 
 
-## "Not this week." The gate rattles but stays shut, the lamps click off, and the
-## cult sits down quietly. Nothing else changes.
-func _refuse(message: String, i: int) -> void:
+## "Not this week." The stack shakes where it stands and the boss shrugs. The gate stays
+## shut and nothing else changes.
+func _refuse(i: int, boss: GateBoss) -> void:
+	beat = "refused"
 	if _stacks:
 		_stacks.refuse(i)
-	var tw := create_tween()
-	tw.tween_property(self, "_gate_lift", 0.0, 0.05)
-	for k in 4:
-		tw.tween_callback(func() -> void:
-			Sfx.play_path("res://art/packs/kenney-impact-sounds/Audio/impactMetal_light_00%d.ogg" % k, 0.8 + k * 0.05, -6.0))
-		tw.tween_property(_leaf, "position:x", 225.0 if k % 2 == 0 else 223.0, 0.05)
-	tw.tween_property(_leaf, "position:x", 224.0, 0.05)
-	for lamp in _gate_lamps:
-		lamp.visible = false
-	for c in _cultists:
-		c.modulate = Color(0.55, 0.5, 0.6)
-	await _gate_bubble.say(message, 1.4)
-	for lamp in _gate_lamps:
-		lamp.visible = true
-	for c in _cultists:
-		c.modulate = Color(0.82, 0.76, 0.88)
+	if boss and is_instance_valid(boss):
+		boss.shrug()
+	await get_tree().create_timer(0.7).timeout
 
 
 func _chant_one(k: int) -> void:
@@ -1069,10 +1061,14 @@ func _queue_beats() -> void:
 		if bool(pend.dying):
 			kill_ids.append(str(b.debt_id))
 			await _death(node, b.get("drop"))
+	# Marked seen before anything else reads /state again, then reloaded, so the
+	# while-you-were-out scene doesn't play the same heal or death a second time.
 	if not away_ids.is_empty():
-		Game.call_api("POST", "/away/seen", {"ids": away_ids})
+		await Game.call_api("POST", "/away/seen", {"ids": away_ids})
 	if not heal_ids.is_empty() or not kill_ids.is_empty():
-		Game.call_api("POST", "/gate/seen", {"heals": heal_ids, "kills": kill_ids})
+		await Game.call_api("POST", "/gate/seen", {"heals": heal_ids, "kills": kill_ids})
+	if not away_ids.is_empty() or not heal_ids.is_empty() or not kill_ids.is_empty():
+		await Game.refresh()
 	if not is_inside_tree():
 		return
 	_beats_running = false

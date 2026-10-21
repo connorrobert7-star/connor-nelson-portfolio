@@ -164,6 +164,7 @@ def _public_item(it: dict | None) -> dict | None:
 
 def gate_state(ctx: Ctx) -> dict:
     register(ctx)
+    sync_seen(ctx)
     bal = balances(ctx)
     spend = can_spend(ctx)
     hourly = hourly_rate_cents(ctx)
@@ -317,12 +318,70 @@ def attack(ctx: Ctx, debt_id: str, amount_cents: int) -> dict:
     }
 
 
-def mark_seen(ctx: Ctx, heals: list, kills: list) -> dict:
-    ctx.conn.executemany("UPDATE gate_heals SET shown = 1 WHERE id = ?", [[int(i)] for i in heals])
-    ctx.conn.executemany(
-        "UPDATE gate_kills SET shown = 1 WHERE debt_id = ?", [[str(k)] for k in kills]
+def _heal_ids(values: list) -> list[int]:
+    out = []
+    for v in values:
+        try:
+            if isinstance(v, bool) or not float(v).is_integer():
+                raise ValueError
+            n = int(float(v))
+        except (TypeError, ValueError, OverflowError):
+            raise ApiError(422, "heals must be beat ids.") from None
+        if not 0 < n < 2**63:
+            raise ApiError(422, "heals must be beat ids.")
+        out.append(n)
+    return out
+
+
+def _kill_ids(values: list) -> list[str]:
+    if not all(isinstance(v, str) for v in values):
+        raise ApiError(422, "kills must be boss ids.")
+    return list(values)
+
+
+# An away beat for a heal: by its id, or (older rows) by its boss and amount.
+_HEAL_BEAT = """away_events.kind = 'gate_heal' AND (
+    json_extract(away_events.payload, '$.heal_id') = gate_heals.id
+    OR (json_extract(away_events.payload, '$.heal_id') IS NULL
+        AND json_extract(away_events.payload, '$.debt_id') = gate_heals.debt_id
+        AND json_extract(away_events.payload, '$.amount_cents') = gate_heals.amount_cents))"""
+_KILL_BEAT = """away_events.kind = 'gate_kill'
+    AND json_extract(away_events.payload, '$.debt_id') = gate_kills.debt_id"""
+
+
+def sync_seen(ctx: Ctx) -> None:
+    """One beat, two places: a heal or a bank kill the while-you-were-out scene already
+    played is shown here too, and one the gate played is gone from that queue."""
+    ctx.conn.execute(
+        f"""UPDATE gate_heals SET shown = 1 WHERE shown = 0 AND EXISTS
+            (SELECT 1 FROM away_events WHERE away_events.shown = 1 AND {_HEAL_BEAT})"""
     )
-    return {"seen": len(heals) + len(kills)}
+    ctx.conn.execute(
+        f"""UPDATE gate_kills SET shown = 1 WHERE shown = 0 AND EXISTS
+            (SELECT 1 FROM away_events WHERE away_events.shown = 1 AND {_KILL_BEAT})"""
+    )
+    ctx.conn.execute(
+        f"""UPDATE away_events SET shown = 1 WHERE shown = 0 AND (
+              EXISTS (SELECT 1 FROM gate_heals WHERE gate_heals.shown = 1 AND {_HEAL_BEAT})
+              OR EXISTS (SELECT 1 FROM gate_kills WHERE gate_kills.shown = 1 AND {_KILL_BEAT}))"""
+    )
+
+
+def mark_seen(ctx: Ctx, heals: list, kills: list) -> dict:
+    """Unknown or already-seen ids are a no-op; ids that aren't ids are a 422."""
+    heal_ids = _heal_ids(heals)
+    kill_ids = _kill_ids(kills)
+    seen = 0
+    for i in heal_ids:
+        seen += ctx.conn.execute(
+            "UPDATE gate_heals SET shown = 1 WHERE id = ? AND shown = 0", [i]
+        ).rowcount
+    for k in kill_ids:
+        seen += ctx.conn.execute(
+            "UPDATE gate_kills SET shown = 1 WHERE debt_id = ? AND shown = 0", [k]
+        ).rowcount
+    sync_seen(ctx)
+    return {"seen": seen}
 
 
 # --- once a day -----------------------------------------------------------------------
@@ -348,6 +407,7 @@ def heal_day(ctx: Ctx, day: date) -> None:
                 ctx,
                 "gate_heal",
                 priority=45,
+                heal_id=cur.lastrowid,
                 debt_id=d["id"],
                 name=boss_name(d),
                 amount_cents=amount,

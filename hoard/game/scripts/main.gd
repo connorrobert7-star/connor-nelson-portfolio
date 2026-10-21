@@ -146,6 +146,9 @@ func _on_event(e: Dictionary) -> void:
 # --- HUD -----------------------------------------------------------------------
 
 func _process(_delta: float) -> void:
+	if _day_button:
+		# Demo only, and never over an overlay or while something is playing out.
+		_day_button.visible = Game.state.get("demo", false) and not Game.busy and _overlays.get_child_count() == 0
 	if _error != "":
 		show_panel(_error)
 	if dialogue.visible:
@@ -191,14 +194,9 @@ func _add_day_button() -> void:
 
 
 func _on_state() -> void:
-	if _day_button:
-		_day_button.visible = Game.state.get("demo", false)
 	_error = ""
 	var s := Game.state
-	var hint := "[ earlier" + ("   ] later" if Game.weeks_ago > 0 else "")
-	if s.get("demo", false):
-		hint += "   N next day"
-	week_label.text = "%s to %s   %s" % [_day(s.window.start), _day(s.window.end), hint]
+	week_label.text = "%s to %s" % [_day(s.window.start), _day(s.window.end)]
 	purse_label.text = "coins %d    extra %s" % [int(s.coins), Money.fmt(maxi(0, int(s.extra.extra_cents)))]
 	_life.show_life(s.life)
 	_show_notifications(s.get("notifications", []))

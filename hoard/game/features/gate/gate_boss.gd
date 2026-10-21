@@ -310,6 +310,15 @@ func brace() -> void:
 	Sfx.play_path(str(data.look.get("roar", "")), 0.7, -18.0)
 
 
+## The payment didn't go: a shrug, shoulders up twice, and back to waiting.
+func shrug() -> void:
+	_rage_left = 0.0
+	var tw := create_tween()
+	for k in 2:
+		tw.tween_property(self, "_squash", Vector2(0.95, 1.07), 0.1).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		tw.tween_property(self, "_squash", Vector2.ONE, 0.14).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+
+
 ## Telegraph, then roar: two quick swells, the rage frames, and the sound.
 func roar(text := "", loud := true) -> void:
 	var look: Dictionary = data.look
