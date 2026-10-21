@@ -1,0 +1,69 @@
+{
+  "_note": "Stardew-style offering tablets by the ruins. Every socket fills from real behavior read from the ledger and game events, counted from the Sunday of the week before the save began. A filled socket never empties, and a restored ruin stays restored. Bundles never pay coins (money never buys coins); the reward is the building.",
+  "wall_months": 3,
+  "wall_courses": 12,
+  "expense_window_days": 90,
+  "flames_per_day": 3,
+  "flame_events": ["minigames_flame", "minigames_run"],
+  "flame_coin_reasons": ["minigames", "mine run", "fishing run", "dungeon run", "arcade"],
+  "ruins": [
+    {
+      "id": "granary",
+      "name": "Granary",
+      "opens": "favorite_foods",
+      "bundles": [
+        {
+          "id": "granary_larder",
+          "detector": "groceries_under_budget",
+          "need": 2,
+          "icon": {"sheet": "res://art/packs/kyrise-rpg-icons-16/icons/16x16/fruit_01a.png", "rect": [0, 0, 16, 16]}
+        },
+        {
+          "id": "granary_hearth",
+          "detector": "no_spend_week",
+          "need": 1,
+          "icon": {"sheet": "res://art/packs/kyrise-rpg-icons-16/icons/16x16/cup_02a.png", "rect": [0, 0, 16, 16]}
+        }
+      ]
+    },
+    {
+      "id": "ossuary",
+      "name": "Ossuary",
+      "opens": "trophies",
+      "bundles": [
+        {
+          "id": "ossuary_blow",
+          "detector": "debt_payment",
+          "need": 1,
+          "icon": {"sheet": "res://art/packs/kyrise-rpg-icons-16/icons/16x16/bone01a.png", "rect": [0, 0, 16, 16]}
+        },
+        {
+          "id": "ossuary_flames",
+          "detector": "three_flames_day",
+          "need": 1,
+          "icon": {"sheet": "res://art/packs/kyrise-rpg-icons-16/icons/16x16/candle_01b.png", "rect": [0, 0, 16, 16]}
+        }
+      ]
+    },
+    {
+      "id": "bell_tower",
+      "name": "Bell Tower",
+      "opens": "payday_bells",
+      "bundles": [
+        {
+          "id": "bell_deposits",
+          "detector": "deposits",
+          "need": 5,
+          "icon": {"sheet": "res://art/packs/kyrise-rpg-icons-16/icons/16x16/potion_01h.png", "rect": [0, 0, 16, 16]}
+        },
+        {
+          "id": "bell_big_week",
+          "detector": "week_landed",
+          "need": 1,
+          "cents": 25000,
+          "icon": {"sheet": "res://art/packs/kyrise-rpg-icons-16/icons/16x16/crystal_01e.png", "rect": [0, 0, 16, 16]}
+        }
+      ]
+    }
+  ]
+}

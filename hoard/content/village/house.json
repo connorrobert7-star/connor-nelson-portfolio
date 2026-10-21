@@ -1,0 +1,16 @@
+{
+  "_note": "The house builds in stages as the House Fund (sav_1) grows toward the down payment. Thresholds follow the shape of Animal Crossing's loan curve: small early steps so the first stages come fast. A built stage never unbuilds.",
+  "account": "sav_1",
+  "goal_cents": 4000000,
+  "goal_name": "Down payment",
+  "rows": 32,
+  "stages": [
+    {"id": "plot", "name": "Plot", "at_cents": 0},
+    {"id": "foundation", "name": "Foundation", "at_cents": 100000},
+    {"id": "frame", "name": "Frame", "at_cents": 320000},
+    {"id": "walls", "name": "Walls", "at_cents": 720000},
+    {"id": "roof", "name": "Roof", "at_cents": 1280000},
+    {"id": "interior", "name": "Interior", "at_cents": 2240000},
+    {"id": "finished", "name": "Finished", "at_cents": 4000000}
+  ]
+}
