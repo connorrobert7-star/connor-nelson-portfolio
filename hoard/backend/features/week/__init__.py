@@ -8,7 +8,7 @@ from backend.features.week.reactions import village_reactions
 @section(order=20)
 def week_state(ctx: Ctx, view: View) -> dict:
     house = ctx.conn.execute(
-        "SELECT name, balance_cents FROM accounts WHERE kind = 'savings'"
+        "SELECT name, balance_cents FROM accounts WHERE id = 'sav_1'"
     ).fetchone()
     return {
         "systems": {name: s["label"] for name, s in ctx.cmap.systems.items()},

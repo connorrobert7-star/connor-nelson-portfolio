@@ -56,3 +56,18 @@ def unseen_notifications(ctx: Ctx) -> list[dict]:
         {**dict(r), "data": json.loads(r["data"] or "{}")}
         for r in ctx.conn.execute("SELECT * FROM notifications WHERE seen = 0 ORDER BY id")
     ]
+
+
+def away(ctx: Ctx, kind: str, priority: int = 50, **payload: object) -> None:
+    """Queue a beat for the "while you were out" scene. Lower priority numbers play first."""
+    ctx.conn.execute(
+        "INSERT INTO away_events (day, kind, priority, payload) VALUES (?, ?, ?, ?)",
+        [ctx.today.isoformat(), kind, priority, json.dumps(payload)],
+    )
+
+
+def unseen_away(ctx: Ctx) -> list[dict]:
+    return [
+        {**dict(r), "payload": json.loads(r["payload"] or "{}")}
+        for r in ctx.conn.execute("SELECT * FROM away_events WHERE shown = 0 ORDER BY priority, id")
+    ]
