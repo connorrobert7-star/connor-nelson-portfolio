@@ -1,0 +1,33 @@
+{
+  "fever": {"chain": 12, "chain_gap_s": 0.75, "seconds": 10, "purse_seconds": 5, "multiplier": 2},
+  "layer": {"width": 8, "rows": 4, "ore_chance": 0.28, "ore_chance_per_depth": 0.012, "purse_chance": 0.025, "keg_chance": 0.03},
+  "blocks": [
+    {"id": "dirt", "hits": 1, "until_depth": 6,
+     "sprite": {"sheet": "res://art/packs/kenney-roguelike-caves-dungeons/Spritesheet/roguelikeDungeon_transparent.png", "rect": [272, 204, 16, 16]}},
+    {"id": "stone", "hits": 2, "until_depth": 999,
+     "sprite": {"sheet": "res://art/packs/kenney-roguelike-caves-dungeons/Spritesheet/roguelikeDungeon_transparent.png", "rect": [272, 170, 16, 16]}},
+    {"id": "coalstone", "hits": 3, "from_depth": 8, "until_depth": 999,
+     "sprite": {"sheet": "res://art/packs/kenney-roguelike-caves-dungeons/Spritesheet/roguelikeDungeon_transparent.png", "rect": [170, 170, 16, 16]}}
+  ],
+  "ores": [
+    {"id": "copper", "name": "Copper", "coins": 1, "hits": 2, "from_depth": 0, "weight": 10, "growth": -0.4,
+     "block": {"sheet": "res://art/packs/kenney-roguelike-caves-dungeons/Spritesheet/roguelikeDungeon_transparent.png", "rect": [187, 187, 16, 16]},
+     "icon": {"sheet": "res://art/packs/kyrise-rpg-icons-16/spritesheet/spritesheet_16x16.png", "rect": [64, 96, 16, 16]}},
+    {"id": "silver", "name": "Silver", "coins": 2, "hits": 3, "from_depth": 2, "weight": 4, "growth": 0.6,
+     "block": {"sheet": "res://art/packs/kenney-roguelike-caves-dungeons/Spritesheet/roguelikeDungeon_transparent.png", "rect": [187, 170, 16, 16]},
+     "icon": {"sheet": "res://art/packs/kyrise-rpg-icons-16/spritesheet/spritesheet_16x16.png", "rect": [80, 96, 16, 16]}},
+    {"id": "gold", "name": "Gold", "coins": 4, "hits": 3, "from_depth": 5, "weight": 2, "growth": 0.7,
+     "block": {"sheet": "res://art/packs/kenney-roguelike-caves-dungeons/Spritesheet/roguelikeDungeon_transparent.png", "rect": [187, 204, 16, 16]},
+     "icon": {"sheet": "res://art/packs/kyrise-rpg-icons-16/spritesheet/spritesheet_16x16.png", "rect": [96, 96, 16, 16]}},
+    {"id": "gem", "name": "Gem", "coins": 10, "hits": 4, "from_depth": 9, "weight": 1, "growth": 0.35,
+     "block": {"sheet": "res://art/packs/kenney-roguelike-caves-dungeons/Spritesheet/roguelikeDungeon_transparent.png", "rect": [170, 204, 16, 16]},
+     "icon": {"sheet": "res://art/packs/kyrise-rpg-icons-16/spritesheet/spritesheet_16x16.png", "rect": [112, 128, 16, 16]}}
+  ],
+  "specials": [
+    {"id": "purse", "hits": 1,
+     "sprite": {"sheet": "res://art/packs/shattered-pixel-dungeon/sprites/items.png", "rect": [32, 16, 16, 16]}},
+    {"id": "keg", "hits": 1,
+     "sprite": {"sheet": "res://art/packs/shattered-pixel-dungeon/sprites/items.png", "rect": [0, 80, 16, 16]}}
+  ],
+  "pickaxe": {"sheet": "res://art/packs/shattered-pixel-dungeon/sprites/items.png", "rect": [208, 112, 16, 16]}
+}

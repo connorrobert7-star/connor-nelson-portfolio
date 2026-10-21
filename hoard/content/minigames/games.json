@@ -1,0 +1,9 @@
+{
+  "flames_per_day": 3,
+  "spent_flame_rate": 0.25,
+  "games": {
+    "mine": {"seconds": 120, "cap": 120, "min_coins": 5, "max_ore": 160},
+    "fishing": {"seconds": 120, "cap": 120, "min_coins": 5, "max_fish": 24},
+    "dungeon": {"seconds": 120, "cap": 80, "min_coins": 5}
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "bite": {"wait_min_s": 1.0, "wait_max_s": 3.2, "hook_window_s": 0.85, "fill_s": 2.2, "drain_s": 3.0, "start_fill": 0.3},
+  "fish": [
+    {"id": "minnow", "name": "Minnow", "tier": "common", "coins": 5, "weight": 30, "zone": 24, "speed": 22, "twitch": 0.04,
+     "icon": {"sheet": "res://art/packs/kyrise-rpg-icons-16/spritesheet/spritesheet_16x16.png", "rect": [0, 144, 16, 16]}},
+    {"id": "sunperch", "name": "Sunperch", "tier": "common", "coins": 6, "weight": 26, "zone": 22, "speed": 26, "twitch": 0.05,
+     "icon": {"sheet": "res://art/packs/kyrise-rpg-icons-16/spritesheet/spritesheet_16x16.png", "rect": [224, 128, 16, 16]}},
+    {"id": "redgill", "name": "Redgill", "tier": "common", "coins": 6, "weight": 24, "zone": 22, "speed": 28, "twitch": 0.06,
+     "icon": {"sheet": "res://art/packs/kyrise-rpg-icons-16/spritesheet/spritesheet_16x16.png", "rect": [208, 128, 16, 16]}},
+    {"id": "mudcrawler", "name": "Mudcrawler", "tier": "common", "coins": 7, "weight": 18, "zone": 20, "speed": 24, "twitch": 0.08,
+     "icon": {"sheet": "res://art/packs/dawnlike/Characters/Aquatic0.png", "rect": [16, 0, 16, 16]}},
+    {"id": "greenback", "name": "Greenback", "tier": "rare", "coins": 11, "weight": 12, "zone": 18, "speed": 36, "twitch": 0.10,
+     "icon": {"sheet": "res://art/packs/kyrise-rpg-icons-16/spritesheet/spritesheet_16x16.png", "rect": [240, 128, 16, 16]}},
+    {"id": "piranha", "name": "Piranha", "tier": "rare", "coins": 12, "weight": 10, "zone": 17, "speed": 40, "twitch": 0.12,
+     "icon": {"sheet": "res://art/packs/dawnlike/Characters/Aquatic0.png", "rect": [64, 0, 16, 16]}},
+    {"id": "bog_eel", "name": "Bog eel", "tier": "rare", "coins": 13, "weight": 9, "zone": 16, "speed": 44, "twitch": 0.14,
+     "icon": {"sheet": "res://art/packs/dawnlike/Characters/Aquatic0.png", "rect": [0, 32, 16, 16]}},
+    {"id": "moon_jelly", "name": "Moon jelly", "tier": "rare", "coins": 13, "weight": 8, "zone": 18, "speed": 30, "twitch": 0.20,
+     "icon": {"sheet": "res://art/packs/dawnlike/Characters/Aquatic0.png", "rect": [96, 0, 16, 16]}},
+    {"id": "inkmother", "name": "Inkmother", "tier": "epic", "coins": 24, "weight": 4, "zone": 14, "speed": 52, "twitch": 0.20,
+     "icon": {"sheet": "res://art/packs/dawnlike/Characters/Aquatic0.png", "rect": [80, 0, 16, 16]}},
+    {"id": "grave_shark", "name": "Grave shark", "tier": "epic", "coins": 26, "weight": 3, "zone": 13, "speed": 58, "twitch": 0.22,
+     "icon": {"sheet": "res://art/packs/dawnlike/Characters/Aquatic0.png", "rect": [0, 16, 16, 16]}},
+    {"id": "old_coil", "name": "The Old Coil", "tier": "legendary", "coins": 50, "weight": 1, "zone": 12, "speed": 66, "twitch": 0.28,
+     "icon": {"sheet": "res://art/packs/dawnlike/Characters/Aquatic0.png", "rect": [0, 48, 16, 16]}}
+  ]
+}
