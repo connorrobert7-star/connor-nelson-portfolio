@@ -3,6 +3,31 @@
 What is written down but not built yet. The owner's own words for these are in
 `docs/DESIGN_NOTES.md`. Nothing here is started.
 
+## Piece 2: the pot (not built yet)
+
+Stopped here to save credits. The full build contract is ready in `docs/POT.md`: scratch, wheel and
+claw get blank pulls; each machine shows a run of lamps with exactly one hit (so a hit always comes
+within the run, and the chance now is one in the lamps left); every pull's price still lands in the
+Brokerage; blank pulls' dollars wait in one pot; a hit spends the whole pot (plus that pull) on the
+stock picked ahead of time at Marlo's counter; cosmetics roll as now, on hits only. Start there.
+
+## Piece 1: what was cut for time
+
+Piece 1 shipped lean: the backend in full, the doubled island, and the building sites (signs with
+requirement lamps, tap to build, scaffolding, the target banner). Not done yet:
+
+- The two review passes (a rules critic and an owner playtest) did not run on the sites.
+- The finished-building reveal is a short puff; the "while you were out" scene shows a
+  `building_done` beat as a plain line of text (no custom renderer yet).
+- The flock in the village is 9 cultists plus 2 per opened parcel; it should follow
+  `buildings.capacity` (the backend's `followers.cultists` already does).
+- `game/scripts/level.gd` still prefixes "E " on prompts outside the village (arcade "E Mine",
+  shop and tavern "E Talk to ..."). Only the village hides them.
+- Tours that need updating for the new map: `dev/tours/core_tour.gd` (old tiles), and the gate,
+  minigames and casino room tours borrow empty corners that now overlap the shop (a free one is
+  `Rect2i(34, 15, 5, 3)`).
+- Followers' emote bubbles over the shrine can sit under the "next day" button.
+
 ## Piece 3 (the owner said: write it down, don't build it yet)
 
 ### Villagers that talk
