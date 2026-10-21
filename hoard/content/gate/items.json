@@ -1,0 +1,80 @@
+{
+  "_note": "Cosmetics only the gate's bosses drop. Each debt kind has one unique drop; spares go to a second boss of the same kind. Granted once, on the kill. Icons are 16x16 cells of the Kyrise RPG icons sheet.",
+  "sets": {
+    "gate": {"name": "Trophies of the Gate"}
+  },
+  "items": [
+    {
+      "id": "gate_maw_mask",
+      "name": "Maw Mask",
+      "tier": "legendary",
+      "set": "gate",
+      "slot": "hat",
+      "drops_from": "credit",
+      "icon": {"sheet": "res://art/packs/kyrise-rpg-icons-16/spritesheet/spritesheet_16x16.png", "rect": [160, 176, 16, 16]}
+    },
+    {
+      "id": "gate_title_key",
+      "name": "Title Key",
+      "tier": "legendary",
+      "set": "gate",
+      "slot": "charm",
+      "drops_from": "auto",
+      "icon": {"sheet": "res://art/packs/kyrise-rpg-icons-16/spritesheet/spritesheet_16x16.png", "rect": [112, 192, 16, 16]}
+    },
+    {
+      "id": "gate_paid_diploma",
+      "name": "Paid Diploma",
+      "tier": "legendary",
+      "set": "gate",
+      "slot": "charm",
+      "drops_from": "student",
+      "icon": {"sheet": "res://art/packs/kyrise-rpg-icons-16/spritesheet/spritesheet_16x16.png", "rect": [192, 256, 16, 16]}
+    },
+    {
+      "id": "gate_goo_ring",
+      "name": "Goo Ring",
+      "tier": "legendary",
+      "set": "gate",
+      "slot": "charm",
+      "drops_from": "other",
+      "icon": {"sheet": "res://art/packs/kyrise-rpg-icons-16/spritesheet/spritesheet_16x16.png", "rect": [112, 256, 16, 16]}
+    },
+    {
+      "id": "gate_warden_helm",
+      "name": "Gatewarden Helm",
+      "tier": "epic",
+      "set": "gate",
+      "slot": "hat",
+      "drops_from": "spare",
+      "icon": {"sheet": "res://art/packs/kyrise-rpg-icons-16/spritesheet/spritesheet_16x16.png", "rect": [192, 176, 16, 16]}
+    },
+    {
+      "id": "gate_bone_skull",
+      "name": "Bone Skull",
+      "tier": "epic",
+      "set": "gate",
+      "slot": "charm",
+      "drops_from": "spare",
+      "icon": {"sheet": "res://art/packs/kyrise-rpg-icons-16/spritesheet/spritesheet_16x16.png", "rect": [208, 288, 16, 16]}
+    },
+    {
+      "id": "gate_quiet_aura",
+      "name": "Quiet Aura",
+      "tier": "epic",
+      "set": "gate",
+      "slot": "aura",
+      "drops_from": "spare",
+      "icon": {"sheet": "res://art/packs/kyrise-rpg-icons-16/spritesheet/spritesheet_16x16.png", "rect": [64, 272, 16, 16]}
+    },
+    {
+      "id": "gate_ember_skull",
+      "name": "Ember Skull",
+      "tier": "epic",
+      "set": "gate",
+      "slot": "charm",
+      "drops_from": "spare",
+      "icon": {"sheet": "res://art/packs/kyrise-rpg-icons-16/spritesheet/spritesheet_16x16.png", "rect": [224, 288, 16, 16]}
+    }
+  ]
+}

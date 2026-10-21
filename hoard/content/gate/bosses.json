@@ -1,0 +1,117 @@
+{
+  "_note": "The bosses outside the gate, one per debt kind. HP is the real balance. Lines are what each boss says; {amount} is filled in by the backend in plain words. The game only draws them.",
+  "amounts_cents": [2500, 5000, 10000, 25000],
+  "refuse_line": "Not this week.",
+  "kind_for_category": {
+    "LOAN_PAYMENTS_CREDIT_CARD_PAYMENT": "credit",
+    "LOAN_PAYMENTS_CAR_PAYMENT": "auto",
+    "LOAN_PAYMENTS_STUDENT_LOAN_PAYMENT": "student",
+    "LOAN_PAYMENTS_MORTGAGE_PAYMENT": "other",
+    "LOAN_PAYMENTS_PERSONAL_LOAN_PAYMENT": "other",
+    "LOAN_PAYMENTS_OTHER_PAYMENT": "other"
+  },
+  "kinds": {
+    "credit": {
+      "name": "The Revolving Maw",
+      "look": {
+        "sheet": "res://art/packs/0x72-dungeontileset-ii/0x72_DungeonTilesetII_v1.7/0x72_DungeonTilesetII_v1.7.png",
+        "idle": [[16, 428, 32, 36], [48, 428, 32, 36], [80, 428, 32, 36], [112, 428, 32, 36]],
+        "rage": [[144, 428, 32, 36], [176, 428, 32, 36], [208, 428, 32, 36], [240, 428, 32, 36]],
+        "scale": 3,
+        "fps": 6,
+        "roar": "res://art/packs/rubberduck-80-rpg-sfx/creature_roar_02.ogg",
+        "hurt": "res://art/packs/rubberduck-80-rpg-sfx/creature_hurt_01.ogg",
+        "die": "res://art/packs/rubberduck-80-rpg-sfx/creature_die_01.ogg"
+      },
+      "lines": {
+        "meet": "Oh. You came all the way to the gate.",
+        "idle": [
+          "I eat a little every month.",
+          "Twenty-four point nine. Say it slowly.",
+          "Minimum payment. Maximum me.",
+          "I was small once. Like you.",
+          "Swipe. Swipe. Swipe."
+        ],
+        "hit": ["That one stung.", "Real money. I can taste it.", "Again, if you mean it.", "Hm. You're serious."],
+        "low": ["Wait. We can talk about this.", "I can be smaller. I can be nothing."],
+        "heal": "Interest. {amount}.",
+        "death": "Paid in full. I was never real."
+      }
+    },
+    "auto": {
+      "name": "The Axle Ogre",
+      "look": {
+        "sheet": "res://art/packs/0x72-dungeontileset-ii/0x72_DungeonTilesetII_v1.7/0x72_DungeonTilesetII_v1.7.png",
+        "idle": [[16, 380, 32, 36], [48, 380, 32, 36], [80, 380, 32, 36], [112, 380, 32, 36]],
+        "rage": [[144, 380, 32, 36], [176, 380, 32, 36], [208, 380, 32, 36], [240, 380, 32, 36]],
+        "scale": 3,
+        "fps": 5,
+        "roar": "res://art/packs/rubberduck-80-rpg-sfx/creature_roar_01.ogg",
+        "hurt": "res://art/packs/rubberduck-80-rpg-sfx/creature_hurt_02.ogg",
+        "die": "res://art/packs/rubberduck-80-rpg-sfx/creature_die_01.ogg"
+      },
+      "lines": {
+        "meet": "Keys. Title. Mine.",
+        "idle": [
+          "Twelve more payments. Maybe forty.",
+          "I am the car now.",
+          "I lose value. I never lose interest.",
+          "Six point nine. Every month.",
+          "Vroom."
+        ],
+        "hit": ["Dent.", "That's coming off the title.", "Ow. My resale.", "You hit like a down payment."],
+        "low": ["The keys are getting heavy.", "I can hear the title rattling."],
+        "heal": "Interest. {amount}.",
+        "death": "Title's yours. Drive safe."
+      }
+    },
+    "student": {
+      "name": "The Bursar",
+      "look": {
+        "sheet": "res://art/packs/0x72-dungeontileset-ii/0x72_DungeonTilesetII_v1.7/0x72_DungeonTilesetII_v1.7.png",
+        "idle": [[16, 332, 32, 36], [48, 332, 32, 36], [80, 332, 32, 36], [112, 332, 32, 36]],
+        "rage": [[144, 332, 32, 36], [176, 332, 32, 36], [208, 332, 32, 36], [240, 332, 32, 36]],
+        "scale": 3,
+        "fps": 4,
+        "roar": "res://art/packs/rubberduck-80-rpg-sfx/creature_roar_03.ogg",
+        "hurt": "res://art/packs/rubberduck-80-rpg-sfx/creature_monster_02.ogg",
+        "die": "res://art/packs/rubberduck-80-rpg-sfx/creature_die_01.ogg"
+      },
+      "lines": {
+        "meet": "Enrollment is permanent.",
+        "idle": [
+          "I have tenure.",
+          "I grow back every month.",
+          "Five point five. Forever.",
+          "Learning was the expensive part.",
+          "Did you read the syllabus."
+        ],
+        "hit": ["Noted.", "That will go on your record.", "Partial credit.", "See me after class."],
+        "low": ["Is this the final exam.", "I feel almost graduated."],
+        "heal": "Interest. {amount}.",
+        "death": "Paid. You may forget everything now."
+      }
+    },
+    "other": {
+      "name": "The Goo",
+      "look": {
+        "sheet": "res://art/packs/ninja-adventure/Actor/Boss/GiantSlime/Idle.png",
+        "idle": [[0, 0, 62, 52], [62, 0, 62, 52], [124, 0, 62, 52], [186, 0, 62, 52], [248, 0, 62, 52]],
+        "rage": [[0, 0, 62, 52], [62, 0, 62, 52], [124, 0, 62, 52], [186, 0, 62, 52], [248, 0, 62, 52]],
+        "scale": 2,
+        "fps": 7,
+        "roar": "res://art/packs/rubberduck-80-rpg-sfx/creature_slime_02.ogg",
+        "hurt": "res://art/packs/rubberduck-80-rpg-sfx/creature_slime_01.ogg",
+        "die": "res://art/packs/rubberduck-80-rpg-sfx/creature_slime_04.ogg"
+      },
+      "lines": {
+        "meet": "You forgot about me.",
+        "idle": ["I'm the one you forgot about.", "Blub.", "I stick to things.", "Every month, a little more of me."],
+        "hit": ["Squelch.", "Less of me now.", "Rude."],
+        "low": ["I'm thinning out."],
+        "heal": "Interest. {amount}.",
+        "death": "Gone. Wipe your boots."
+      }
+    }
+  }
+}
