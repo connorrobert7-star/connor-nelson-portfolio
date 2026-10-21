@@ -5,4 +5,5 @@ const FEATURES: Array[Script] = [
 	preload("res://features/casino/feature.gd"),
 	preload("res://features/minigames/feature.gd"),
 	preload("res://features/gate/feature.gd"),
+	preload("res://features/followers/feature.gd"),
 ]

@@ -1,0 +1,24 @@
+{
+  "_note": "Food at the shrine bowl. Bought with coins only; a deposit never fills a belly. Prices from docs/STEPS_2_5.md.",
+  "foods": [
+    {"id": "gruel", "name": "Gruel", "price": 5, "belly": 40, "loyalty": 3,
+     "icon": {"sheet": "res://art/packs/ninja-adventure/Items/Food/Onigiri.png", "rect": [0, 0, 16, 16]}},
+    {"id": "stew", "name": "Stew", "price": 15, "belly": 80, "loyalty": 8,
+     "icon": {"sheet": "res://art/packs/ninja-adventure/Items/Food/Noodle.png", "rect": [0, 0, 16, 16]}},
+    {"id": "favorite", "name": "Favorite", "price": 25, "belly": 100, "loyalty": 20,
+     "icon": {"sheet": "res://art/packs/kyrise-rpg-icons-16/spritesheet/spritesheet_16x16.png", "rect": [192, 80, 16, 16]}}
+  ],
+  "favorites": [
+    {"id": "sushi", "name": "Sushi", "icon": {"sheet": "res://art/packs/ninja-adventure/Items/Food/Sushi.png", "rect": [0, 0, 16, 16]}},
+    {"id": "honey", "name": "Honey", "icon": {"sheet": "res://art/packs/ninja-adventure/Items/Food/Honey.png", "rect": [0, 0, 16, 16]}},
+    {"id": "fortune_cookie", "name": "Fortune Cookie", "icon": {"sheet": "res://art/packs/ninja-adventure/Items/Food/FortuneCookie.png", "rect": [0, 0, 16, 16]}},
+    {"id": "calamari", "name": "Calamari", "icon": {"sheet": "res://art/packs/ninja-adventure/Items/Food/Calamari.png", "rect": [0, 0, 16, 16]}},
+    {"id": "yakitori", "name": "Yakitori", "icon": {"sheet": "res://art/packs/ninja-adventure/Items/Food/Yakitori.png", "rect": [0, 0, 16, 16]}},
+    {"id": "meat", "name": "Meat", "icon": {"sheet": "res://art/packs/ninja-adventure/Items/Food/Meat.png", "rect": [0, 0, 15, 15]}},
+    {"id": "fish", "name": "Fish", "icon": {"sheet": "res://art/packs/ninja-adventure/Items/Food/Fish.png", "rect": [0, 0, 16, 16]}},
+    {"id": "shrimp", "name": "Shrimp", "icon": {"sheet": "res://art/packs/ninja-adventure/Items/Food/Shrimp.png", "rect": [0, 0, 16, 16]}},
+    {"id": "apple", "name": "Apple", "icon": {"sheet": "res://art/packs/kyrise-rpg-icons-16/spritesheet/spritesheet_16x16.png", "rect": [48, 144, 16, 16]}},
+    {"id": "cookie", "name": "Cookie", "icon": {"sheet": "res://art/packs/kyrise-rpg-icons-16/spritesheet/spritesheet_16x16.png", "rect": [192, 112, 16, 16]}}
+  ],
+  "things": ["candles", "bones", "shiny", "plants", "skulls"]
+}

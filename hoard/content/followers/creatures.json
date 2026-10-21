@@ -1,0 +1,35 @@
+{
+  "_note": "The creature each holding becomes. A ticker's own `creature` in content/market.json wins when it names one of these. Cells are 16x16 in Tiny Creatures (col, row).",
+  "sheet": "res://art/packs/tiny-creatures/Tilemap/tilemap_packed.png",
+  "creatures": {
+    "elephant": [8, 15],
+    "lion": [6, 15],
+    "parrot": [3, 10],
+    "turtle": [9, 14],
+    "hedgehog": [3, 14],
+    "owl": [7, 11],
+    "watcher": [5, 0],
+    "dragon": [1, 3],
+    "serpent": [0, 4],
+    "raccoon": [8, 17],
+    "golem": [7, 4],
+    "fox": [9, 16],
+    "wisp": [6, 4],
+    "bear": [1, 10],
+    "bat": [6, 13]
+  },
+  "symbols": {
+    "VTI": "elephant",
+    "VOO": "lion",
+    "VXUS": "parrot",
+    "SCHD": "turtle",
+    "BND": "hedgehog",
+    "AAPL": "owl",
+    "MSFT": "watcher",
+    "NVDA": "dragon",
+    "AMZN": "serpent",
+    "GOOGL": "raccoon"
+  },
+  "kinds": {"index": "golem", "bond": "turtle", "stock": "fox"},
+  "default": "wisp"
+}

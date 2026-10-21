@@ -1,0 +1,20 @@
+{
+  "_note": "Names offered at the personal follower's naming rite (three, picked by the save), and the growth stages by kept weeks.",
+  "personal": [
+    "Mote", "Wick", "Bramble", "Tallow", "Pip", "Sorrel", "Ossia", "Nib", "Moth", "Clove",
+    "Thimble", "Hollis", "Brine", "Fennel", "Ash", "Burdock", "Juniper", "Marrow", "Cinder",
+    "Lumen", "Pith", "Quill", "Rook", "Sable", "Teasel", "Umber", "Vesper", "Yarrow", "Bonnet",
+    "Crumb", "Dimity", "Ember", "Gristle", "Hob", "Ink", "Larkin", "Murmur", "Nettle", "Oriel",
+    "Parsnip", "Rue", "Sprig", "Tuft", "Velvet", "Whisker", "Bodkin", "Cobble", "Dusk"
+  ],
+  "stages": [
+    {"stage": 0, "name": "egg", "weeks": 0},
+    {"stage": 1, "name": "hatchling", "weeks": 1},
+    {"stage": 2, "name": "lamb", "weeks": 2},
+    {"stage": 3, "name": "yearling", "weeks": 4},
+    {"stage": 4, "name": "ram", "weeks": 8},
+    {"stage": 5, "name": "elder", "weeks": 13},
+    {"stage": 6, "name": "high elder", "weeks": 26},
+    {"stage": 7, "name": "crowned", "weeks": 52}
+  ]
+}
