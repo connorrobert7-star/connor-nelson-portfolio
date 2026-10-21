@@ -13,7 +13,13 @@
       if (!url.endsWith(suffix)) continue;
       const clean = { ...(init || {}) };
       delete clean.integrity; // the bytes on the wire are gzipped
-      return realFetch(spec.file, clean).then((res) => {
+      const whole = spec.parts
+        ? Promise.all(spec.parts.map((p) => realFetch(p, clean).then((r) => {
+            if (!r.ok) throw new Error("Missing " + p);
+            return r.blob();
+          }))).then((blobs) => new Response(new Blob(blobs)))
+        : realFetch(spec.file, clean);
+      return whole.then((res) => {
         if (!res.ok || !spec.gz) return res;
         const body = res.body.pipeThrough(new DecompressionStream("gzip"));
         return new Response(body, { status: 200, headers: { "Content-Type": spec.type || "application/octet-stream" } });

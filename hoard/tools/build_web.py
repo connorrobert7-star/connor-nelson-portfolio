@@ -19,6 +19,7 @@ import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+PART_BYTES = 14 * 1024 * 1024
 WEB = ROOT / "web"
 GODOT_EXPORT = ROOT / "export" / "web"
 
@@ -93,8 +94,19 @@ def main() -> None:
     for suffix, (name, src, gz, ctype) in BINARIES.items():
         where, fname = src.split(":")
         data = (sources[where] / fname).read_bytes()
-        (out / name).write_bytes(gzip.compress(data, 9, mtime=0) if gz else data)
-        files[suffix] = {"file": name, "gz": gz, "type": ctype}
+        blob = gzip.compress(data, 9, mtime=0) if gz else data
+        # The host takes binaries up to 15 MB, so big ones ship in parts that
+        # web/bridge.js joins back together.
+        parts = [blob[i : i + PART_BYTES] for i in range(0, len(blob), PART_BYTES)] or [b""]
+        if len(parts) == 1:
+            (out / name).write_bytes(blob)
+            files[suffix] = {"file": name, "gz": gz, "type": ctype}
+            continue
+        stem = name.removesuffix(".wasm")
+        names = [f"{stem}.{i}.wasm" for i in range(len(parts))]
+        for part_name, part in zip(names, parts, strict=True):
+            (out / part_name).write_bytes(part)
+        files[suffix] = {"parts": names, "gz": gz, "type": ctype}
     shutil.copy(GODOT_EXPORT / "index.audio.worklet.js", out / "index.audio.worklet.js")
     (out / "hoard-py.json").write_text(json.dumps(python_bundle()))
 
