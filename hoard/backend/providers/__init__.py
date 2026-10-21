@@ -7,6 +7,8 @@
     HOARD_ADVISOR=fixture|claude
     HOARD_CREDIT=fixture|bureau
     HOARD_LIFE_TABLE=us   (CDC NCHS United States Life Tables, 2024)
+    HOARD_BROKER=fixture|moomoo|alpaca   (buys from brokerage cash; never sells)
+    HOARD_LIVE=1          (real-money orders; anything else, or unset, means paper)
 
 Everything defaults to the demo. The game is in demo mode whenever transfers are
 simulated, and only demo mode can move the clock forward.
@@ -20,6 +22,7 @@ from backend.providers.base import (
     AdvisorProvider,
     BankProvider,
     BrokerageProvider,
+    BrokerProvider,
     CreditProvider,
     LifeTableProvider,
     MarketDataProvider,
@@ -37,6 +40,7 @@ class Providers:
     advisor: AdvisorProvider
     credit: CreditProvider
     life: LifeTableProvider
+    broker: BrokerProvider
 
     @property
     def demo(self) -> bool:
@@ -71,7 +75,29 @@ def load(env: Mapping[str, str] = os.environ) -> Providers:
         env.get("HOARD_CREDIT", "fixture")
     ]()
     life = {"us": fixtures.UsLifeTable}[env.get("HOARD_LIFE_TABLE", "us")]()
-    return Providers(bank, brokerage, market, transfers, advisor, credit, life)
+    return Providers(bank, brokerage, market, transfers, advisor, credit, life, load_broker(env))
 
 
-__all__ = ["NotConfigured", "Providers", "load"]
+def live(env: Mapping[str, str] = os.environ) -> bool:
+    """Real-money orders only with HOARD_LIVE=1, whatever keys are present."""
+    return env.get("HOARD_LIVE", "").strip() == "1"
+
+
+def load_broker(env: Mapping[str, str] = os.environ) -> BrokerProvider:
+    from backend.providers import broker, real
+
+    kind = env.get("HOARD_BROKER", "fixture")
+    if kind == "fixture":
+        from backend.providers.fixtures import FixtureMarket
+
+        return broker.FixtureBroker(FixtureMarket())
+    if kind == "moomoo":
+        from backend.providers.moomoo import MoomooBroker
+
+        return MoomooBroker(paper=not live(env))
+    if kind == "alpaca":
+        return real.AlpacaBroker(paper=not live(env))
+    raise ValueError(f"HOARD_BROKER={kind} is not one of fixture, moomoo, alpaca.")
+
+
+__all__ = ["NotConfigured", "Providers", "live", "load", "load_broker"]

@@ -55,6 +55,41 @@ class MarketDataProvider(Protocol):
     def weekly_price_cents(self, symbol: str, week_start: date, anchor: date) -> int: ...
 
 
+class BrokerProvider(Protocol):
+    """Buys from cash already in the brokerage, one market order per pull. Never sells.
+
+    Real: moomoo through OpenD (share counts), Alpaca (dollar amounts). Paper unless
+    HOARD_LIVE=1. Quotes are only used here to size an order; the game never shows them.
+    """
+
+    name: str
+    paper: bool
+
+    def cash_cents(self) -> int:
+        """Settled cash available to buy with."""
+        ...
+
+    def market_open(self) -> bool:
+        """True during regular US hours (9:30 to 16:00 ET on a trading day)."""
+        ...
+
+    def buy(self, symbol: str, amount_cents: int, ref: str) -> dict:
+        """Place a market buy for about amount_cents of symbol and wait briefly for the fill.
+
+        Returns {order_id, symbol, target_cents, qty_sent, quote_cents, status, filled_qty,
+        avg_price, filled_cents, leftover_cents, message}. status is one of filled, partial,
+        open (sent, not filled yet) or rejected. Never pretends an order filled."""
+        ...
+
+    def order(self, order_id: str) -> dict:
+        """The same shape as buy(), read again (for orders that were still open)."""
+        ...
+
+    def positions(self) -> list[dict]:
+        """[{symbol, qty, value_cents}]"""
+        ...
+
+
 class TransferProvider(Protocol):
     """Moves money between the player's own accounts. Real: Plaid Transfer."""
 

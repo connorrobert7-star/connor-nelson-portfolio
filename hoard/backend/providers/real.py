@@ -106,3 +106,30 @@ class BureauCredit:
 
     def report(self, anchor: date, today: date, facts: dict) -> dict:
         raise NotConfigured("BureauCredit.report is not written yet.")
+
+
+class AlpacaBroker:
+    """Alpaca Trading API, the fallback broker: market buys by dollar amount (notional), so
+    no share-count math. Paper at paper-api.alpaca.markets unless HOARD_LIVE=1.
+    Env: ALPACA_KEY_ID, ALPACA_SECRET_KEY. Same interface as MoomooBroker; never sells."""
+
+    name = "alpaca"
+
+    def __init__(self, paper: bool = True) -> None:
+        _need("ALPACA_KEY_ID", "ALPACA_SECRET_KEY")
+        self.paper = paper
+
+    def cash_cents(self) -> int:
+        raise NotConfigured("AlpacaBroker.cash_cents is not written yet.")
+
+    def market_open(self) -> bool:
+        raise NotConfigured("AlpacaBroker.market_open is not written yet.")
+
+    def buy(self, symbol: str, amount_cents: int, ref: str) -> dict:
+        raise NotConfigured("AlpacaBroker.buy is not written yet (POST /v2/orders, notional).")
+
+    def order(self, order_id: str) -> dict:
+        raise NotConfigured("AlpacaBroker.order is not written yet.")
+
+    def positions(self) -> list[dict]:
+        raise NotConfigured("AlpacaBroker.positions is not written yet.")

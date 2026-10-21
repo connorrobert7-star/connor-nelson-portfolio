@@ -13,6 +13,9 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from backend.core.engine import Engine
+from backend.envfile import load_env
+
+load_env()
 
 DEFAULT_DB = Path(__file__).resolve().parent / "db" / "hoard.sqlite3"
 
