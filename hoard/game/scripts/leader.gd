@@ -22,6 +22,7 @@ func _ready() -> void:
 	_sprite.hframes = 6
 	_sprite.offset = Vector2(0, -14)
 	add_child(_sprite)
+	BookOverlay.dress_leader(self, _sprite)  # what the collection book put on (features/casino)
 
 
 func _physics_process(delta: float) -> void:
