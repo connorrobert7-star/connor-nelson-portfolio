@@ -3,4 +3,5 @@ class_name FeatureManifest
 
 const FEATURES: Array[Script] = [
 	preload("res://features/minigames/feature.gd"),
+	preload("res://features/gate/feature.gd"),
 ]
