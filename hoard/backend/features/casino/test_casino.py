@@ -297,6 +297,41 @@ def test_the_money_moves_before_anything_is_rolled(ctx, monkeypatch):
         assert snapshot(ctx.conn) == before
 
 
+def _fail_transfers(monkeypatch, providers) -> None:
+    monkeypatch.setattr(providers.transfers, "submit", lambda *args: {"status": "failed"})
+
+
+@pytest.mark.parametrize("machine", list(PAID))
+def test_a_failed_transfer_grants_nothing_and_rolls_nothing(engine, machine, monkeypatch):
+    path, body, _ = PAID[machine]
+    engine.handle("GET", "/state")  # load every machine
+    before = snapshot(engine.conn)
+    _fail_transfers(monkeypatch, engine.providers)
+    for _ in range(3):  # failed pulls are never free pulls
+        status, out = engine.handle("POST", path, body={**body, "to_account": "sav_1"})
+        assert (status, out) == (409, {"detail": "Not this week."})
+        assert snapshot(engine.conn) == before
+
+
+def test_a_failed_transfer_stops_before_any_load_is_touched(ctx, monkeypatch):
+    """Even without the request rollback, nothing is fired, drawn, spun, grabbed or granted."""
+    machines.room_state(ctx)  # load every machine
+    loaded = ("inventory", *CASINO_TABLES)
+    before = {t: v for t, v in snapshot(ctx.conn).items() if t in loaded}
+    _fail_transfers(monkeypatch, ctx.providers)
+    for call in (
+        lambda: machines.open_case(ctx, "case_10", "sav_1"),
+        lambda: machines.scratch(ctx, 100, "sav_1"),
+        lambda: machines.spin_wheel(ctx, "sav_1"),
+        lambda: machines.drop_claw(ctx, "sav_1", 0.3),
+    ):
+        with pytest.raises(ApiError) as refused:
+            call()
+        assert (refused.value.status, refused.value.message) == (409, "Not this week.")
+        assert {t: v for t, v in snapshot(ctx.conn).items() if t in loaded} == before
+        assert not [e for e in ctx.events if e.get("kind") == "item"]
+
+
 FREE_ROUTES = {("GET", "/casino/catalog"), ("POST", "/casino/tradeup"), ("POST", "/casino/equip")}
 
 

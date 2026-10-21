@@ -5,6 +5,7 @@ Every paid pull goes the same way, in one request:
   1. check the price against the week's extra and the transfer caps ("Not this week."),
   2. move() the exact price from checking into the owner's House Fund or Brokerage,
   3. only then take the next shell, ticket, wedge or heap piece and grant a cosmetic.
+If the transfer comes back 'failed', the pull is refused ("Not this week.") before step 3.
 Money is never random. The price lands in full every time; only the cosmetic varies.
 """
 
@@ -61,6 +62,10 @@ def pay(
     (status,) = ctx.conn.execute(
         "SELECT status FROM transfers WHERE id = ?", [transfer_id]
     ).fetchone()
+    if status == "failed":
+        # No money landed, so nothing is rolled or granted. Raising rolls the whole
+        # request back (the transfer row included), the same as any other refusal.
+        raise ApiError(409, dealer.NOT_THIS_WEEK)
     money = {"amount_cents": price_cents, "to_account": to_account, "status": status}
     return money, transfer_id
 
