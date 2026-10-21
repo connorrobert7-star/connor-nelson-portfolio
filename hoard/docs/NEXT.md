@@ -19,10 +19,6 @@ requirement lamps, tap to build, scaffolding, the target banner). Not done yet:
 - The two review passes (a rules critic and an owner playtest) did not run on the sites.
 - The finished-building reveal is a short puff; the "while you were out" scene shows a
   `building_done` beat as a plain line of text (no custom renderer yet).
-- The flock in the village is 9 cultists plus 2 per opened parcel; it should follow
-  `buildings.capacity` (the backend's `followers.cultists` already does).
-- `game/scripts/level.gd` still prefixes "E " on prompts outside the village (arcade "E Mine",
-  shop and tavern "E Talk to ..."). Only the village hides them.
 - Tours that need updating for the new map: `dev/tours/core_tour.gd` (old tiles), and the gate,
   minigames and casino room tours borrow empty corners that now overlap the shop (a free one is
   `Rect2i(34, 15, 5, 3)`).
@@ -69,15 +65,9 @@ this is built:
 
 ## Carried over from the last pass (not started)
 
-- The 0x72 wizard as the leader everywhere (`wizzard_m`: idle at x128 y164, 16x28, four frames
-  16 px apart; run at x192), not only in the minigames.
-- The gate: a refused payment must not open the gate or spend the coin stack on screen (`_fire`
-  spends and opens before `/gate/attack` answers); heal and bank-kill beats play twice;
-  `/gate/seen` can return 500; platform toasts cut across the fight.
+- The gate: platform toasts can still cut across the fight.
+- Week browsing has no tap version (the [ and ] keys still work; the HUD no longer names them).
 - The fixture bank keeps charging interest on a debt the gate killed.
-- The HUD's "[ earlier" and "N next day" hints are keyboard words; week browsing has no tap
-  version.
-- The "next day" demo button draws over overlays.
 - The casino feature draws a dark hall over the village's casino facade.
 - A reduced-motion setting.
 - README: the exact `.env` keys for Plaid, SnapTrade and Alpaca; refresh `CLAUDE.md` (its phases
