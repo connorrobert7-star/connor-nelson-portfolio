@@ -109,3 +109,32 @@ def test_every_route_documents_itself():
     for method, path in ROUTES:
         assert path.startswith("/"), path
         assert method in ("GET", "POST"), method
+
+
+def test_emergency_fund_account(state):
+    ids = {a["id"]: a for a in state["accounts"]}
+    assert ids["sav_2"]["kind"] == "savings" and ids["sav_2"]["name"] == "Emergency Fund"
+    assert state["house"]["name"] == "House Fund"
+
+
+def test_landed_cents_counts_bank_and_game_transfers(ctx):
+    from backend.money.budget import landed_cents, last_landing_day
+    from backend.money.transfer import move
+
+    week_start = TODAY - timedelta(days=7)
+    before = landed_cents(ctx, week_start, TODAY)
+    assert before == 20_000 + 15_000  # the scripted payday's savings and brokerage transfers
+    move(ctx, "chk_1", "sav_2", 2_000, "test", {"type": "test"})
+    assert landed_cents(ctx, week_start, TODAY) == before + 2_000
+    assert last_landing_day(ctx) == TODAY
+
+
+def test_away_queue(engine):
+    from backend.core.services import away
+
+    with engine.conn:
+        away(engine.ctx(), "test_beat", priority=10, text="hello")
+    status, s = engine.handle("GET", "/state")
+    assert [a["kind"] for a in s["away"]] == ["test_beat"]
+    engine.handle("POST", "/away/seen", body={"ids": [s["away"][0]["id"]]})
+    assert engine.handle("GET", "/state")[1]["away"] == []

@@ -96,3 +96,14 @@ CREATE TABLE IF NOT EXISTS notifications (
     data    TEXT,
     seen    INTEGER NOT NULL DEFAULT 0
 );
+
+-- Things that happened while the player was away, for the "while you were out" scene.
+-- Written by daily hooks; shown once, highest priority first.
+CREATE TABLE IF NOT EXISTS away_events (
+    id       INTEGER PRIMARY KEY AUTOINCREMENT,
+    day      TEXT NOT NULL,
+    kind     TEXT NOT NULL,
+    priority INTEGER NOT NULL DEFAULT 50,
+    payload  TEXT,
+    shown    INTEGER NOT NULL DEFAULT 0
+);

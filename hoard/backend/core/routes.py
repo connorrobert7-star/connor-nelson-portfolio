@@ -5,9 +5,9 @@ from datetime import date
 from backend.core.context import Ctx
 from backend.core.life import life_clock
 from backend.core.router import ApiError, route
-from backend.core.services import coin_balance, unseen_notifications
+from backend.core.services import coin_balance, unseen_away, unseen_notifications
 from backend.core.state import View, compose, section
-from backend.money.budget import balances, compute_extra, hourly_rate_cents
+from backend.money.budget import balances, compute_extra, hourly_rate_cents, last_landing_day
 from backend.money.transfer import caps_remaining
 from backend.sync import anchor
 
@@ -40,6 +40,8 @@ def platform(ctx: Ctx, view: View) -> dict:
         "holdings": [dict(r) for r in ctx.conn.execute("SELECT * FROM holdings ORDER BY symbol")],
         "debts": [dict(r) for r in ctx.conn.execute("SELECT * FROM debts ORDER BY balance_cents")],
         "notifications": unseen_notifications(ctx),
+        "away": unseen_away(ctx),
+        "last_landing_day": (lambda d: d.isoformat() if d else None)(last_landing_day(ctx)),
     }
 
 
@@ -77,4 +79,10 @@ def advance(ctx: Ctx, days: int = 1) -> dict:
 @route("POST", "/notifications/seen")
 def notifications_seen(ctx: Ctx, ids: list) -> dict:
     ctx.conn.executemany("UPDATE notifications SET seen = 1 WHERE id = ?", [[int(i)] for i in ids])
+    return {"seen": len(ids)}
+
+
+@route("POST", "/away/seen")
+def away_seen(ctx: Ctx, ids: list) -> dict:
+    ctx.conn.executemany("UPDATE away_events SET shown = 1 WHERE id = ?", [[int(i)] for i in ids])
     return {"seen": len(ids)}

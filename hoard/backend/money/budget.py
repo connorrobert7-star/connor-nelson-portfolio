@@ -12,6 +12,9 @@ from backend.core.context import Ctx
 from backend.core.dates import add_month, week_start
 
 FLOOR_CENTS = 50_000
+# The player's own accounts money can land in: House Fund, Emergency Fund (the wall), Brokerage.
+OWN_ACCOUNTS = ("sav_1", "sav_2", "brk_1")
+LANDING_CATEGORIES = ("TRANSFER_OUT_SAVINGS", "TRANSFER_OUT_INVESTMENT_AND_RETIREMENT_FUNDS")
 BILL_HORIZON_DAYS = 14
 AVERAGE_WEEKS = 4
 UNSETTLED = ("simulated", "pending")
@@ -114,3 +117,37 @@ def compute_extra(ctx: Ctx) -> dict:
         "avg_weekly_food_transport_cents": food_transport,
         "week_start": week_start(ctx.today).isoformat(),
     }
+
+
+def landed_cents(ctx: Ctx, start: date, end: date) -> int:
+    """Money that landed in the player's own accounts between start and end (inclusive):
+    the game's own transfers plus the bank's savings and investment transfers."""
+    (game,) = ctx.conn.execute(
+        f"""SELECT COALESCE(SUM(amount_cents), 0) FROM transfers
+            WHERE status != 'failed' AND to_account IN ({_in(list(OWN_ACCOUNTS))})
+              AND created BETWEEN ? AND ?""",
+        [*OWN_ACCOUNTS, start.isoformat(), end.isoformat()],
+    ).fetchone()
+    (bank,) = ctx.conn.execute(
+        f"""SELECT COALESCE(SUM(amount_cents), 0) FROM transactions
+            WHERE category IN ({_in(list(LANDING_CATEGORIES))}) AND amount_cents > 0
+              AND date BETWEEN ? AND ?""",
+        [*LANDING_CATEGORIES, start.isoformat(), end.isoformat()],
+    ).fetchone()
+    return game + bank
+
+
+def last_landing_day(ctx: Ctx) -> date | None:
+    """The last day money landed in an own account, or None if it never has."""
+    (game,) = ctx.conn.execute(
+        f"SELECT MAX(created) FROM transfers WHERE status != 'failed' "
+        f"AND to_account IN ({_in(list(OWN_ACCOUNTS))})",
+        OWN_ACCOUNTS,
+    ).fetchone()
+    (bank,) = ctx.conn.execute(
+        f"SELECT MAX(date) FROM transactions WHERE amount_cents > 0 "
+        f"AND category IN ({_in(list(LANDING_CATEGORIES))})",
+        LANDING_CATEGORIES,
+    ).fetchone()
+    days = [date.fromisoformat(d) for d in (game, bank) if d]
+    return max(days) if days else None

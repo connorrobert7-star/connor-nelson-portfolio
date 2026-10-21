@@ -21,6 +21,7 @@ from backend.core.dates import is_monthly_on, week_start
 HISTORY_DAYS = 90
 OPENING_CHECKING_CENTS = 100_000
 OPENING_SAVINGS_CENTS = 705_000
+OPENING_EMERGENCY_CENTS = 180_000
 CARD_LIMIT_CENTS = 320_000
 
 MONTHLY_BILLS: dict[int, list[tuple[str, int, str]]] = {
@@ -169,6 +170,12 @@ class FixtureBank:
                 "kind": "savings",
                 "name": "House Fund",
                 "balance_cents": OPENING_SAVINGS_CENTS + saved,
+            },
+            {
+                "id": "sav_2",
+                "kind": "savings",
+                "name": "Emergency Fund",
+                "balance_cents": OPENING_EMERGENCY_CENTS,
             },
         ]
 
