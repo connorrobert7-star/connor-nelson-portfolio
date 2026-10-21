@@ -3,6 +3,8 @@ extends Node
 ## Holds the current level, the HUD, overlays, toasts, and moves between places.
 
 const TOAST_SECONDS := 2.6
+## Where a new session opens: the casino once it exists, else the village.
+const START_LEVEL := "casino"
 
 @onready var world: Node2D = $World
 @onready var hud: CanvasLayer = $Hud
@@ -21,6 +23,7 @@ var _life := LifeBar.new()
 var _toasts := VBoxContainer.new()
 var _overlays := Control.new()
 var _shown_notifications: Dictionary = {}
+var _day_button: Button
 
 
 func _ready() -> void:
@@ -39,8 +42,10 @@ func _ready() -> void:
 	Game.state_changed.connect(_on_state)
 	Game.failed.connect(func(message: String) -> void: _error = message)
 	Game.event_fired.connect(_on_event)
+	_add_day_button()
 	show_panel("Waking the village...")
-	go_to("village", Village.SPAWN)
+	var first := START_LEVEL if Features.level_script(START_LEVEL) else "village"
+	go_to(first, Room.ENTRANCE if first != "village" else Village.SPAWN)
 	Game.refresh()
 
 
@@ -162,7 +167,31 @@ func _unhandled_input(event: InputEvent) -> void:
 				toast("A day passes. %s" % _day(Game.state.today), Palette.MUTED)
 
 
+## Demo only: a tappable "next day" in the corner, same as the N key.
+func _add_day_button() -> void:
+	var b := Button.new()
+	b.text = "next day"
+	b.flat = true
+	b.add_theme_font_size_override("font_size", 6)
+	b.add_theme_color_override("font_color", Palette.MUTED)
+	b.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	b.position = Vector2(-44, 15)
+	b.focus_mode = Control.FOCUS_NONE
+	b.visible = false
+	b.pressed.connect(func() -> void:
+		if Game.busy or not Game.state.get("demo", false):
+			return
+		Sfx.play("whoosh")
+		await Game.advance_days(1)
+		toast("A day passes. %s" % _day(Game.state.today), Palette.MUTED)
+	)
+	hud.add_child(b)
+	_day_button = b
+
+
 func _on_state() -> void:
+	if _day_button:
+		_day_button.visible = Game.state.get("demo", false)
 	_error = ""
 	var s := Game.state
 	var hint := "[ earlier" + ("   ] later" if Game.weeks_ago > 0 else "")

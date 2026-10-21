@@ -112,6 +112,20 @@ func _release() -> void:
 	Game.busy = false
 
 
+func _gui_input(event: InputEvent) -> void:
+	if Level._is_tap(event) and _choices.get_child_count() == 0:
+		accept_event()
+		_advance_or_finish()
+
+
+func _advance_or_finish() -> void:
+	if _text.visible_ratio < 1.0:
+		_typing.kill()
+		_text.visible_ratio = 1.0
+	else:
+		_advanced.emit()
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if not visible:
 		return
@@ -125,10 +139,6 @@ func _unhandled_input(event: InputEvent) -> void:
 				get_viewport().set_input_as_handled()
 				(focused as Button).pressed.emit()
 		return
-	if event.is_action_pressed("interact") or event.is_action_pressed("ui_cancel"):
+	if event.is_action_pressed("interact") or event.is_action_pressed("ui_cancel") or Level._is_tap(event):
 		get_viewport().set_input_as_handled()
-		if _text.visible_ratio < 1.0:
-			_typing.kill()
-			_text.visible_ratio = 1.0
-		else:
-			_advanced.emit()
+		_advance_or_finish()

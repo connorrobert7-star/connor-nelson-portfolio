@@ -11,12 +11,22 @@ func run(kit: TourKit) -> void:
 	kit.check(village.leader.position.y > 80 and village.leader.position.y < 100, "stops at the riverbank")
 	await kit.shot("core_village")
 
+	# Tap Wren from a few tiles away: the leader walks over and talks.
+	await kit.stand(Vector2i(15, 15))
+	await kit.tap_world(village.tile_center(Vector2i(11, 12)))
+	await kit.until(func() -> bool: return kit.dialogue_open(), 6.0)
+	kit.check(kit.dialogue_open(), "tapping Wren walks there and talks")
+	await kit.read_on()
 	await kit.stand(Vector2i(11, 13))
 	if await kit.interact():
 		kit.check(kit.dialogue_open(), "Wren talks")
 		await kit.shot("core_wren")
 		await kit.read_on()
 	kit.check(not kit.dialogue_open() and not Game.busy, "dialogue closes and frees the player")
+	var before_tap := kit.level().leader.position
+	await kit.tap_world(before_tap + Vector2(40, 16))
+	await kit.wait(1.2)
+	kit.check(kit.level().leader.position.distance_to(before_tap) > 20, "tapping the ground walks there")
 
 	# Walk in through the shop door.
 	await kit.stand(Vector2i(26, 23))

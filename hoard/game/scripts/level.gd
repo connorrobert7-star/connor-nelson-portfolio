@@ -8,6 +8,8 @@ signal travel(level_id: String, spawn: Vector2i)
 
 const TILE := 16
 const REACH := 18.0
+## How close a tap has to land to an interactable's spot to count as tapping it.
+const TAP_RADIUS := 20.0
 const NPC_FRAMES := {"shopkeeper": 0, "tavern_keeper": 1, "farmer": 2, "shrine_keeper": 3}
 ## Spawn value for a door that leads back to wherever the player came from.
 const RETURN := Vector2i(-1, -1)
@@ -30,6 +32,7 @@ var _open: Dictionary = {}  # Vector2i -> true, walkable despite the map (doors)
 var _zones: Array[Dictionary] = []  # {rect, text: Callable}
 var _interactables: Array[Dictionary] = []  # {pos, label: Callable, action: Callable}
 var _doors: Array[Dictionary] = []  # {rect, level, spawn}
+var _pending: Dictionary = {}  # the interactable a tap is walking to
 
 
 func setup(main_node: Node, spawn: Vector2i) -> void:
@@ -48,6 +51,10 @@ func _ready() -> void:
 	_paint()
 	leader.position = feet_at(_spawn)
 	leader.is_walkable = is_walkable
+	leader.arrived.connect(func() -> void:
+		if not _pending.is_empty() and leader.position.distance_to(_pending.pos) < REACH + 6:
+			_use_pending()
+	)
 	var size := Vector2(map[0].length(), map.size()) * TILE
 	if follow_camera:
 		leader.add_child(camera)
@@ -98,12 +105,53 @@ func _process(_delta: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if Game.busy or not event.is_action_pressed("interact"):
+	if Game.busy:
+		return
+	if _is_tap(event):
+		get_viewport().set_input_as_handled()
+		_on_tap((make_input_local(event) as InputEventMouseButton).position if event is InputEventMouseButton else (make_input_local(event) as InputEventScreenTouch).position)
+		return
+	if not event.is_action_pressed("interact"):
 		return
 	var it := nearest_interactable()
 	if not it.is_empty():
 		get_viewport().set_input_as_handled()
 		(it.action as Callable).call()
+
+
+static func _is_tap(event: InputEvent) -> bool:
+	if event is InputEventMouseButton:
+		var mb := event as InputEventMouseButton
+		return mb.pressed and mb.button_index == MOUSE_BUTTON_LEFT
+	return event is InputEventScreenTouch and (event as InputEventScreenTouch).pressed
+
+
+## A click or tap in the world: walk to it, and use whatever was tapped once there.
+func _on_tap(point: Vector2) -> void:
+	var tapped: Dictionary = {}
+	var best := TAP_RADIUS
+	for it: Dictionary in _interactables:
+		var d := point.distance_to(it.pos)
+		if d < best:
+			best = d
+			tapped = it
+	if tapped.is_empty():
+		_pending = {}
+		leader.walk_to(point)
+		return
+	_pending = tapped
+	if leader.position.distance_to(tapped.pos) < REACH:
+		_use_pending()
+	else:
+		leader.walk_to(tapped.pos)
+
+
+func _use_pending() -> void:
+	if _pending.is_empty() or Game.busy:
+		return
+	var it := _pending
+	_pending = {}
+	(it.action as Callable).call()
 
 
 func nearest_interactable() -> Dictionary:

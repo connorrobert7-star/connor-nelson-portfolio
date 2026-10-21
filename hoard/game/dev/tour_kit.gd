@@ -119,6 +119,34 @@ func key(code: Key) -> void:
 	await frames(2)
 
 
+## Click (tap) a point in the world, like a mouse or finger would.
+func tap_world(point: Vector2) -> void:
+	var vp := get_viewport()
+	var screen := vp.get_screen_transform() * vp.get_canvas_transform() * point
+	await tap_screen(screen)
+
+
+## Click a point on screen (window pixels), for overlays and HUD buttons.
+func tap_screen(screen: Vector2) -> void:
+	var down := InputEventMouseButton.new()
+	down.button_index = MOUSE_BUTTON_LEFT
+	down.pressed = true
+	down.position = screen
+	down.global_position = screen
+	Input.parse_input_event(down)
+	await frames(1)
+	var up := down.duplicate() as InputEventMouseButton
+	up.pressed = false
+	Input.parse_input_event(up)
+	await frames(2)
+
+
+## Click the middle of a Control.
+func tap_control(c: Control) -> void:
+	var r := c.get_global_rect()
+	await tap_screen(get_viewport().get_screen_transform() * (r.position + r.size / 2.0))
+
+
 func shot(name: String) -> void:
 	await frames(1)
 	await RenderingServer.frame_post_draw
