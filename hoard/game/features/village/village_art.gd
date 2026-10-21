@@ -19,7 +19,6 @@ const SPARK_RING := PACKS + "ninja-adventure/FX/Magic/Circle/SpriteSheetSpark.pn
 const FLAME := PACKS + "ninja-adventure/FX/Elemental/Flam/SpriteSheet.png"
 const FOG := PACKS + "ninja-adventure/FX/Environment/Fog.png"
 const LEAF := PACKS + "ninja-adventure/FX/Particle/Leaf.png"
-const LIGHT := PACKS + "kenney-particle-pack/PNG (Transparent)/light_01.png"
 const DCSS := PACKS + "dcss-altars-features/dungeon/"
 const HOODED_A := PACKS + "dawnlike/Characters/Humanoid0.png"
 const HOODED_B := PACKS + "dawnlike/Characters/Humanoid1.png"
@@ -41,6 +40,7 @@ const INK := Color("120c18")
 static var _textures: Dictionary = {}
 static var _fonts: Dictionary = {}
 static var _add: CanvasItemMaterial
+static var _soft: GradientTexture2D
 
 
 ## Whole dollars for numbers painted on things ("$8,450"); the stats screen keeps cents.
@@ -89,10 +89,29 @@ static func additive() -> CanvasItemMaterial:
 	return _add
 
 
-## A soft pool of light (Kenney light mask, added on top). `size` is its diameter in px.
+## A smooth radial falloff for pools of light (the Kenney masks have rings that read as
+## smudges when they're big and overlap on the dark ground).
+static func soft_light() -> Texture2D:
+	if _soft == null:
+		var g := Gradient.new()
+		g.set_color(0, Color(1, 1, 1, 1))
+		g.set_color(1, Color(1, 1, 1, 0))
+		g.add_point(0.25, Color(1, 1, 1, 0.62))
+		g.add_point(0.6, Color(1, 1, 1, 0.18))
+		_soft = GradientTexture2D.new()
+		_soft.gradient = g
+		_soft.fill = GradientTexture2D.FILL_RADIAL
+		_soft.fill_from = Vector2(0.5, 0.5)
+		_soft.fill_to = Vector2(0.5, 0.0)
+		_soft.width = 128
+		_soft.height = 128
+	return _soft
+
+
+## A soft pool of light, added on top. `size` is its diameter in px.
 static func glow(parent: Node, pos: Vector2, color: Color, size := 48.0, breathe := 0.0) -> Sprite2D:
 	var s := Sprite2D.new()
-	s.texture = sheet(LIGHT)
+	s.texture = soft_light()
 	s.material = additive()
 	s.modulate = color
 	s.position = pos
