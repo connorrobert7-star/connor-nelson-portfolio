@@ -1,0 +1,219 @@
+{
+  "_note": "What Pip, the owner's familiar, says. Plain language, no exclamation points, no tickers, no live prices, nothing that says a thing is going up or worth buying. {braces} are filled from the owner's own numbers by backend/features/helper/lines.py. Each line is one speech bubble: at most two short lines on screen (about 60 characters). The advisor slot (HOARD_ADVISOR=claude) can replace these later through helper_lines(facts); every line it writes passes the same checks.",
+  "name": "Pip",
+  "assumed_rate": 0.07,
+  "fee_rate": 0.01,
+  "opening": [
+    {
+      "id": "meet",
+      "place": "casino",
+      "near": "arrive",
+      "lines": [
+        "I'm Pip. I'll float along and explain things as we go.",
+        "Tap me to ask something. Tap me twice to skip the tour."
+      ]
+    },
+    {
+      "id": "case",
+      "place": "casino",
+      "near": "shelf",
+      "lines": [
+        "Pulling a case moves its price to your own account first.",
+        "Exact dollars, every time. Only the look inside is chance.",
+        {"who": "vex", "text": "{belt_odds}"},
+        "This week you can put in up to {can_spend}."
+      ]
+    },
+    {
+      "id": "book",
+      "place": "casino",
+      "near": "book",
+      "lines": [
+        "The book keeps every look you find. Wear any of them.",
+        "Looks are just for fun. They never touch your money."
+      ]
+    },
+    {
+      "id": "village",
+      "place": "village",
+      "near": "arrive",
+      "lines": [
+        "This is your village. Each place is part of your money.",
+        "Go where you like. I'll keep up."
+      ]
+    },
+    {
+      "id": "sign",
+      "place": "village",
+      "near": "sign",
+      "lines": [
+        "Each lamp on a sign is one thing the next tier needs.",
+        "{sign_need}",
+        "The lamps are checked {next_check}. Nothing is spent."
+      ]
+    },
+    {
+      "id": "arcade",
+      "place": "village",
+      "near": "arcade",
+      "lines": [
+        "The arcade is where you earn coins. Coins pay for building.",
+        "Money never buys coins, and coins never turn into money."
+      ]
+    },
+    {
+      "id": "gate",
+      "place": "village",
+      "near": "gate",
+      "lines": [
+        "Past the gate are your debts. Each one waits as a boss.",
+        "Its health is the real balance. Each dollar paid is a hit."
+      ]
+    },
+    {
+      "id": "shrine",
+      "place": "village",
+      "near": "shrine",
+      "lines": [
+        "The shrine keeps your flock. Each one stands for a holding.",
+        "You hold {holdings_count} now. Their size updates each Sunday."
+      ]
+    }
+  ],
+  "end": [
+    "That's the tour. Tap me any time and I'll explain something."
+  ],
+  "skip": [
+    "Alright. Tap me whenever you want something explained."
+  ],
+  "streak": {
+    "none": "Steady deposits do the work, in good weeks and bad.",
+    "one": "A deposit landed this week. Steady weeks do the work.",
+    "many": "Your deposits have landed {streak} weeks in a row."
+  },
+  "rest": [
+    "That's all I have for now. Ask again when your numbers move."
+  ],
+  "topics": [
+    {
+      "id": "emergency_fund",
+      "variants": {
+        "short": [
+          "An emergency fund comes first, before investing.",
+          "It covers surprises, so you never sell or borrow in a hurry.",
+          "Yours holds {ef_balance}. That's {ef_months} months of costs.",
+          "Most people aim for {ef_target_months} months. For you that's {ef_target}."
+        ],
+        "full": [
+          "An emergency fund comes first, before investing.",
+          "It covers surprises, so you never sell or borrow in a hurry.",
+          "Yours holds {ef_balance}. That's {ef_months} months of costs.",
+          "That's past {ef_target_months} months, the usual floor."
+        ]
+      }
+    },
+    {
+      "id": "high_rate_debt",
+      "variants": {
+        "debt": [
+          "Paying down a high-rate debt is a return you can count on.",
+          "Your {debt_name} charges {debt_apr} a year on {debt_balance}.",
+          "Each $100 paid off saves {debt_save_100} a year, for sure.",
+          "At an assumed 7%, $100 invested makes about {flat_100}. No promise."
+        ],
+        "none": [
+          "Paying down a high-rate debt is a return you can count on.",
+          "None of your debts charge over {high_apr} right now.",
+          "So money past the emergency fund can go to the long run."
+        ]
+      }
+    },
+    {
+      "id": "index_fund",
+      "variants": {
+        "any": [
+          "An index fund owns a little of hundreds of companies at once.",
+          "If one company fails, it's a small part of the whole.",
+          "{index_share} of your {brokerage} brokerage is in funds like that."
+        ]
+      }
+    },
+    {
+      "id": "compounding",
+      "variants": {
+        "any": [
+          "$5 a week is $260 a year. Growth on growth does the rest.",
+          "Say a flat 7% a year. That's an assumption, not a promise.",
+          "After 10 years: about {grow_10}, from {put_10} put in.",
+          "After 30 years: about {grow_30}, from {put_30} put in."
+        ]
+      }
+    },
+    {
+      "id": "fees",
+      "variants": {
+        "any": [
+          "Fees come out every year, good year or bad.",
+          "A 1% fee on your {brokerage} would be {fee_year} a year.",
+          "Over 30 years, 1% would eat about {fee_30} of that {grow_30}.",
+          "Broad index funds often charge well under 0.1%."
+        ]
+      }
+    },
+    {
+      "id": "gold_silver",
+      "variants": {
+        "none": [
+          "Gold and silver don't pay dividends or earn profits.",
+          "People hold a little because it often moves apart from stocks.",
+          "That can soften a bad year. It can also lag for a decade.",
+          "You hold none right now. That's a choice, not a mistake."
+        ],
+        "some": [
+          "Gold and silver don't pay dividends or earn profits.",
+          "People hold a little because it often moves apart from stocks.",
+          "That can soften a bad year. It can also lag for a decade.",
+          "{metals_share} of your brokerage is in metals now."
+        ]
+      }
+    },
+    {
+      "id": "bitcoin",
+      "variants": {
+        "none": [
+          "Bitcoin has fallen by more than half, more than once.",
+          "No profits or interest stand behind it, only what people pay.",
+          "If you hold some, keep it a slice you could watch halve.",
+          "You hold none right now."
+        ],
+        "some": [
+          "Bitcoin has fallen by more than half, more than once.",
+          "No profits or interest stand behind it, only what people pay.",
+          "If you hold some, keep it a slice you could watch halve.",
+          "{crypto_share} of your brokerage is in crypto now."
+        ]
+      }
+    },
+    {
+      "id": "time_in_market",
+      "variants": {
+        "any": [
+          "Time in the market beats timing it. Nobody calls the dips.",
+          "The best days often come right after the worst ones.",
+          "Miss a few of them and the whole decade looks worse.",
+          "{streak_line}"
+        ]
+      }
+    },
+    {
+      "id": "never_sells",
+      "variants": {
+        "any": [
+          "This game never sells anything. It only ever adds.",
+          "Selling after a drop locks the loss in, and can cost taxes.",
+          "Your holdings change only by what you add and what markets do."
+        ]
+      }
+    }
+  ]
+}

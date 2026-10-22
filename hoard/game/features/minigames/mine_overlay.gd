@@ -18,6 +18,7 @@ const SND_DESCEND := ArcadeFx.PACKS + "shattered-pixel-dungeon/sounds/descend.mp
 const SMOKE := ArcadeFx.PACKS + "ninja-adventure/FX/Smoke/Smoke/SpriteSheet.png"
 const EXPLOSION := ArcadeFx.PACKS + "ninja-adventure/FX/Elemental/Explosion/SpriteSheet.png"
 const SPARK := ArcadeFx.PACKS + "ninja-adventure/FX/Magic/Spark/SpriteSheet.png"
+const _KENNEY := ArcadeFx.PACKS + "kenney-roguelike-caves-dungeons/Spritesheet/roguelikeDungeon_transparent.png"
 const ORE_HUES := {"copper": Color("e08a4a"), "silver": Color("dfe6f0"), "gold": Color("ffd75a"), "gem": Color("c58cff")}
 
 var depth := 0
@@ -278,15 +279,32 @@ func _place_cell(cell: Dictionary, c: int, r: int) -> void:
 	var n := Node2D.new()
 	n.position = Vector2(GX + c * CELL + CELL / 2.0, _row_y(r) + CELL / 2.0)
 	var s := Sprite2D.new()
-	s.texture = ArcadeFx.icon(cell.sprite) if cell.kind in ["ore", "dirt", "stone", "coalstone"] else ArcadeFx.icon(_pick_block(0).sprite)
+	var look: Dictionary = cell.sprite if cell.kind in ["ore", "dirt", "stone", "coalstone"] else _pick_block(0).sprite
+	var hash_ := absi((c * 73856093) ^ (int(cell.depth) * 19349663))
+	s.texture = ArcadeFx.icon(_rock_variant(look, hash_))
 	s.scale = Vector2(2, 2)
 	# Rock sits back in the dark (deeper is darker and more violet) so ore and kegs read first.
 	s.modulate = Color(0.58, 0.54, 0.68).darkened(minf(0.35, int(cell.depth) * 0.016)).lerp(Color("7a6a9a"), minf(0.35, int(cell.depth) * 0.012))
 	n.add_child(s)
-	var edge := Line2D.new()
-	edge.width = 1.0
-	edge.default_color = Color(Palette.NIGHT, 0.85)
-	edge.points = PackedVector2Array([Vector2(-16, -16), Vector2(16, -16), Vector2(16, 16), Vector2(-16, 16), Vector2(-16, -16)])
+	# Pebbles, streaks or an old bone pressed into some of the plain rock, so no two blocks
+	# read alike, and a bevel (lit top-left, shadowed bottom-right) so each one is a block.
+	if cell.kind in ["dirt", "stone"] and hash_ % 3 != 0:
+		var grit := Sprite2D.new()
+		var grits: Array = [[238, 170], [255, 187], [255, 170], [238, 238]]
+		var g: Array = grits[(hash_ / 3) % (grits.size() if hash_ % 11 == 0 else 3)]
+		grit.texture = ArcadeFx.tex(_KENNEY, [g[0], g[1], 16, 16])
+		grit.scale = Vector2(2, 2)
+		grit.flip_h = hash_ % 2 == 0
+		grit.modulate = Color(1, 1, 1, 0.42)
+		n.add_child(grit)
+	var edge := Node2D.new()
+	edge.draw.connect(func() -> void:
+		edge.draw_rect(Rect2(-16, -16, 32, 1), Color(1, 1, 1, 0.14))
+		edge.draw_rect(Rect2(-16, -15, 1, 30), Color(1, 1, 1, 0.08))
+		edge.draw_rect(Rect2(-16, 14, 32, 2), Color(0, 0, 0, 0.38))
+		edge.draw_rect(Rect2(15, -16, 1, 30), Color(0, 0, 0, 0.3))
+		edge.draw_rect(Rect2(-16, 15, 32, 1), Color(Palette.NIGHT, 0.9))
+		edge.draw_rect(Rect2(15, -16, 1, 32), Color(Palette.NIGHT, 0.7)))
 	n.add_child(edge)
 	if cell.kind == "ore":
 		var chunk := Sprite2D.new()
@@ -320,13 +338,57 @@ func _place_cell(cell: Dictionary, c: int, r: int) -> void:
 		tw.tween_property(glint, "modulate:a", 1.0, 0.08)
 		tw.tween_property(glint, "rotation", PI / 2, 0.25)
 		tw.parallel().tween_property(glint, "modulate:a", 0.0, 0.25)
-	var cracks := Line2D.new()
-	cracks.width = 1.0
-	cracks.default_color = Color("120c18")
+	# Cracks open in stages with each hit: a first split, then branches, then the block is
+	# crazed all over just before it goes. One fixed pattern per block, drawn in whole pixels.
+	var cracks := Node2D.new()
+	cracks.set_meta("stage", 0.0)
+	var path := _crack_path(hash_)
+	cracks.draw.connect(func() -> void:
+		var stage: float = cracks.get_meta("stage")
+		var shown := int(ceil(stage * path.size()))
+		for k in shown:
+			var seg: Array = path[k]
+			PixelDraw.line(cracks, seg[0] + Vector2(1, 1), seg[1] + Vector2(1, 1), Color(1, 1, 1, 0.16))
+			PixelDraw.line(cracks, seg[0], seg[1], Color("120c18")))
 	n.add_child(cracks)
 	cell.cracks = cracks
 	cell.node = n
 	_grid.add_child(n)
+
+
+## Plain dirt and stone come in the pack's six shades of each (the block's own cell and the
+## five beside it on the sheet), picked by the block's place so the wall never tiles.
+func _rock_variant(look: Dictionary, hash_: int) -> Dictionary:
+	var rect: Array = look.get("rect", [])
+	if str(look.get("sheet", "")) != _KENNEY or rect.size() < 4 or int(rect[0]) != 272:
+		return look
+	var v := hash_ % 6
+	return {"sheet": _KENNEY, "rect": [272 + (v % 3) * 17, int(rect[1]) + (v / 3) * 17, 16, 16]}
+
+
+## A block's crack, as segments in the order they open: a main split from one edge through
+## the middle, then two branches off it, then hairlines. Whole-pixel ends.
+static func _crack_path(hash_: int) -> Array:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash_
+	var segs: Array = []
+	var p := Vector2(rng.randi_range(-10, 10), -14)
+	var main: Array[Vector2] = [p]
+	for i in 4:
+		p = Vector2(clampf(p.x + rng.randi_range(-6, 6), -13, 13), p.y + rng.randi_range(5, 8))
+		main.append(p)
+	for i in range(1, main.size()):
+		segs.append([main[i - 1], main[i]])
+	for b in 2:
+		var from: Vector2 = main[1 + b * 2]
+		var dir := -1.0 if b == 0 else 1.0
+		var q := from + Vector2(dir * rng.randi_range(5, 9), rng.randi_range(-3, 4))
+		segs.append([from, q])
+		segs.append([q, q + Vector2(dir * rng.randi_range(3, 5), rng.randi_range(2, 5))])
+	for h in 3:
+		var at: Vector2 = main[rng.randi_range(0, main.size() - 1)]
+		segs.append([at, at + Vector2(rng.randi_range(-5, 5), rng.randi_range(-4, 4))])
+	return segs
 
 
 func _depth_mark(r: int, row_depth: int) -> void:
@@ -397,11 +459,9 @@ func _hit(cell: Dictionary, c: int, r: int, dmg: int) -> void:
 	if int(cell.hp) > 0:
 		ArcadeFx.sfx(SND_HIT % (randi() % 5), randf_range(0.9, 1.15), -4.0)
 		ArcadeFx.burst(world, n.position, _chip_color(cell), 6, 70.0, 0.35)
-		var cracks: Line2D = cell.cracks
-		var p := Vector2(randf_range(-10, 10), randf_range(-10, 10))
-		for i in 4:
-			cracks.add_point(p)
-			p += Vector2(randf_range(-7, 7), randf_range(-7, 7))
+		var cracks: Node2D = cell.cracks
+		cracks.set_meta("stage", 1.0 - float(cell.hp) / float(maxi(1, int(cell.max))) * 0.85)
+		cracks.queue_redraw()
 		var tw := n.create_tween()
 		tw.tween_property(n, "position:x", n.position.x + 2, 0.02)
 		tw.tween_property(n, "position:x", n.position.x - 2, 0.03)

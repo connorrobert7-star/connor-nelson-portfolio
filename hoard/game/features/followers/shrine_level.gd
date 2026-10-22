@@ -182,12 +182,12 @@ func _build_wall() -> void:
 
 func _build_altar() -> void:
 	_altar_glow = FollowerArt.glow(Color(Palette.GLOW, 0.5), 90.0)
-	_altar_glow.position = ALTAR + Vector2(0, -34)
+	_altar_glow.position = ALTAR + Vector2(0, -20)
 	_altar_glow.z_index = -5
 	add_child(_altar_glow)
 	_altar.texture = FollowerArt.altar(0)
 	_altar.offset = Vector2(0, -16)
-	_altar.scale = Vector2(2, 2)
+	_altar.scale = Vector2.ONE  # the flame at its own pixel size, like everything around it
 	_altar.position = ALTAR
 	props.add_child(_altar)
 	block(Rect2i(13, 3, 4, 3))
@@ -644,8 +644,8 @@ func _fill_wardrobe(wearables: Array) -> void:
 func _collect() -> void:
 	var amount := int(Game.state.get("followers", {}).get("devotion", {}).get("amount", 0))
 	var tw := create_tween()
-	tw.tween_property(_altar, "scale", Vector2(2.2, 1.8), 0.05)
-	tw.tween_property(_altar, "scale", Vector2(2, 2), 0.25).set_trans(Tween.TRANS_ELASTIC).set_ease(Tween.EASE_OUT)
+	tw.tween_property(_altar, "scale", Vector2(1.15, 0.85), 0.05)
+	tw.tween_property(_altar, "scale", Vector2.ONE, 0.25).set_trans(Tween.TRANS_ELASTIC).set_ease(Tween.EASE_OUT)
 	if amount <= 0:
 		FollowerArt.play("bell", 0.7, -12.0)
 		return
@@ -696,10 +696,10 @@ func _on_money_event(e: Dictionary) -> void:
 func flare_circle() -> void:
 	_circle_summon = 0.0
 	var tw := create_tween()
-	tw.tween_property(_altar, "scale", Vector2(2.4, 2.9), 0.12).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	tw.tween_property(_altar, "scale", Vector2(2, 2), 0.5).set_trans(Tween.TRANS_ELASTIC).set_ease(Tween.EASE_OUT)
+	tw.tween_property(_altar, "scale", Vector2(1.2, 1.5), 0.12).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.tween_property(_altar, "scale", Vector2.ONE, 0.5).set_trans(Tween.TRANS_ELASTIC).set_ease(Tween.EASE_OUT)
 	var glow := create_tween()
 	glow.tween_property(_altar_glow, "modulate:a", 0.95, 0.1)
 	glow.tween_property(_altar_glow, "modulate:a", 0.6, 1.2)
-	FlockFx.motes(self, Vector2(240, 262), ALTAR + Vector2(0, -30), 28, 0.7)
+	FlockFx.motes(self, Vector2(240, 262), ALTAR + Vector2(0, -18), 28, 0.7)
 	FlockFx.ring(self, CIRCLE, Palette.CREAM, 70.0, 0.7)

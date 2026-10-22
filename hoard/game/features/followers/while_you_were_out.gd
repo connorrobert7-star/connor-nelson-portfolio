@@ -16,6 +16,8 @@ const SLIME_HIT := "res://art/packs/ninja-adventure/Actor/Boss/GiantSlime/Hit.pn
 const TOWN := "res://art/packs/kenney-tiny-town/Tilemap/tilemap_packed.png"
 const DECOR := "res://art/packs/dawnlike/Objects/Decor0.png"
 const CANDLES := "res://art/packs/vk-candles-with-eyes/candles_with_eyes.png"
+const PLATE := "res://art/packs/tiopalada-dark-dwellers-gui/20251029darkDwellers9SlicesA.png"
+const STAGE_Y := 214.0
 
 var beats: Array[Dictionary] = []
 var ids: Array = []
@@ -72,6 +74,7 @@ func _ready() -> void:
 	# The backdrop lets taps through to the scene: a tap skips to the next beat.
 	add_backdrop(1.0).mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_build_sky()
+	_build_stage()
 	add_child(_scene)
 	_music.stream = load(str(FollowerArt.AUDIO.away_bed)) as AudioStream
 	_music.volume_db = -18.0
@@ -114,6 +117,94 @@ func _build_sky() -> void:
 		tw.tween_property(s, "modulate:a", 0.7, randf_range(0.6, 1.6))
 
 
+## The night plays on a little stage: boards under a spot from above, a pool where the beats
+## stand, velvet curtains at the sides and a scalloped valance across the top.
+func _build_stage() -> void:
+	var spot := Polygon2D.new()
+	spot.polygon = PackedVector2Array([Vector2(214, 0), Vector2(266, 0), Vector2(360, STAGE_Y + 8), Vector2(120, STAGE_Y + 8)])
+	var beam := Color(Palette.CREAM, 0.0)
+	spot.vertex_colors = PackedColorArray([Color(beam, 0.1), Color(beam, 0.1), Color(beam, 0.02), Color(beam, 0.02)])
+	var add := CanvasItemMaterial.new()
+	add.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	spot.material = add
+	add_child(spot)
+	var boards := Node2D.new()
+	boards.draw.connect(func() -> void:
+		boards.draw_rect(Rect2(0, STAGE_Y, 480, 270 - STAGE_Y), Color("140d1e"))
+		var row := 0
+		for y in range(int(STAGE_Y) + 3, 270, 7):
+			boards.draw_rect(Rect2(0, y, 480, 1), Color("241a33"))
+			var x := -40 + (row % 2) * 31
+			while x < 480:
+				boards.draw_rect(Rect2(x, y + 1, 1, 6), Color("0b0712"))
+				x += 62
+			row += 1
+		boards.draw_rect(Rect2(0, STAGE_Y - 2, 480, 3), Color("3a2d4f"))
+		boards.draw_rect(Rect2(0, STAGE_Y - 2, 480, 1), Color(Palette.CREAM, 0.22))
+		boards.draw_rect(Rect2(0, STAGE_Y + 1, 480, 2), Color(0, 0, 0, 0.45))
+		PixelDraw.ellipse(boards, Vector2(240, STAGE_Y + 14), 120, 12, Color(Palette.CREAM, 0.05))
+		PixelDraw.ellipse(boards, Vector2(240, STAGE_Y + 14), 80, 8, Color(Palette.CREAM, 0.05)))
+	add_child(boards)
+	var drapes := Node2D.new()
+	drapes.z_index = 50
+	drapes.draw.connect(func() -> void:
+		var folds: Array[Color] = [Color("5a1830"), Color("47122a"), Color("6a2038"), Color("3a0e20")]
+		for side in 2:
+			for i in 12:
+				var x := (i * 3) if side == 0 else (480 - 36 + i * 3)
+				drapes.draw_rect(Rect2(x, 0, 3, 270), folds[i % folds.size()])
+		drapes.draw_rect(Rect2(0, 0, 480, 10), Color("47122a"))
+		for x in range(0, 480, 16):
+			PixelDraw.disc(drapes, Vector2(x + 8, 10), 7, Color("5a1830"))
+			drapes.draw_rect(Rect2(x + 4, 15, 8, 1), Color("3a0e20"))
+		drapes.draw_rect(Rect2(0, 0, 480, 2), Color(Palette.GLOW, 0.5))
+		drapes.draw_rect(Rect2(0, 2, 480, 1), Color(0, 0, 0, 0.5)))
+	add_child(drapes)
+
+
+## A number on its own plaque (the HUD's frame): dropped in, never floating bare.
+func _plaque(text: String, center: Vector2, width: float, color := Palette.CREAM, size := 22) -> Label:
+	var plate := NinePatchRect.new()
+	plate.texture = load(PLATE)
+	plate.patch_margin_left = 6
+	plate.patch_margin_right = 6
+	plate.patch_margin_top = 6
+	plate.patch_margin_bottom = 6
+	plate.size = Vector2(width, size + 12)
+	plate.position = (center - plate.size / 2.0).round()
+	plate.modulate = Color(0.62, 0.56, 0.74, 0.96)
+	plate.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_scene.add_child(plate)
+	var label := FollowerArt.label(text, FollowerArt.FONT_NUMBERS, size, color)
+	label.size = Vector2(width, size + 4)
+	label.position = (center - label.size / 2.0).round()
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_scene.add_child(label)
+	for n: CanvasItem in [plate, label]:
+		n.modulate.a = 0.0
+		var tw := n.create_tween().set_parallel()
+		tw.tween_property(n, "modulate:a", 0.96 if n == plate else 1.0, 0.15)
+		tw.tween_property(n, "position:y", n.position.y, 0.25).from(n.position.y - 10.0).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	return label
+
+
+## Between beats the set flips like a channel: the old picture snaps off in a TV wipe while the
+## next beat is already on. Nothing waits on it, so a tap still skips exactly one beat.
+func _wipe() -> void:
+	var s := Sprite2D.new()
+	s.centered = false
+	s.scale = Vector2(480.0 / 128.0, 270.0 / 128.0)
+	s.z_index = 100
+	s.modulate = Color(Palette.NIGHT, 1.0)
+	add_child(s)
+	var tw := s.create_tween()
+	tw.tween_method(func(f: float) -> void:
+		s.texture = FollowerArt.region(TV, Rect2(clampi(int(f), 0, 15) * 128, 0, 128, 128)), 15.0, 0.0, 0.24)
+	tw.tween_callback(s.queue_free)
+	FollowerArt.play("whoosh", 1.4, -20.0)
+
+
 func _run() -> void:
 	await _tv(true)
 	var total := 0.0
@@ -125,6 +216,8 @@ func _run() -> void:
 		if not is_inside_tree():
 			return
 		_clear()
+		if not played.is_empty():
+			_wipe()
 		played.append(str(b.kind))
 		var seconds := float(SECONDS.get(b.kind, 1.6)) * k
 		var method := "_beat_" + str(b.kind)
@@ -188,11 +281,7 @@ func _beat_landed(p: Dictionary, seconds: float) -> void:
 	for wave in 3:
 		_later(wave * seconds * 0.22, func() -> void:
 			FlockFx.motes(_scene, Vector2(240 + randf_range(-120, 120), -10), Vector2(240, 168), count, 0.6))
-	var label := FollowerArt.label("+" + Money.fmt(0), FollowerArt.FONT_NUMBERS, 22, Palette.CREAM)
-	label.size = Vector2(200, 26)
-	label.position = Vector2(140, 92)
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_scene.add_child(label)
+	var label := _plaque("+" + Money.fmt(0), Vector2(240, 104), 150.0)
 	var tw := label.create_tween()
 	tw.tween_interval(seconds * 0.2)
 	tw.tween_method(func(v: float) -> void:
@@ -219,11 +308,7 @@ func _beat_mourning(p: Dictionary, seconds: float) -> void:
 	tw.tween_property(flame, "modulate:a", 0.6, 0.4)
 	var start := str(p.get("week_start", ""))
 	var end := str(p.get("week_end", ""))
-	var words := FollowerArt.label("%s - %s" % [ShrineLevel._short_day(start), ShrineLevel._short_day(end)], FollowerArt.FONT_TINY, 16, Palette.CREAM)
-	words.size = Vector2(200, 16)
-	words.position = Vector2(140, 108)
-	words.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_scene.add_child(words)
+	_plaque("%s - %s" % [ShrineLevel._short_day(start), ShrineLevel._short_day(end)], Vector2(240, 112), 120.0, Palette.CREAM, 16)
 	_rain()
 	_kneelers(Vector2(240, 214), "veiled")
 
@@ -389,7 +474,7 @@ func _beat_gate_hit(p: Dictionary, seconds: float) -> void:
 			boss.modulate = Color(3, 3, 3)
 			boss.create_tween().tween_property(boss, "modulate", Color.WHITE, 0.25)
 		if amount > 0:
-			FlockFx.float_text(_scene, Vector2(250, 96), "-" + Money.fmt(amount), Palette.CREAM, 22))
+			_plaque("-" + Money.fmt(amount), Vector2(250, 92), 130.0))
 
 
 ## The village built something while you were out.

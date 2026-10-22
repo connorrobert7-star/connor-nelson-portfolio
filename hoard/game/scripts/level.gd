@@ -87,6 +87,7 @@ func _ready() -> void:
 			_use_pending()
 	)
 	leader.surface_at = surface_at
+	HelperFamiliar.join(self)  # Pip follows the wizard into every place (features/helper)
 	var size := Vector2(map[0].length(), map.size()) * TILE
 	add_child(camera)
 	if follow_camera:

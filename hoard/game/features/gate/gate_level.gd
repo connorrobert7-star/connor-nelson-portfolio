@@ -216,9 +216,9 @@ func _build_field() -> void:
 	fade.scale = Vector2(65, 1.3)
 	fade.z_index = -29
 	add_child(fade)
-	# Skull piles and bones scattered on the field.
-	for spot: Vector2 in [Vector2(20, 120), Vector2(440, 112), Vector2(150, 76), Vector2(332, 70), Vector2(30, 70), Vector2(458, 140)]:
-		var r := Rect2(Vector2(8 + _rng.randi() % 2, 4) * TILE, Vector2(TILE, TILE)) if _rng.randf() < 0.6 else Rect2(Vector2(_rng.randi() % 2, 8) * TILE, Vector2(TILE, TILE))
+	# A few bones and one skull pile on the field: dressing, not wallpaper.
+	for spot: Vector2 in [Vector2(20, 120), Vector2(458, 140), Vector2(332, 70)]:
+		var r := Rect2(Vector2(8, 4) * TILE, Vector2(TILE, TILE)) if spot.x == 458.0 else Rect2(Vector2(_rng.randi() % 2, 8) * TILE, Vector2(TILE, TILE))
 		var s := _sprite(HALLS, r, spot, -28)
 		s.modulate = Color(0.7, 0.65, 0.75)
 	# Low fog drifting across.

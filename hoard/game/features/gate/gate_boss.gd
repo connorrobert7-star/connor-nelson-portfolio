@@ -33,6 +33,7 @@ var _rage_left := 0.0
 var _phase := randf() * TAU
 var _light: Sprite2D
 var _shadow: Sprite2D
+var _pool: Node2D  ## the floor pool and the spot from above: the boss stands in its own light
 var _bar := Node2D.new()
 var _fill := Sprite2D.new()
 var _ghost := Sprite2D.new()
@@ -75,6 +76,29 @@ func _ready() -> void:
 	_shadow.modulate = Color(0, 0, 0, 0.55)
 	_shadow.scale = Vector2(size_px.x / 64.0 * 0.9, size_px.x / 64.0 * 0.22)
 	add_child(_shadow)
+	# A spot from above and the pool it makes on the ground: the front boss stands in the
+	# brighter one, so the eye goes to the fight that matters (light, never a word).
+	_pool = Node2D.new()
+	_pool.z_index = -3
+	add_child(_pool)
+	var k := 1.0 if front else 0.6
+	var floor_pool := GateFx.glow(Color(0.8, 0.55, 0.9, 0.42 * k), size_px.x * 0.85, -3)
+	floor_pool.scale.y *= 0.32
+	floor_pool.position = Vector2(0, -1)
+	_pool.add_child(floor_pool)
+	var spot := Polygon2D.new()
+	var top_w := size_px.x * 0.25
+	var foot_w := size_px.x * 0.7
+	var top_y := -size_px.y - 40.0
+	spot.polygon = PackedVector2Array([Vector2(-top_w, top_y), Vector2(top_w, top_y), Vector2(foot_w, 0), Vector2(-foot_w, 0)])
+	spot.vertex_colors = PackedColorArray([Color(0.85, 0.7, 1.0, 0.0), Color(0.85, 0.7, 1.0, 0.0), Color(0.85, 0.7, 1.0, 0.16 * k), Color(0.85, 0.7, 1.0, 0.16 * k)])
+	var add := CanvasItemMaterial.new()
+	add.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	spot.material = add
+	_pool.add_child(spot)
+	var breath := _pool.create_tween().set_loops()
+	breath.tween_property(_pool, "modulate:a", 0.75, 1.6 + k).set_trans(Tween.TRANS_SINE)
+	breath.tween_property(_pool, "modulate:a", 1.0, 1.6 + k).set_trans(Tween.TRANS_SINE)
 
 	_sprite.texture = load(str(data.look.sheet))
 	_sprite.region_enabled = true
@@ -457,6 +481,8 @@ func die(text: String) -> void:
 	dt.parallel().tween_property(self, "_squash", Vector2(1.25, 0.2), 1.1).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	dt.parallel().tween_property(_light, "modulate:a", 0.0, 1.1)
 	dt.parallel().tween_property(_shadow, "modulate:a", 0.0, 1.1)
+	for c in _pool.get_children():
+		c.create_tween().tween_property(c, "modulate:a", 0.0, 1.1)
 	await dt.finished
 	_sprite.visible = false
 	await get_tree().create_timer(1.0).timeout

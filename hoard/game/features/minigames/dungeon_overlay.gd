@@ -303,6 +303,7 @@ func _enter_room(index: int) -> void:
 	if spec.get("boss", false):
 		ArcadeFx.sfx(SND_BOSS, 1.0, -2.0)
 		ArcadeFx.shake(world, 3.0, 0.7)
+		_boss_intro()
 	phase = Phase.FIGHT
 	clock_running = true
 	if index == 0:
@@ -344,6 +345,17 @@ func _paint_room(tiles: String) -> void:
 		torch.position = Vector2(x, 36)
 		floor_.add_child(torch)
 		ArcadeFx.breathe(ArcadeFx.glow(floor_, Vector2(x, 34), Color("ffb05a"), 64.0, 0.4), 0.65, 1.0, 0.6 + randf() * 0.4)
+		# Each torch throws a warm pool across the flagstones below it.
+		ArcadeFx.breathe(ArcadeFx.glow(floor_, Vector2(x + (24.0 if x < W / 2.0 else -24.0), 92), Color("ff9a3c"), 110.0, 0.3), 0.75, 1.0, 0.7 + randf() * 0.3)
+	# The middle of the room is lit from the door; the far corners fall to black.
+	ArcadeFx.glow(floor_, Vector2(W / 2.0, 150), Color("b89aff"), 150.0, 0.1)
+	for corner in 2:
+		var dark := Polygon2D.new()
+		var cx := 0.0 if corner == 0 else W
+		var k := 1.0 if corner == 0 else -1.0
+		dark.polygon = PackedVector2Array([Vector2(cx, H), Vector2(cx + 120 * k, H), Vector2(cx, H - 90)])
+		dark.vertex_colors = PackedColorArray([Color(0, 0, 0, 0.55), Color(0, 0, 0, 0.0), Color(0, 0, 0, 0.0)])
+		floor_.add_child(dark)
 
 
 func _build_door() -> void:
@@ -539,12 +551,15 @@ func _make_node(u: Unit, sprite: AnimatedSprite2D, at: Vector2) -> void:
 	sprite.offset = Vector2(0, -h / 2.0)
 	sprite.scale = Vector2(UNIT_SCALE, UNIT_SCALE) * (1.0 if not u.boss else 1.0)
 	u.node.add_child(sprite)
-	var shadow := Sprite2D.new()
-	shadow.texture = ArcadeFx.tex(ArcadeFx.PACKS + "kenney-particle-pack/PNG (Transparent)/circle_05.png", [0, 0, 0, 0])
-	shadow.scale = Vector2(0.12, 0.04) * (2.0 if u.boss else 1.0)
-	shadow.modulate = Color(0, 0, 0, 0.5)
-	shadow.z_index = -1
+	# A pixel shadow under the feet, as wide as the body (a boss stands 1.5x).
+	var shadow := Node2D.new()
+	var w := float(sprite.sprite_frames.get_frame_texture("default", 0).get_width()) * UNIT_SCALE * (1.5 if u.boss else 1.0)
+	var rx := maxi(4, roundi(w * 0.38))
+	shadow.draw.connect(func() -> void:
+		PixelDraw.ellipse(shadow, Vector2(0, 1), rx, maxi(1, rx / 3), Color(0, 0, 0, 0.4))
+		PixelDraw.ellipse(shadow, Vector2(0, 1), maxi(2, rx - 3), maxi(1, rx / 4), Color(0, 0, 0, 0.25)))
 	u.node.add_child(shadow)
+	u.node.move_child(shadow, 0)  # under the body, but over the floor (a negative z hid it)
 	u.bar = ColorRect.new()
 	u.bar.color = Palette.BILE if u.is_party else Palette.CREAM
 	u.bar.size = Vector2(16, 2)
@@ -607,6 +622,39 @@ func _spawn_enemies(spec: Dictionary) -> void:
 			u.line.default_color = Color(Palette.BILE, 0.7)
 			u.line.z_index = 20
 			_arena.add_child(u.line)
+
+
+## The boss walks in under a letterbox: black bars close top and bottom for a beat, a red pool
+## opens on the floor where it stands, and its bar fills from empty. Nothing waits on it.
+func _boss_intro() -> void:
+	for top: bool in [true, false]:
+		var bar := ColorRect.new()
+		bar.color = Color("07040b")
+		bar.size = Vector2(W, 18)
+		bar.position = Vector2(0, -18.0 if top else H)
+		bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		bar.z_index = 60
+		hud.add_child(bar)
+		var tw := bar.create_tween()
+		tw.tween_property(bar, "position:y", 0.0 if top else H - 18.0, 0.25).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		tw.tween_interval(1.1)
+		tw.tween_property(bar, "position:y", -18.0 if top else H, 0.3).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+		tw.tween_callback(bar.queue_free)
+	var pool := ArcadeFx.glow(_arena, Vector2(360, 162), Color("ff4f5f"), 100.0, 0.0)
+	pool.scale.y *= 0.45
+	var pt := pool.create_tween()
+	pt.tween_property(pool, "modulate:a", 0.32, 0.6)
+	pt.tween_callback(func() -> void: ArcadeFx.breathe(pool, 0.6, 1.0, 1.3))
+	ArcadeFx.flash(hud, Color("ff4f5f"), 0.25, 0.3)
+	var boss: Unit = null
+	for e in enemies:
+		if e.boss:
+			boss = e
+	if _boss_fill and boss:
+		_boss_fill.size.x = 0.0
+		_boss_fill.create_tween().tween_method(func(k: float) -> void:
+			if is_instance_valid(_boss_fill):
+				_boss_fill.size.x = 198.0 * k * maxf(0.0, boss.hp) / boss.max_hp, 0.0, 1.0, 0.8).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 
 
 func _boss_ui(u: Unit) -> void:

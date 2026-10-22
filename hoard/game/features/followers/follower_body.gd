@@ -770,9 +770,10 @@ func go_home() -> void:
 
 func _draw() -> void:
 	# A shadow on the floor, and after a pet or a meal, the five loyalty candles at the feet.
-	draw_set_transform(Vector2(0, 1), 0.0, Vector2(1.0, 0.35))
-	draw_circle(Vector2.ZERO, _width * 0.55, Color(0, 0, 0, 0.35))
-	draw_set_transform(Vector2.ZERO)
+	# In whole pixels, like the creature standing on it: a soft rim and a darker core.
+	var rx := maxi(3, roundi(_width * 0.55))
+	PixelDraw.ellipse(self, Vector2(0, 1), rx, maxi(1, roundi(rx * 0.35)), Color(0, 0, 0, 0.22))
+	PixelDraw.ellipse(self, Vector2(0, 1), maxi(2, rx - 2), maxi(1, roundi(rx * 0.25)), Color(0, 0, 0, 0.2))
 	if _shown_candles > 0.0 and kind != "cultist":
 		var lit := int(data.get("loyalty", 0)) / 20
 		for i in 5:

@@ -38,7 +38,8 @@ var _window := 0.0
 var _clock := 0.0
 var _bobber := Node2D.new()
 var _bob_home := Vector2.ZERO
-var _line := Line2D.new()
+var _line := Node2D.new()  ## the line, drawn in whole pixels (PixelDraw), never smooth
+var _line_pts := PackedVector2Array()
 var _aim := Node2D.new()
 var _leader: AnimatedSprite2D
 var _omg: AnimatedSprite2D
@@ -204,16 +205,24 @@ func _build_water() -> void:
 
 
 func _fish_shadow() -> Sprite2D:
+	# A fish's own outline under the glass, in the water's darkest blue: a silhouette, not a blur.
 	var s := Sprite2D.new()
-	s.texture = ArcadeFx.tex(ArcadeFx.PACKS + "kenney-particle-pack/PNG (Transparent)/circle_05.png", [0, 0, 0, 0])
-	s.scale = Vector2(0.45, 0.16)
-	s.modulate = Color(0.0, 0.02, 0.05, 0.55)
+	s.texture = ArcadeFx.tex(ArcadeFx.PACKS + "kyrise-rpg-icons-16/spritesheet/spritesheet_16x16.png", [224, 128, 16, 16])
+	s.rotation = -PI / 4.0  # the icon swims on a diagonal, head up-left: lay it flat
+	s.modulate = Color(0.01, 0.03, 0.1, 0.42)
 	return s
+
+
+## Point a silhouette along its swim: the icon's head is up-left, so heading left lays it flat
+## turned back an eighth, heading right mirrors it and turns it forward.
+static func _face(s: Sprite2D, right: bool) -> void:
+	s.scale.x = absf(s.scale.x) * (-1.0 if right else 1.0)
+	s.rotation = PI / 4.0 if right else -PI / 4.0
 
 
 func _swim(s: Sprite2D) -> void:
 	var to := Vector2(randf_range(180, 470), randf_range(WATER_Y + 20, H - 14))
-	s.scale.x = absf(s.scale.x) * (1.0 if to.x > s.position.x else -1.0)
+	_face(s, to.x > s.position.x)
 	var tw := s.create_tween()
 	tw.tween_property(s, "position", to, randf_range(2.5, 5.0)).set_trans(Tween.TRANS_SINE)
 	tw.tween_callback(func() -> void:
@@ -273,16 +282,34 @@ func _build_dock() -> void:
 
 
 func _build_tackle() -> void:
-	var rod := Line2D.new()
-	rod.width = 1.5
-	rod.default_color = Color("8a5a3a")
-	rod.points = PackedVector2Array([Vector2(DOCK_END + 4, DOCK_Y - 10), ROD_TIP])
+	# The rod and the line sit on the pixel grid with the art: stepped, never smooth.
+	var rod := Node2D.new()
+	rod.draw.connect(func() -> void:
+		var butt := Vector2(DOCK_END + 4, DOCK_Y - 10)
+		PixelDraw.line(rod, butt + Vector2(1, 1), ROD_TIP + Vector2(1, 1), Color("3a2418"))
+		PixelDraw.line(rod, butt, ROD_TIP, Color("8a5a3a"))
+		PixelDraw.line(rod, butt, butt.lerp(ROD_TIP, 0.3), Color("b07a4a"))
+		rod.draw_rect(Rect2((ROD_TIP - Vector2(1, 1)).round(), Vector2(2, 2)), Color("d8c8a8")))
 	rod.z_index = 11
 	world.add_child(rod)
-	_line.width = 1.0
-	_line.default_color = Color(Palette.CREAM, 0.7)
 	_line.z_index = 11
+	_line.draw.connect(func() -> void:
+		for i in range(1, _line_pts.size()):
+			PixelDraw.line(_line, _line_pts[i - 1], _line_pts[i], Color(Palette.CREAM, 0.75)))
 	world.add_child(_line)
+	# The bobber: a red cap over a cream belly, inked round the edge so it reads on the water.
+	var ink := ColorRect.new()
+	ink.color = Palette.NIGHT
+	ink.size = Vector2(7, 7)
+	ink.position = Vector2(-3.5, -4)
+	ink.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_bobber.add_child(ink)
+	var stem := ColorRect.new()
+	stem.color = Palette.NIGHT
+	stem.size = Vector2(1, 2)
+	stem.position = Vector2(-0.5, -6)
+	stem.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_bobber.add_child(stem)
 	var red := ColorRect.new()
 	red.color = Color("e0304e")
 	red.size = Vector2(5, 3)
@@ -295,6 +322,12 @@ func _build_tackle() -> void:
 	white.position = Vector2(-2.5, 0)
 	white.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_bobber.add_child(white)
+	var shine := ColorRect.new()
+	shine.color = Color("ff8a9a")
+	shine.size = Vector2(1, 1)
+	shine.position = Vector2(-1.5, -2)
+	shine.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_bobber.add_child(shine)
 	ArcadeFx.glow(_bobber, Vector2.ZERO, Palette.CREAM, 8.0, 0.4)
 	_bobber.z_index = 12
 	world.add_child(_bobber)
@@ -436,26 +469,43 @@ func _approach() -> void:
 	_shadow.position = _bob_home + Vector2(_rng.randf_range(-60, 60), _rng.randf_range(20, 40))
 	var sizes := {"common": 0.0, "rare": 0.3, "epic": 0.6, "legendary": 1.1}
 	var big: float = 1.0 + float(sizes.get(str(_fish.tier), 0.0))
-	_shadow.scale = Vector2(0.45, 0.16) * big
+	_shadow.scale = Vector2.ONE * maxf(1.0, roundf(big * 1.5))
+	_face(_shadow, _bob_home.x > _shadow.position.x)
 	world.add_child(_shadow)
 	var tw := _shadow.create_tween()
 	tw.tween_property(_shadow, "position", _bob_home + Vector2(0, 6), maxf(0.5, _wait - 0.2)).set_trans(Tween.TRANS_SINE)
 
 
 func _ring(at: Vector2, radius: float) -> void:
-	var ring := Line2D.new()
-	ring.width = 1.0
-	ring.default_color = Color(0.8, 0.9, 1.0, 0.8)
-	var pts := PackedVector2Array()
-	for i in 17:
-		pts.append(Vector2(cos(i * TAU / 16) * radius / 4.0, sin(i * TAU / 16) * radius / 10.0))
-	ring.points = pts
-	ring.position = at
+	# A ripple in whole pixels: an ellipse outline that opens out and fades, a second one
+	# trailing it for the bigger splashes.
+	var ring := Node2D.new()
+	ring.position = at.round()
+	ring.set_meta("k", 0.0)
+	ring.draw.connect(func() -> void:
+		var k: float = ring.get_meta("k")
+		_pixel_oval(ring, Vector2.ZERO, maxi(2, roundi(radius * k)), maxi(1, roundi(radius * k * 0.36)), Color(0.8, 0.9, 1.0, 0.8))
+		if radius >= 12.0 and k > 0.35:
+			_pixel_oval(ring, Vector2.ZERO, maxi(2, roundi(radius * (k - 0.35))), maxi(1, roundi(radius * (k - 0.35) * 0.36)), Color(0.8, 0.9, 1.0, 0.5)))
 	world.add_child(ring)
 	var tw := ring.create_tween()
-	tw.tween_property(ring, "scale", Vector2(4, 4), 0.6).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	tw.parallel().tween_property(ring, "modulate:a", 0.0, 0.6)
+	tw.tween_method(func(k: float) -> void:
+		ring.set_meta("k", k)
+		ring.queue_redraw(), 0.15, 1.0, 0.7).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tw.parallel().tween_property(ring, "modulate:a", 0.0, 0.7)
 	tw.tween_callback(ring.queue_free)
+
+
+## A 1px ellipse outline on the pixel grid (ripples are wide and flat on water).
+static func _pixel_oval(ci: CanvasItem, c: Vector2, rx: int, ry: int, color: Color) -> void:
+	var steps := maxi(12, rx * 4)
+	var last := Vector2(INF, INF)
+	for i in steps:
+		var a := TAU * i / steps
+		var p := (c + Vector2(cos(a) * rx, sin(a) * ry)).round()
+		if p != last:
+			ci.draw_rect(Rect2(p, Vector2.ONE), color)
+			last = p
 
 
 func _bite() -> void:
@@ -536,8 +586,9 @@ func _draw_line() -> void:
 	var pts := PackedVector2Array()
 	for i in 9:
 		var t := i / 8.0
-		pts.append(a.lerp(b, t) + Vector2(0, sin(t * PI) * sag))
-	_line.points = pts
+		pts.append((a.lerp(b, t) + Vector2(0, sin(t * PI) * sag)).round())
+	_line_pts = pts
+	_line.queue_redraw()
 
 
 func _reel(delta: float) -> void:

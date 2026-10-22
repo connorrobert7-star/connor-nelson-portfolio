@@ -50,6 +50,7 @@ var _neons: Array[Sprite2D] = []
 var _neon_frames: Array = []
 var _dead_screens: Array[Node2D] = []
 var _reach := -1
+var _starting := false  ## a coin is on its way into a slot: one game at a time
 var _ambience: AudioStreamPlayer
 
 
@@ -434,11 +435,38 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _play(i: int) -> void:
-	if Game.busy:
+	if Game.busy or _starting:
 		return
+	_starting = true
 	var cab := cabinets[i]
 	ArcadeFx.squash(cab)
-	ArcadeFx.sfx(ArcadeFx.PACKS + "kenney-casino-audio/Audio/chips-collide-1.ogg", 1.0, -4.0)
+	# A run costs one of the lantern's flames, never coins: a flame leaves the stand, arcs into
+	# the cabinet's slot and clunks home; the screen flares, and only then does the game come up.
+	var slot := cab.position + Vector2(0, -14)
+	var from := feet_at(STAND) + Vector2(TILE / 2.0, -16)
+	var ember := Sprite2D.new()
+	ember.texture = ArcadeFx.tex(ICONS, [64, 80, 16, 16])
+	ember.position = from
+	ember.z_index = 70
+	props.add_child(ember)
+	ArcadeFx.glow(ember, Vector2(0, -4), Color("ffb05a"), 14.0, 0.7)
+	var mid := (from + slot) / 2.0 + Vector2(0, -50)
+	var et := ember.create_tween()
+	et.tween_method(func(t: float) -> void:
+		ember.position = from.lerp(mid, t).lerp(mid.lerp(slot, t), t)
+		ember.scale = Vector2.ONE * lerpf(1.0, 0.5, t), 0.0, 1.0, 0.4).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	et.tween_callback(ember.queue_free)
+	await get_tree().create_timer(0.42).timeout
+	_starting = false
+	if not is_inside_tree() or Game.busy:
+		return
+	ArcadeFx.sfx(ArcadeFx.PACKS + "kenney-casino-audio/Audio/chips-collide-1.ogg", 0.7, -4.0)  # the clunk
+	ArcadeFx.burst(props, slot, Color("ffb05a"), 8, 40.0, 0.3)
+	ArcadeFx.pop(cab, 0.12)
+	var flare := ArcadeFx.glow(cab, Vector2(0, -28), TRIM[i], 30.0, 0.9)
+	var ft := flare.create_tween()
+	ft.tween_property(flare, "modulate:a", 0.0, 0.5)
+	ft.tween_callback(flare.queue_free)
 	var overlay: MinigameOverlay
 	match i:
 		0:
