@@ -84,8 +84,8 @@ const TRIM_LIT := Color("b58d6c")
 const GLASS := Color("08050c")
 const EYES := Color("d8ff8a")
 
-const VEX_AT := Vector2(46, 74)
-const BUBBLE_AT := Vector2(122, 46)
+const VEX_AT := Vector2(8, 44)  # the bust's top-left
+const BUBBLE_AT := Vector2(124, 42)
 const CENTER := Vector2(240, 112)  # where a revealed item hangs
 const BOOK_AT := Vector2(436, 232)
 
@@ -109,7 +109,7 @@ var _fx := Control.new()
 var _dark := ColorRect.new()  # the room going dark behind a reveal
 var _cine := Control.new()  # cutscene beams and the falling item
 var _bubble := SpeechBubble.new()
-var _vex: Vex
+var _vex: CasinoRoomVex.Bust
 var _lamp: Lamp
 var _cone: Cone
 var _mouths: Dictionary = {}  # dest -> Mouth
@@ -184,11 +184,7 @@ func _exit_tree() -> void:
 
 
 func _build_frame() -> void:
-	var dim := ColorRect.new()
-	dim.color = Color(Palette.NIGHT, 0.93)
-	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
-	dim.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(dim)
+	CasinoFx.room_dim(self, Vector2(_lamp_x(), 140))
 	_room.size = Vector2(480, 270)
 	_room.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_room)
@@ -197,7 +193,7 @@ func _build_frame() -> void:
 	_room.add_child(_back)
 	_build_crowd()
 	# Candles at the edges, an eye on a stand by the dealer.
-	for spot: Array in [[Vector2(8, 196), 0], [Vector2(454, 196), 3], [Vector2(86, 104), 7]]:
+	for spot: Array in [[Vector2(8, 196), 0], [Vector2(454, 196), 3], [Vector2(90, 150), 7]]:
 		var stand := TextureRect.new()
 		stand.texture = region(CANDLES, Rect2(int(spot[1]) * 18, 0, 18, 41))
 		stand.position = spot[0]
@@ -205,8 +201,9 @@ func _build_frame() -> void:
 		var flame_at: Vector2 = spot[0] + Vector2(9, 16 if int(spot[1]) == 7 else 6)
 		_flames.append(glow(_back, flame_at, Color(Palette.CREAM, 0.3), 16.0))
 		_back.add_child(stand)
-	_vex = Vex.new()
+	_vex = CasinoRoomVex.Bust.new()
 	_vex.position = VEX_AT
+	_vex.rail = true
 	_back.add_child(_vex)
 	stage.size = Vector2(480, 270)
 	stage.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -240,6 +237,7 @@ func _build_front() -> void:
 	_fx.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_room.add_child(_fx)
 	_bubble.position = BUBBLE_AT
+	_bubble.tail_x = -66.0  # the tail drops toward his hood
 	_room.add_child(_bubble)
 	_dark.color = Color(0, 0, 0, 0)
 	_dark.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -261,26 +259,8 @@ func _build_crowd() -> void:
 		spots.append(Vector2(x, 34))
 	var cells := [Rect2(0, 272, 16, 16), Rect2(16, 272, 16, 16), Rect2(32, 272, 16, 16)]
 	for i in spots.size():
-		var t := TextureRect.new()
 		var cell: Rect2 = cells[i % cells.size()]
-		t.texture = region(CULTISTS[0], cell)
-		t.set_meta("cell", cell)
-		t.size = Vector2(16, 16)
-		t.position = spots[i] - Vector2(8, 8)
-		t.set_meta("home", t.position)
-		t.flip_h = i % 3 == 1
-		var near := spots[i].y > 30
-		t.material = silhouette(Color("2e2040") if near else Color("1f1529"))
-		t.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		for ex: int in [5, 9]:
-			var eye := ColorRect.new()
-			eye.color = Color(EYES, 0.9 if near else 0.55)
-			eye.size = Vector2(1, 1)
-			eye.position = Vector2(ex if not t.flip_h else 15 - ex, 7)
-			eye.mouse_filter = Control.MOUSE_FILTER_IGNORE
-			t.add_child(eye)
-		_back.add_child(t)
-		_cultists.append(t)
+		_cultists.append(CasinoFx.cultist(_back, spots[i], CULTISTS[0], cell, spots[i].y > 30, i % 3 == 1))
 
 
 static func _account_name(casino: Dictionary, id: String) -> String:
@@ -318,6 +298,7 @@ func _process(delta: float) -> void:
 		c.texture = region(CULTISTS[(beat + i) % 2], cell)
 	for i in _flames.size():
 		_flames[i].modulate.a = 0.26 + 0.1 * sin(_t * 9.0 + i * 1.7) + 0.05 * sin(_t * 23.0 + i)
+	CasinoFx.blink(_cultists, delta)
 
 
 # --- input -------------------------------------------------------------------------------
@@ -372,6 +353,7 @@ func _select(id: String, speak: bool) -> void:
 		(_mouths[k] as Mouth).selected = k == id
 	if speak:
 		Sfx.play_path(SND_SELECT, 1.0, -8.0)
+		(_mouths[id] as Mouth).poke()
 	update_lamp()
 	speak_line(_dealer_line())
 
@@ -445,11 +427,12 @@ func _money(data: Dictionary, slot: Vector2) -> void:
 			Game.event_fired.emit(e)
 	# Into the mouth: the motes land on its lip, and the amount rises above it.
 	var lip := m.position + Vector2(m.size.x / 2.0, -2)
-	await CasinoFx.money_landed(_fx, slot, lip, int(money.get("amount_cents", 0)), m.account)
-	if str(money.get("status", "")) == "simulated":
-		# Honest about the demo: no real dollars moved yet.
-		CasinoFx.float_text(_fx, lip + Vector2(0, -20), "simulated", Palette.MUTED, 8)
+	# Honest about the demo: a "simulated" chip rides beside the amount when no real dollars moved.
+	var tag := "simulated" if str(money.get("status", "")) == "simulated" else ""
+	var amount := int(money.get("amount_cents", 0))
+	await CasinoFx.money_landed(_fx, slot, lip, amount, m.account, tag, lip + Vector2(0, -26))
 	m.pulse()
+	CasinoFx.stamp(_fx, m.position + Vector2(m.size.x - 22, 2), CasinoFx.dollars(amount), m)
 	await CasinoFx.hit_stop(get_tree(), 0.08)
 	_count_up(m)
 
@@ -464,8 +447,7 @@ func _count_up(m: Mouth) -> void:
 	var to := _balance(m.dest)
 	if to == from or not is_instance_valid(m):
 		return
-	var tw := m.create_tween()
-	tw.tween_method(func(v: float) -> void: m.show_balance(int(v)), float(from), float(to), 0.6)
+	await m.roll(from, to)
 
 
 ## The lamp over the slot clicks off, Vex lays it down and says it, and the machine closes
@@ -507,6 +489,8 @@ func reveal(item: Dictionary, from: Vector2) -> void:
 	var tier := str(item.get("tier", "common"))
 	var cfg: Dictionary = REVEAL.get(tier, REVEAL.common)
 	var color := CasinoFx.rarity_color(tier)
+	var high := tier == "legendary" or tier == "mythic"
+	_vex.look = CENTER
 	if tier == "mythic":
 		# The room goes black except the red glow where it came out.
 		_dark.color = Color(0, 0, 0, 0.97)
@@ -514,7 +498,8 @@ func reveal(item: Dictionary, from: Vector2) -> void:
 		Sfx.play_path(SND_BOOM, 0.5, 0.0)
 		await get_tree().create_timer(0.5).timeout
 		g.queue_free()
-	await CasinoFx.hit_stop(get_tree(), float(cfg.stop))
+	if high:
+		await CasinoFx.hit_stop(get_tree(), float(cfg.stop))
 	moment = "reveal"
 	Sfx.play("reveal_" + tier)
 	Sfx.play_path(STINGER[tier], 1.0, -4.0)
@@ -522,13 +507,14 @@ func reveal(item: Dictionary, from: Vector2) -> void:
 		Sfx.play_path(SND_JACKPOT, 1.0, -6.0)
 	elif tier == "mythic":
 		Sfx.play_path(SND_DREAD, 1.0, -2.0)
-	if float(cfg.flash) > 0.0:
+	if high:
 		CasinoFx.flash(self, color, float(cfg.flash), float(cfg.fade))
-	shake(_room, float(cfg.shake), float(cfg.shake_s))
-	sparks(_fx, from, tier, int(cfg.sparks))
-	ring(_fx, from, color, 26.0 + int(cfg.sparks) * 0.35, 0.5)
-	if tier == "common":
-		CasinoFx.burst(_fx, from, Palette.MUTED, 8, 50.0, 0.7)
+		shake(_room, float(cfg.shake), float(cfg.shake_s))
+		sparks(_fx, from, tier, int(cfg.sparks))
+		ring(_fx, from, color, 26.0 + int(cfg.sparks) * 0.35, 0.5)
+	else:
+		# It pops out of the machine; the stage waits for it in the light.
+		CasinoFx.burst(_cine, from, color, 8, 70.0, 0.5)
 	_crowd_react(tier)
 	var behind := create_tween()
 	behind.tween_property(_dark, "color", Color(0.02, 0.0, 0.03, 0.72), 0.3)
@@ -547,44 +533,53 @@ func reveal(item: Dictionary, from: Vector2) -> void:
 	fly.tween_method(func(t: float) -> void:
 		hero.position = start.lerp(peak, t).lerp(peak.lerp(lift, t), t)
 		halo.position = hero.position + hero.size / 2.0 - halo.size / 2.0, 0.0, 1.0, 0.45).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	fly.tween_property(hero, "scale", Vector2(1.4, 1.4), 0.45).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	fly.tween_property(hero, "scale", Vector2(1.4, 1.4) if high else Vector2(0.9, 0.9), 0.45).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	Sfx.play_path(SND_WHOOSH, 1.4, -10.0)
 	await fly.finished
-	ring(_fx, CENTER, color, 40.0, 0.4)
-	# The slow zoom.
-	var zoom := hero.create_tween()
-	zoom.tween_property(hero, "scale", Vector2.ONE * float(cfg.zoom), 1.1).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-	halo.create_tween().tween_property(halo, "scale", Vector2(1.3, 1.3), 1.1)
 
-	var name_label := label(str(item.get("name", "")), color, 20)
-	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	name_label.size = Vector2(300, 24)
-	name_label.position = Vector2(90, CENTER.y + 34)
-	name_label.z_index = 61
-	name_label.modulate.a = 0.0
-
-	if tier == "legendary" or tier == "mythic":
+	if high:
+		ring(_fx, CENTER, color, 40.0, 0.4)
+		# The slow zoom.
+		var zoom := hero.create_tween()
+		zoom.tween_property(hero, "scale", Vector2.ONE * float(cfg.zoom), 1.1).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		halo.create_tween().tween_property(halo, "scale", Vector2(1.3, 1.3), 1.1)
+		var name_label := label(str(item.get("name", "")), color, 20)
+		name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		name_label.size = Vector2(300, 24)
+		name_label.position = Vector2(90, CENTER.y + 34)
+		name_label.z_index = 61
+		name_label.modulate.a = 0.0
 		await _cutscene(tier, item, hero, halo, name_label)
+		name_label.create_tween().tween_property(name_label, "modulate:a", 0.0, 0.25)
 	else:
-		if tier == "epic":
-			beam(_fx, CENTER.x, CENTER.y + 40, tier, 26.0, 0.9)
-			for i in 8:
-				var star := glow(_fx, CENTER + Vector2(randf_range(-50, 50), randf_range(-40, 30)), Color(GLOW[tier], 0.9), 4.0)
-				star.texture = res(STAR) as Texture2D
-				var tw := star.create_tween()
-				tw.tween_property(star, "scale", Vector2(2.2, 2.2), 0.5).set_delay(i * 0.06)
-				tw.parallel().tween_property(star, "modulate:a", 0.0, 0.6).set_delay(i * 0.06)
-				tw.tween_callback(star.queue_free)
-		add_child(name_label)
-		name_label.create_tween().tween_property(name_label, "modulate:a", 1.0, 0.3)
+		# The rung for its tier: the card turns in and lands, the stage answers above the dark.
+		CasinoFx.flip_in(hero, Vector2.ONE * float(cfg.zoom), 0.3)
+		await get_tree().create_timer(0.28).timeout
+		halo.create_tween().tween_property(halo, "scale", Vector2(1.3, 1.3), 0.6)
+		var stage_fx := await CasinoFx.reveal(_cine, CENTER, tier, _room)
+		var sway := CasinoFx.wobble(hero)
+		_pulse_outline(hero)
+		var name_label := CasinoFx.type_name(self, str(item.get("name", "")), tier, CENTER + Vector2(0, 48))
 		await _beat(1.5 if tier == "common" else 1.9, 0.6)
-	name_label.create_tween().tween_property(name_label, "modulate:a", 0.0, 0.25)
+		name_label.create_tween().tween_property(name_label, "modulate:a", 0.0, 0.25)
+		CasinoFx.fade_stage(stage_fx)
+		sway.kill()
+		hero.rotation = 0.0
 	var back := create_tween()
 	back.tween_property(_dark, "color", Color(0, 0, 0, 0), 0.35)
 	await _to_book(hero, halo, tier)
 	for e: Dictionary in result.get("_events", []):
 		if str(e.get("kind", "")) == "item":
 			Game.event_fired.emit(e)
+
+
+## The rarity outline around a revealed item breathes while it waits.
+static func _pulse_outline(hero: Control) -> void:
+	for i in mini(4, hero.get_child_count()):
+		var o := hero.get_child(i) as CanvasItem
+		var tw := o.create_tween().set_loops()
+		tw.tween_property(o, "modulate:a", 0.45, 0.45).set_trans(Tween.TRANS_SINE)
+		tw.tween_property(o, "modulate:a", 1.0, 0.45).set_trans(Tween.TRANS_SINE)
 
 
 func _crowd_react(tier: String) -> void:
@@ -1106,38 +1101,63 @@ class Cone:
 
 class Mouth:
 	extends Control
-	## A slot mouth: the account's icon, its name, its real balance, and the slit.
+	## A slot mouth: the account's icon sitting on the counter, its name, its real balance,
+	## and a brass-rimmed slot with a lamp glow inside and the paper's edge peeking out.
+	## The chosen mouth's rim pulses in the lamp's color; the other sits back in the dark.
+	const BRASS := Color("c99a4a")
+	const BRASS_DARK := Color("6b4a22")
+	const LAMP := Color("ffe6c4")
 	var dest := ""
 	var account := ""
 	var balance := 0
 	var selected := false:
 		set(v):
 			selected = v
+			if is_inside_tree():
+				create_tween().tween_property(self, "_dim", 1.0 if v else 0.6, 0.2)
+			else:
+				_dim = 1.0 if v else 0.6
 			queue_redraw()
-	var _icon := TextureRect.new()
+	var _dim := 1.0:
+		set(v):
+			_dim = v
+			self_modulate = Color(v, v, v)
+			for c: Node in get_children():
+				(c as CanvasItem).modulate = Color(v, v, v)
+	var _icon := Control.new()
 	var _name: Label
 	var _bal: Label
 	var _t := 0.0
+	var _poke := 0.0
 
 	func _init() -> void:
 		mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 	func setup(account_name: String, balance_cents: int, tex: Texture2D) -> void:
 		account = account_name
-		_icon.texture = tex
-		_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		_icon.size = Vector2(16, 16)
-		_icon.position = Vector2(4, 6)
-		_icon.pivot_offset = Vector2(8, 8)
+		# The icon at 2x with a 1 px night outline, standing on the counter's lip.
+		_icon.size = Vector2(32, 32)
+		_icon.position = Vector2(-2, -9)
+		_icon.pivot_offset = Vector2(16, 32)
 		_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		for off: Vector2 in [Vector2(-1, 0), Vector2(1, 0), Vector2(0, -1), Vector2(0, 1), Vector2.ZERO]:
+			var t := TextureRect.new()
+			t.texture = tex
+			t.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			t.size = Vector2(32, 32)
+			t.position = off
+			t.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			if off != Vector2.ZERO:
+				t.material = MachineOverlay.silhouette(Palette.NIGHT)
+			_icon.add_child(t)
 		add_child(_icon)
 		_name = MachineOverlay.label(account_name, Palette.MUTED, 16, MachineOverlay.M5X7)
 		_name.add_theme_constant_override("outline_size", 0)
-		_name.position = Vector2(24, -3)
+		_name.position = Vector2(32, -3)
 		add_child(_name)
 		_bal = MachineOverlay.label("", Palette.CREAM, 16)
 		_bal.add_theme_constant_override("outline_size", 0)
-		_bal.position = Vector2(24, 8)
+		_bal.position = Vector2(32, 8)
 		add_child(_bal)
 		show_balance(balance_cents)
 
@@ -1145,90 +1165,51 @@ class Mouth:
 		balance = cents
 		_bal.text = Money.fmt(cents)
 
+	## Roll the painted balance from `from` to `to` (exactly), then squash the icon.
+	func roll(from: int, to: int) -> void:
+		await CasinoFx.count_up(self, _bal, from, to, show_balance)
+		pulse()
+
 	func pulse() -> void:
 		var tw := _icon.create_tween()
-		tw.tween_property(_icon, "scale", Vector2(1.4, 0.75), 0.06)
+		tw.tween_property(_icon, "scale", Vector2(1.3, 0.75), 0.06)
 		tw.tween_property(_icon, "scale", Vector2.ONE, 0.25).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
-	func _process(delta: float) -> void:
-		_t += delta
-		if selected:
-			queue_redraw()
-
-	func _draw() -> void:
-		var r := Rect2(Vector2.ZERO, size)
-		draw_rect(r, Color(MachineOverlay.BODY_DARK, 0.95))
-		if selected:
-			var a := 0.55 + 0.25 * sin(_t * 4.0)
-			draw_rect(r.grow(1), Color(Palette.CREAM, a * 0.35), false, 3.0)
-			draw_rect(r, Color(Palette.CREAM, a), false, 1.0)
-			draw_texture_rect(MachineOverlay.res(MachineOverlay.LIGHT) as Texture2D, Rect2(-6, -4, 36, 36), false, Color(Palette.CREAM, 0.12))
-		else:
-			draw_rect(r, MachineOverlay.TRIM, false, 1.0)
-		# The slit the money goes into.
-		var slit := Rect2(size.x - 22, 9, 4, 12)
-		draw_rect(slit.grow(1), MachineOverlay.TRIM_LIT if selected else MachineOverlay.TRIM)
-		draw_rect(slit, Color(0, 0, 0))
-
-
-class Vex:
-	extends Control
-	## The dealer at the edge of the light: round, big-eyed, a little wrong. Only his face
-	## and long hands catch the lamp. He leans in when he speaks and blinks every few seconds.
-	const SKIN := Color("a493b3")
-	const SKIN_DARK := Color("5d4b6e")
-	const HOOD := Color("0e0913")
-	var look := Vector2(240, 140)
-	var _t := 0.0
-	var _blink_at := 2.0
-	var _lean := 0.0
-
-	func _init() -> void:
-		size = Vector2(60, 50)
-		mouse_filter = Control.MOUSE_FILTER_IGNORE
-
-	func speak() -> void:
-		var tw := create_tween()
-		tw.tween_property(self, "_lean", 2.0, 0.12)
-		tw.tween_interval(0.8)
-		tw.tween_property(self, "_lean", 0.0, 0.3)
+	## Chosen: the paper noses into the slot and the icon squashes.
+	func poke() -> void:
+		_poke = 1.0
+		pulse()
 
 	func _process(delta: float) -> void:
 		_t += delta
-		if _t > _blink_at + 0.12:
-			_blink_at = _t + randf_range(3.0, 7.0)
+		_poke = maxf(0.0, _poke - delta * 3.0)
 		queue_redraw()
 
 	func _draw() -> void:
-		var breath := roundf(sin(_t * TAU / 1.2) * 0.6)
-		var c := Vector2(_lean, breath - _lean * 0.5)
+		var r := Rect2(Vector2.ZERO, size)
 		var light := MachineOverlay.res(MachineOverlay.LIGHT) as Texture2D
-		draw_texture_rect(light, Rect2(c + Vector2(-36, -36), Vector2(72, 72)), false, Color(Palette.PANEL, 0.85))
-		draw_colored_polygon(PackedVector2Array([c + Vector2(-17, -8), c + Vector2(-3, -33), c + Vector2(17, -8)]), HOOD)
-		draw_circle(c + Vector2(0, 2), 21.0, HOOD)
-		draw_circle(c, 15.0, SKIN_DARK)
-		draw_circle(c + Vector2(2, -1), 13.0, SKIN)
-		var blink := _t >= _blink_at and _t < _blink_at + 0.12
-		var dir := (look - (position + c)).normalized() * 1.6
-		for ex: float in [-6.0, 6.0]:
-			var e := c + Vector2(ex, -3)
-			if blink:
-				draw_line(e - Vector2(4, 0), e + Vector2(4, 0), HOOD, 1.0)
-				continue
-			var white := PackedVector2Array()
-			for j in 14:
-				var a := TAU * j / 14.0
-				white.append(e + Vector2(cos(a) * 4.5, sin(a) * 5.5))
-			draw_colored_polygon(white, Palette.CREAM)
-			draw_circle(e + dir, 2.6, HOOD)
-			draw_rect(Rect2(e + dir + Vector2(0, -1), Vector2(1, 1)), MachineOverlay.EYES)
-		var m := c + Vector2(1, 1)
-		draw_arc(m, 9.0, 0.18 * PI, 0.82 * PI, 14, HOOD, 2.0)
-		for a: float in [0.3, 0.4, 0.5, 0.6, 0.7]:
-			var tp := m + Vector2(cos(a * PI), sin(a * PI)) * 8.0
-			draw_rect(Rect2(tp + Vector2(0, -2), Vector2(1, 2)), Palette.CREAM)
-		for side: float in [-1.0, 1.0]:
-			for i in 4:
-				var fx := side * (10.0 + i * 3.0) + _lean
-				draw_line(Vector2(fx, 16), Vector2(fx + side, 25 + (i % 2)), SKIN, 1.0)
-				draw_rect(Rect2(Vector2(fx + side, 25 + (i % 2)), Vector2(1, 1)), SKIN_DARK)
+		if selected:
+			draw_texture_rect(light, Rect2(-10, -16, size.x + 20, size.y + 30), false, Color(LAMP, 0.10))
+		draw_rect(r, Color(MachineOverlay.BODY_DARK, 0.96))
+		draw_rect(Rect2(1, 1, size.x - 2, 1), Color(1, 1, 1, 0.05))
+		if selected:
+			var a := 0.55 + 0.3 * sin(_t * 4.0)
+			draw_rect(r.grow(1), Color(LAMP, a * 0.3), false, 3.0)
+			draw_rect(r, Color(LAMP, a), false, 1.0)
+		else:
+			draw_rect(r, Color(MachineOverlay.TRIM, 0.6), false, 1.0)
+		# The slot: a brass rim, a black throat with lamp light inside, the paper's edge.
+		var slot := Rect2(size.x - 16, 5, 6, size.y - 10)
+		draw_rect(slot.grow(2), BRASS_DARK)
+		draw_rect(slot.grow(1), BRASS if selected else BRASS.darkened(0.35))
+		draw_rect(Rect2(slot.position.x - 1, slot.position.y - 1, slot.size.x + 2, 1), BRASS.lightened(0.4) if selected else BRASS)
+		draw_rect(slot, Color(0, 0, 0))
+		var glow_a := (0.35 + 0.15 * sin(_t * 3.0)) if selected else 0.08
+		for i in int(slot.size.y):
+			var k := 1.0 - float(i) / slot.size.y
+			draw_rect(Rect2(slot.position.x + 1, slot.end.y - 1 - i, slot.size.x - 2, 1), Color(LAMP, glow_a * k * k))
+		if selected:
+			# A bill's edge waiting in the throat; it noses in when the mouth is chosen.
+			var dip := roundf(_poke * 4.0)
+			draw_rect(Rect2(slot.position.x + 1, slot.position.y - 3 + dip, slot.size.x - 2, 3), Palette.CREAM)
+			draw_rect(Rect2(slot.position.x + 1, slot.position.y - 3 + dip, slot.size.x - 2, 1), Palette.CREAM.darkened(0.15))

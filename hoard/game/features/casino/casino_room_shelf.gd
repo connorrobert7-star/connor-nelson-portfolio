@@ -17,6 +17,9 @@ var _rattle := 3.0
 var _rattling := ""
 var _rattle_t := 0.0
 var _labels: Array[Label] = []
+var _glint: Sprite2D
+var _glint_t := 2.0
+var _glint_life := 0.0
 
 
 ## Build the chests for the cases in state (top shelf is the dearest).
@@ -56,6 +59,7 @@ func case_rect(case_id: String) -> Rect2:
 
 
 func idle(delta: float) -> void:
+	_twinkle(delta)
 	_rattle -= delta
 	if _rattle <= 0.0 and not chests.is_empty():
 		_rattle = randf_range(3.0, 5.5)
@@ -93,3 +97,29 @@ func _draw() -> void:
 		draw_rect(Rect2(-W / 2 + 3, b, W - 6, 1), Color("a07a3a"))
 		draw_rect(Rect2(-W / 2 + 3, b - 21, W - 6, 1), Color(1, 0.9, 0.75, 0.10))
 	draw_rect(Rect2(-W / 2, -2, W, 2), Color("2a1810"))
+
+
+## A case the week can still cover catches the light now and then: a four-point glint
+## that opens and closes on its lid.
+func _twinkle(delta: float) -> void:
+	if _glint == null:
+		_glint = Sprite2D.new()
+		_glint.texture = load("res://art/packs/kenney-particle-pack/PNG (Transparent)/star_06.png")
+		_glint.material = Art.additive()
+		_glint.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+		_glint.z_index = 4
+		_glint.modulate = Color(Art.LAMP, 0.0)
+		add_child(_glint)
+	_glint_t -= delta
+	if _glint_t <= 0.0:
+		_glint_t = randf_range(1.6, 3.2)
+		var open: Array = cases.filter(func(c: Dictionary) -> bool: return c.get("affordable", true) and chests.has(c.id))
+		if not open.is_empty():
+			var ch: Dictionary = chests[(open[randi() % open.size()] as Dictionary).id]
+			_glint.position = Vector2(CHEST_X + randf_range(-14, 14), float(ch.board) - randf_range(18, 34)).round()
+			_glint_life = 0.45
+	_glint_life = maxf(0.0, _glint_life - delta)
+	var k := sin(clampf(_glint_life / 0.45, 0.0, 1.0) * PI)
+	_glint.scale = Vector2.ONE * 0.09 * k
+	_glint.rotation = _glint_life * 2.0
+	_glint.modulate.a = k

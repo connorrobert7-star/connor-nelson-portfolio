@@ -133,7 +133,7 @@ var _lamp: Lamp
 var _cone: Cone
 var _fx := Control.new()
 var _bubble := SpeechBubble.new()
-var _vex: Vex
+var _vex: CasinoRoomVex.Bust
 var _cultists: Array[TextureRect] = []
 var _flames: Array[TextureRect] = []
 var _speech := 0
@@ -203,11 +203,7 @@ func _exit_tree() -> void:
 # --- building the machine ----------------------------------------------------------
 
 func _build() -> void:
-	var dim := ColorRect.new()
-	dim.color = Color(Palette.NIGHT, 0.86)
-	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
-	dim.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(dim)
+	CasinoFx.room_dim(self, Vector2(240, 150))
 	var top := TextureRect.new()
 	top.texture = _top_shade()
 	top.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
@@ -222,12 +218,16 @@ func _build() -> void:
 	_back.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_root.add_child(_back)
 	_build_crowd()
-	_vex = Vex.new()
-	_vex.position = Vector2(70, 44)
+	_vex = CasinoRoomVex.Bust.new()
+	_vex.position = Vector2(22, 8)
+	_vex.ledge = 58.0  # his hands hook over the cabinet's top edge
 	_back.add_child(_vex)
 
 	_cabinet = Cabinet.new()
 	_root.add_child(_cabinet)
+	# His hands come out in front of the cabinet.
+	_vex.hands.z_index = 0
+	_vex.hands.reparent(_root)
 	# Eyes on stands either side of the crown, candles at the corners.
 	for spot: Array in [[Vector2(144, 24), 7], [Vector2(318, 24), 7], [Vector2(14, 24), 0], [Vector2(448, 24), 0]]:
 		var stand := TextureRect.new()
@@ -301,7 +301,8 @@ func _build() -> void:
 	_fx.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_fx.size = Vector2(480, 270)
 	_root.add_child(_fx)
-	_bubble.position = Vector2(162, 34)
+	_bubble.position = Vector2(166, 30)
+	_bubble.tail_x = -96.0  # the tail drops toward his hood
 	_root.add_child(_bubble)
 
 	_vignette.texture = _vignette_tex()
@@ -341,26 +342,8 @@ func _build_crowd() -> void:
 		spots.append(Vector2(x, 47))
 	var cells := [Rect2(0, 272, 16, 16), Rect2(16, 272, 16, 16), Rect2(32, 272, 16, 16)]
 	for i in spots.size():
-		var t := TextureRect.new()
 		var cell: Rect2 = cells[i % cells.size()]
-		t.texture = CasinoFx.region(CULTISTS[0], cell)
-		t.set_meta("cell", cell)
-		t.size = Vector2(16, 16)
-		t.position = spots[i] - Vector2(8, 8)
-		t.set_meta("home", t.position)
-		t.flip_h = i % 3 == 1
-		var near := spots[i].y > 40
-		t.material = CasinoFx.silhouette(Color("2e2040") if near else Color("21172e"))
-		t.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		for ex: int in [5, 9]:
-			var eye := ColorRect.new()
-			eye.color = Color(EYES, 0.95 if near else 0.6)
-			eye.size = Vector2(1, 1)
-			eye.position = Vector2(ex if not t.flip_h else 15 - ex, 7)
-			eye.mouse_filter = Control.MOUSE_FILTER_IGNORE
-			t.add_child(eye)
-		_back.add_child(t)
-		_cultists.append(t)
+		_cultists.append(CasinoFx.cultist(_back, spots[i], CULTISTS[0], cell, spots[i].y > 40, i % 3 == 1))
 
 
 static func _vignette_tex() -> Texture2D:
@@ -566,10 +549,12 @@ func _animate_room(delta: float) -> void:
 		c.position.y = lerpf(c.position.y, home.y + lean, minf(1.0, delta * 12.0))
 		c.position.x = lerpf(c.position.x, home.x + signf(240.0 - home.x) * minf(lean, 1.0), minf(1.0, delta * 8.0))
 		for eye: Node in c.get_children():
-			(eye as ColorRect).size = Vector2(1, 2) if wide else Vector2(1, 1)
+			if eye is ColorRect:
+				(eye as ColorRect).size = Vector2(1, 2) if wide else Vector2(1, 1)
 	_cabinet.chase += delta * (2.0 + (_reel.speed / 40.0 if _phase == Phase.REEL else 0.0))
 	for i in _flames.size():
 		_flames[i].modulate.a = 0.28 + 0.1 * sin(_t * 9.0 + i * 1.7) + 0.05 * sin(_t * 23.0 + i)
+	CasinoFx.blink(_cultists, delta)
 
 
 func _chest_frame(frame: int) -> void:
@@ -624,11 +609,12 @@ func _money(data: Dictionary) -> void:
 		if str(e.get("kind", "")) == "money_moved":
 			Game.event_fired.emit(e)
 	var jar := m.position + Vector2(22, 22)
-	await CasinoFx.money_landed(_fx, slot, jar, int(money.get("amount_cents", _price)), m.account)
-	if str(money.get("status", "")) == "simulated":
-		# Honest about the demo: no real dollars moved yet.
-		CasinoFx.float_text(_fx, jar + Vector2(30, -4), "simulated", Palette.MUTED, 8)
+	# Honest about the demo: a "simulated" chip rides beside the amount when no real dollars moved.
+	var tag := "simulated" if str(money.get("status", "")) == "simulated" else ""
+	var amount := int(money.get("amount_cents", _price))
+	await CasinoFx.money_landed(_fx, slot, jar, amount, m.account, tag, m.position + Vector2(m.size.x / 2.0, -8))
 	m.pulse()
+	CasinoFx.stamp(_fx, m.position + Vector2(m.size.x - 18, 8), CasinoFx.dollars(amount), m)
 	await CasinoFx.hit_stop(get_tree(), 0.08)
 	_count_up(m)
 
@@ -641,10 +627,10 @@ func _count_up(m: Mouth) -> void:
 		await get_tree().process_frame
 		waited += get_process_delta_time()
 	var to := _balance(m.dest)
-	if to == from:
+	if to == from or not is_instance_valid(m):
 		return
-	var tw := m.create_tween()
-	tw.tween_method(func(v: float) -> void: m.show_balance(int(v)), float(from), float(to), 0.6)
+	await CasinoFx.count_up(m, m._bal, from, to, m.show_balance)
+	m.pulse()
 
 
 func _refuse(message: String) -> void:
@@ -948,6 +934,7 @@ func _reveal() -> void:
 	var tier := str(item.get("tier", "common"))
 	var cfg: Dictionary = REVEAL.get(tier, REVEAL.common)
 	var color := CasinoFx.rarity_color(tier)
+	var high := tier == "legendary" or tier == "mythic"
 	var card_pos := WIN.position + Vector2(_win * PITCH + 2.0 - _reel.pos + LINE, (WIN.size.y - CARD.y) / 2.0)
 	var center := card_pos + CARD / 2.0
 	_reel.focus = _win
@@ -964,20 +951,21 @@ func _reveal() -> void:
 		await get_tree().create_timer(0.5).timeout
 		g.queue_free()
 		_dark.color.a = 0.0
-	await CasinoFx.hit_stop(get_tree(), float(cfg.stop))
+	if high:
+		await CasinoFx.hit_stop(get_tree(), float(cfg.stop))
 	moment = "reveal"
 	Sfx.play_path(STINGER[tier], 1.0, -2.0)
 	if tier == "legendary":
 		Sfx.play_path(SND_JACKPOT, 1.0, -6.0)
 	elif tier == "mythic":
 		Sfx.play_path(SND_DREAD, 1.0, -2.0)
-	if float(cfg.flash) > 0.0:
+	if high:
 		CasinoFx.flash(self, color, float(cfg.flash), float(cfg.fade))
-	CasinoFx.shake(_root, float(cfg.shake), float(cfg.shake_s))
-	CasinoFx.sparks(_fx, center, tier, int(cfg.sparks))
-	CasinoFx.ring(_fx, center, color, 30.0 + int(cfg.sparks) * 0.4, 0.5)
-	if tier == "common":
-		CasinoFx.smoke(_fx, center + Vector2(0, 18), 6)
+		CasinoFx.shake(_root, float(cfg.shake), float(cfg.shake_s))
+		CasinoFx.sparks(_fx, center, tier, int(cfg.sparks))
+		CasinoFx.ring(_fx, center, color, 30.0 + int(cfg.sparks) * 0.4, 0.5)
+	else:
+		CasinoFx.burst(_fx, center, color, 6, 60.0, 0.5)
 	_cabinet.flash_color = color
 	_cabinet.flash_until = _t + 1.2
 	_crowd_react(tier)
@@ -992,35 +980,43 @@ func _reveal() -> void:
 	add_child(hero)
 	_reel.hidden_index = _win
 	var halo := CasinoFx.rarity_glow(_fx, center, tier, 52.0 + 12.0 * Palette.RARITY.keys().find(tier))
-	var pop := hero.create_tween()
-	pop.tween_property(hero, "scale", Vector2(1.3, 1.3), 0.07).set_ease(Tween.EASE_OUT)
-	pop.tween_property(hero, "scale", Vector2(1.15, 1.15), 0.1)
-	await pop.finished
-	# The slow zoom.
 	var lift := Vector2(240, 106) - CARD / 2.0
-	var zoom := hero.create_tween().set_parallel(true)
-	zoom.tween_property(hero, "scale", Vector2(1.9, 1.9), 0.9).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-	zoom.tween_property(hero, "position", lift, 0.9).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-	halo.create_tween().tween_property(halo, "position", lift + CARD / 2.0 - halo.size / 2.0, 0.9)
-
-	var name_label := CasinoFx.label(str(item.get("name", "")), color, 20)
-	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	name_label.size = Vector2(300, 24)
-	name_label.position = Vector2(90, 156)
-	name_label.z_index = 80
-	name_label.modulate.a = 0.0
-
-	if tier == "legendary" or tier == "mythic":
+	var stage_fx: Control = null
+	var sway: Tween = null
+	var name_label: Label
+	if high:
+		var pop := hero.create_tween()
+		pop.tween_property(hero, "scale", Vector2(1.3, 1.3), 0.07).set_ease(Tween.EASE_OUT)
+		pop.tween_property(hero, "scale", Vector2(1.15, 1.15), 0.1)
+		await pop.finished
+		# The slow zoom.
+		var zoom := hero.create_tween().set_parallel(true)
+		zoom.tween_property(hero, "scale", Vector2(1.9, 1.9), 0.9).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		zoom.tween_property(hero, "position", lift, 0.9).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		halo.create_tween().tween_property(halo, "position", lift + CARD / 2.0 - halo.size / 2.0, 0.9)
+		name_label = CasinoFx.label(str(item.get("name", "")), color, 20)
+		name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		name_label.size = Vector2(300, 24)
+		name_label.position = Vector2(90, 156)
+		name_label.z_index = 80
+		name_label.modulate.a = 0.0
 		await _cutscene(tier, item, hero, halo, name_label)
 	else:
-		if tier == "epic":
-			CasinoFx.beam(_fx, 240, 160, tier, 26.0, 0.7)
-			for i in 8:
-				CasinoFx.burst(_fx, Vector2(240 + randf_range(-40, 40), 106 + randf_range(-30, 30)), CasinoFx.glow_color(tier), 3, 40.0, 0.8)
-		add_child(name_label)
-		name_label.create_tween().tween_property(name_label, "modulate:a", 1.0, 0.3)
+		# Out of the reel and up into the lamp, turning over on the way; it lands on its rung.
+		var up := hero.create_tween().set_parallel(true)
+		up.tween_property(hero, "position", lift, 0.3).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		halo.create_tween().tween_property(halo, "position", lift + CARD / 2.0 - halo.size / 2.0, 0.3)
+		CasinoFx.flip_in(hero, Vector2(1.9, 1.9), 0.3)
+		await get_tree().create_timer(0.28).timeout
+		stage_fx = await CasinoFx.reveal(_fx, Vector2(240, 106), tier, _root)
+		sway = CasinoFx.wobble(hero)
+		name_label = CasinoFx.type_name(self, str(item.get("name", "")), tier, Vector2(240, 168))
 		await _beat(1.5 if tier == "common" else 1.9)
 	name_label.create_tween().tween_property(name_label, "modulate:a", 0.0, 0.25)
+	if sway:
+		sway.kill()
+		hero.rotation = 0.0
+	CasinoFx.fade_stage(stage_fx)
 	await _to_book(hero, halo, tier)
 	for e: Dictionary in result.get("_events", []):
 		if str(e.get("kind", "")) == "item":
@@ -1377,6 +1373,23 @@ class Cabinet:
 				draw_rect(Rect2(x - 1, y - 1, 2, 2), Color(c, a))
 		# Counter lip under the mouths.
 		draw_rect(Rect2(0, size.y - 34, size.x, 2), TRIM)
+		# The brass bill tray along the bottom: a dark trough with a brass lip, the lamp's
+		# light sliding along its rim.
+		var tray := Rect2(20, size.y - 22, 400, 14)
+		draw_rect(tray.grow(2), Color("3a2614"))
+		draw_rect(tray.grow(1), Color("8a6a3a"))
+		draw_rect(tray, Color("0b0710"))
+		draw_rect(Rect2(tray.position.x, tray.position.y, tray.size.x, 2), Color(0, 0, 0, 0.6))
+		draw_rect(Rect2(tray.position.x - 1, tray.position.y - 1, tray.size.x + 2, 1), Color("c99a4a"))
+		draw_rect(Rect2(tray.position.x, tray.end.y - 1, tray.size.x, 1), Color("2a1a10"))
+		var sweep := fposmod(_t * 60.0, tray.size.x + 120.0) - 60.0
+		for i in 24:
+			var x := tray.position.x + sweep + i - 12
+			if x >= tray.position.x and x < tray.end.x:
+				draw_rect(Rect2(x, tray.position.y - 1, 1, 1), Color(Palette.CREAM, 0.6 * (1.0 - absf(i - 12) / 12.0)))
+		draw_texture_rect(CasinoFx.res(CasinoFx.LIGHT) as Texture2D, Rect2(Vector2(232, tray.position.y - 10) - Vector2(60, 0), Vector2(120, 34)), false, Color(Palette.CREAM, 0.06))
+		for x: float in [tray.position.x + 4, tray.end.x - 5]:
+			draw_rect(Rect2(x, tray.get_center().y - 1, 2, 2), Color("c99a4a"))
 
 
 class Mouth:
@@ -1388,8 +1401,18 @@ class Mouth:
 	var selected := false:
 		set(v):
 			selected = v
+			if is_inside_tree():
+				create_tween().tween_property(self, "_dim", 1.0 if v else 0.6, 0.2)
+			else:
+				_dim = 1.0 if v else 0.6
 			queue_redraw()
-	var _icon := TextureRect.new()
+	var _dim := 1.0:
+		set(v):
+			_dim = v
+			self_modulate = Color(v, v, v)
+			for c: Node in get_children():
+				(c as CanvasItem).modulate = Color(v, v, v)
+	var _icon := Control.new()
 	var _name: Label
 	var _bal: Label
 	var _t := 0.0
@@ -1399,12 +1422,21 @@ class Mouth:
 
 	func setup(account_name: String, balance_cents: int, icon: Texture2D) -> void:
 		account = account_name
-		_icon.texture = icon
-		_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		# The icon at 2x with a 1 px night outline.
 		_icon.size = Vector2(32, 32)
-		_icon.position = Vector2(6, 6)
-		_icon.pivot_offset = Vector2(16, 16)
+		_icon.position = Vector2(6, 8)
+		_icon.pivot_offset = Vector2(16, 32)
 		_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		for off: Vector2 in [Vector2(-1, 0), Vector2(1, 0), Vector2(0, -1), Vector2(0, 1), Vector2.ZERO]:
+			var t := TextureRect.new()
+			t.texture = icon
+			t.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			t.size = Vector2(32, 32)
+			t.position = off
+			t.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			if off != Vector2.ZERO:
+				t.material = CasinoFx.silhouette(Palette.NIGHT)
+			_icon.add_child(t)
 		add_child(_icon)
 		_name = CasinoFx.label(account_name, Palette.MUTED, 16, CasinoFx.M5X7)
 		_name.position = Vector2(44, 2)
@@ -1430,18 +1462,30 @@ class Mouth:
 
 	func _draw() -> void:
 		var r := Rect2(Vector2.ZERO, size)
-		draw_rect(r, Color(BODY_DARK, 0.95))
+		var lamp := Color("ffe6c4")
+		var brass := Color("c99a4a")
 		if selected:
-			var a := 0.55 + 0.25 * sin(_t * 4.0)
-			draw_rect(r.grow(1), Color(Palette.CREAM, a * 0.35), false, 3.0)
-			draw_rect(r, Color(Palette.CREAM, a), false, 1.0)
+			draw_texture_rect(CasinoFx.res(CasinoFx.LIGHT) as Texture2D, Rect2(-14, -18, size.x + 28, size.y + 36), false, Color(lamp, 0.08))
+		draw_rect(r, Color(BODY_DARK, 0.96))
+		draw_rect(Rect2(1, 1, size.x - 2, 1), Color(1, 1, 1, 0.05))
+		if selected:
+			var a := 0.55 + 0.3 * sin(_t * 4.0)
+			draw_rect(r.grow(1), Color(lamp, a * 0.3), false, 3.0)
+			draw_rect(r, Color(lamp, a), false, 1.0)
 		else:
-			draw_rect(r, TRIM, false, 1.0)
-		# The slit the bill goes into.
+			draw_rect(r, Color(TRIM, 0.6), false, 1.0)
+		# The slit the bill goes into: a brass rim, a black throat with lamp light inside.
 		var slit := Rect2(64, 46, 64, 6)
-		draw_rect(slit.grow(2), TRIM_LIT if selected else TRIM)
+		draw_rect(slit.grow(3), Color("6b4a22"))
+		draw_rect(slit.grow(2), brass if selected else brass.darkened(0.35))
+		draw_rect(Rect2(slit.position.x - 2, slit.position.y - 2, slit.size.x + 4, 1), brass.lightened(0.4) if selected else brass)
 		draw_rect(slit, Color(0, 0, 0))
-		draw_rect(Rect2(slit.position.x, slit.position.y, slit.size.x, 1), Color(Palette.CREAM, 0.12))
+		var glow_a := (0.4 + 0.15 * sin(_t * 3.0)) if selected else 0.08
+		for i in int(slit.size.y):
+			var k := float(i) / slit.size.y
+			draw_rect(Rect2(slit.position.x + 1, slit.position.y + i, slit.size.x - 2, 1), Color(lamp, glow_a * k * k))
+		for x in range(int(slit.position.x) + 4, int(slit.end.x) - 2, 8):
+			draw_rect(Rect2(x, slit.end.y + 3, 1, 1), Color(brass, 0.5))
 
 
 class Bill:
@@ -1552,75 +1596,6 @@ class Cone:
 		var top := Color(Palette.CREAM, 0.13)
 		var bottom := Color(Palette.CREAM, 0.0)
 		draw_polygon(pts, PackedColorArray([top, top, bottom, bottom]))
-
-
-class Vex:
-	extends Control
-	## The dealer at the edge of the light: round, big-eyed, a little wrong. Only his face
-	## and long hands catch the lamp. He leans in when he speaks, blinks every few seconds,
-	## and his eyes follow the bill, then the line.
-	const SKIN := Color("a493b3")
-	const SKIN_DARK := Color("5d4b6e")
-	const HOOD := Color("0e0913")
-	var look := Vector2(240, 126)
-	var _t := 0.0
-	var _blink_at := 2.0
-	var _lean := 0.0
-
-	func _init() -> void:
-		size = Vector2(60, 50)
-		mouse_filter = Control.MOUSE_FILTER_IGNORE
-
-	func speak() -> void:
-		var tw := create_tween()
-		tw.tween_property(self, "_lean", 2.0, 0.12)
-		tw.tween_interval(0.8)
-		tw.tween_property(self, "_lean", 0.0, 0.3)
-
-	func _process(delta: float) -> void:
-		_t += delta
-		if _t > _blink_at + 0.12:
-			_blink_at = _t + randf_range(3.0, 7.0)
-		queue_redraw()
-
-	func _draw() -> void:
-		var breath := roundf(sin(_t * TAU / 1.2) * 0.6)
-		var c := Vector2(_lean, breath - _lean * 0.5)
-		var light := CasinoFx.res(CasinoFx.LIGHT) as Texture2D
-		draw_texture_rect(light, Rect2(c + Vector2(-34, -34), Vector2(68, 68)), false, Color(Palette.PANEL, 0.8))
-		# The hood, peaked.
-		draw_colored_polygon(PackedVector2Array([c + Vector2(-17, -8), c + Vector2(-3, -33), c + Vector2(17, -8)]), HOOD)
-		draw_circle(c + Vector2(0, 2), 21.0, HOOD)
-		# The face, lit from the lamp side.
-		draw_circle(c, 15.0, SKIN_DARK)
-		draw_circle(c + Vector2(2, -1), 13.0, SKIN)
-		# Big eyes that follow.
-		var blink := _t >= _blink_at and _t < _blink_at + 0.12
-		var dir := (look - (position + c)).normalized() * 1.6
-		for ex: float in [-6.0, 6.0]:
-			var e := c + Vector2(ex, -3)
-			if blink:
-				draw_line(e - Vector2(4, 0), e + Vector2(4, 0), HOOD, 1.0)
-				continue
-			var white := PackedVector2Array()
-			for j in 14:
-				var a := TAU * j / 14.0
-				white.append(e + Vector2(cos(a) * 4.5, sin(a) * 5.5))
-			draw_colored_polygon(white, Palette.CREAM)
-			draw_circle(e + dir, 2.6, HOOD)
-			draw_rect(Rect2(e + dir + Vector2(0, -1), Vector2(1, 1)), EYES)
-		# A grin a little too wide, with teeth.
-		var m := c + Vector2(1, 1)
-		draw_arc(m, 9.0, 0.18 * PI, 0.82 * PI, 14, HOOD, 2.0)
-		for a: float in [0.3, 0.4, 0.5, 0.6, 0.7]:
-			var tp := m + Vector2(cos(a * PI), sin(a * PI)) * 8.0
-			draw_rect(Rect2(tp + Vector2(0, -2), Vector2(1, 2)), Palette.CREAM)
-		# Long fingers curled over the cabinet's edge.
-		for side: float in [-1.0, 1.0]:
-			for i in 4:
-				var fx := side * (10.0 + i * 3.0) + _lean
-				draw_line(Vector2(fx, 16), Vector2(fx + side, 25 + (i % 2)), SKIN, 1.0)
-				draw_rect(Rect2(Vector2(fx + side, 25 + (i % 2)), Vector2(1, 1)), SKIN_DARK)
 
 
 class HeroCard:

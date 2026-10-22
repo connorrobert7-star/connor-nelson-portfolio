@@ -115,8 +115,8 @@ class Neon:
 		_sprite.texture = _frames[_i]
 		var hum := 0.02 * sin(_t * 40.0)
 		_glow.modulate.a = 0.34 * _bright[_i] + hum
-		_wall.modulate.a = 0.20 * _bright[_i] + hum * 0.5
-		_floor.modulate.a = 0.07 * _bright[_i]
+		_wall.modulate.a = 0.30 * _bright[_i] + hum * 0.5
+		_floor.modulate.a = 0.10 * _bright[_i]
 
 
 ## The one hanging lamp over the table: a brass shade, a cone of light that sways a little,
@@ -128,6 +128,7 @@ class Lamp:
 	const CONE_H := 118.0
 
 	var tint := Color.TRANSPARENT
+	var _swing := 0.0
 	var _cone := Sprite2D.new()
 	var _bulb: Sprite2D
 	var _pool: Sprite2D
@@ -169,7 +170,8 @@ class Lamp:
 
 	func _process(delta: float) -> void:
 		_t += delta
-		rotation = sin(_t * 0.7) * 0.012
+		_swing = move_toward(_swing, 0.0, delta * 0.03)
+		rotation = sin(_t * 0.7) * 0.012 + sin(_t * 3.4) * _swing
 		var want := Art.LAMP if tint.a == 0.0 else Art.LAMP.lerp(tint, 0.85)
 		_color = _color.lerp(want, minf(1.0, delta * 2.0))
 		var flick := 1.0 + 0.04 * sin(_t * 23.0) * sin(_t * 3.1)
@@ -179,6 +181,10 @@ class Lamp:
 		_bulb.modulate = Color(_color, 0.95)
 		_dust.color = Color(_color, 0.8)
 		queue_redraw()
+
+	## A big win sets the lamp swinging a little on its cord.
+	func swing(amount := 0.06) -> void:
+		_swing = maxf(_swing, amount)
 
 	static func _twinkle() -> Gradient:
 		var g := Gradient.new()
@@ -264,10 +270,20 @@ class Odds:
 	func _process(delta: float) -> void:
 		_t += delta
 		for i in _glows.size():
-			_glows[i].modulate.a = (0.18 + i * 0.05) * (0.85 + 0.15 * sin(_t * 2.0 + i))
+			_glows[i].modulate.a = (0.3 + i * 0.07) * (0.8 + 0.2 * sin(_t * 2.0 + i))
 		queue_redraw()
 
 	func _draw() -> void:
+		# A small brass-trimmed frame on the wall; the rates inside never move.
+		var f := Rect2(-12, -4, 47, RATES.size() * PITCH + 7)
+		draw_rect(f.grow(1), Color(0, 0, 0, 0.45))
+		draw_rect(f, Color("140d1a"))
+		draw_rect(f, Color("6b4a22"), false, 1.0)
+		draw_rect(Rect2(f.position.x, f.position.y, f.size.x, 1), Color("c99a4a"))
+		draw_rect(Rect2(f.position.x + 1, f.end.y - 2, f.size.x - 2, 1), Color("2a1a10"))
+		for c: Vector2 in [f.position + Vector2(1, 1), Vector2(f.end.x - 2, f.position.y + 1), Vector2(f.position.x + 1, f.end.y - 2), f.end - Vector2(2, 2)]:
+			draw_rect(Rect2(c, Vector2(1, 1)), Color("f0cf8a"))
+		draw_rect(Rect2(f.position.x + 1, f.position.y + 1, f.size.x - 2, 3), Color(1, 0.9, 0.75, 0.05))
 		for i in RATES.size():
 			var c := Art.rarity(RATES[i][0])
 			var p := Vector2(-6, i * PITCH + 3.5)
@@ -295,7 +311,7 @@ class Haze:
 			s.centered = false
 			s.scale = Vector2(2, 1)
 			s.material = Art.additive()
-			s.modulate = Color(Art.MOON, 0.04)
+			s.modulate = Color(0.62, 0.52, 0.8, 0.035)
 			s.flip_h = i == 1
 			s.z_index = 2
 			add_child(s)
@@ -308,7 +324,7 @@ class Haze:
 			var dir := 1.0 if i == 0 else -1.0
 			var x := fposmod(_t * (5.0 + i * 2.0) * dir + i * 220.0, w) - w / 2.0
 			_banks[i].position = Vector2(roundf(x), 92.0 + i * 46.0 + roundf(sin(_t * 0.3 + i) * 4.0))
-			_banks[i].modulate.a = 0.035 + 0.01 * sin(_t * 0.5 + i * 2.0)
+			_banks[i].modulate.a = 0.03 + 0.01 * sin(_t * 0.5 + i * 2.0)
 
 
 ## A slow pink sheen sliding down the oxblood runner: the sign's light on the pile.

@@ -21,6 +21,9 @@ var members: Array[Dictionary] = []  # {sprite, frames: [open, closed, back], ho
 var beats := 0
 var t := 0.0
 var _hush := 0.0
+var _glance := 0.0
+var _glance_x := 240.0
+var _cheer := 0.0
 
 
 func _ready() -> void:
@@ -49,6 +52,8 @@ func _add(kind: String, home: Vector2, index: int) -> void:
 		Art.region(path, Rect2(0, 0, 16, 16)),
 		Art.region(path, Rect2(0, 96, 16, 16)),
 		Art.region(path, Rect2(16, 0, 16, 16)),
+		Art.region(path, Rect2(32, 0, 16, 16)),  # facing left
+		Art.region(path, Rect2(48, 0, 16, 16)),  # facing right
 	]
 	_member(frames, home, index, Vector2(0, -8))
 
@@ -95,6 +100,19 @@ func hush(seconds := 2.0) -> void:
 	_hush = seconds
 
 
+## Every head turns to look at Vex (at room x `at_x`) for a moment: a pull is starting.
+func glance(at_x: float, seconds := 0.3) -> void:
+	_glance_x = at_x
+	_glance = seconds
+
+
+## The room answers a good pull: everyone hops, the front row first.
+func cheer(seconds := 1.0) -> void:
+	_cheer = seconds
+	for m: Dictionary in members:
+		m["hop_at"] = randf_range(0.0, 0.25)
+
+
 ## Positions and frames right now, so a tour can tell that the choir moves.
 func snapshot() -> Array:
 	var out: Array = []
@@ -107,11 +125,28 @@ func snapshot() -> Array:
 func _process(delta: float) -> void:
 	t += delta
 	_hush = maxf(0.0, _hush - delta)
+	_glance = maxf(0.0, _glance - delta)
+	_cheer = maxf(0.0, _cheer - delta)
 	for m: Dictionary in members:
 		var s: Sprite2D = m.sprite
 		var home: Vector2 = m.home
+		var frames: Array = m.frames
+		if _glance > 0.0 and frames.size() >= 5:
+			s.texture = frames[4] if home.x + position.x < _glance_x else frames[3]
+			s.position = home
+			continue
+		if _cheer > 0.0:
+			var since := 1.0 - _cheer - float(m.get("hop_at", 0.0))
+			var hop := 0.0
+			if since > 0.0 and since < 0.6:
+				hop = absf(sin(since / 0.3 * PI)) * 3.0
+			s.texture = frames[0]
+			s.scale = Vector2.ONE
+			s.position = home + Vector2(0, -roundf(hop))
+			continue
 		if mode == "stare":
 			# Turned to the box, trembling.
+			s.texture = frames[2]
 			s.position = home + Vector2(roundf(sin(t * 31.0 + m.seed) * 0.6), 0)
 			s.scale = Vector2.ONE
 			continue

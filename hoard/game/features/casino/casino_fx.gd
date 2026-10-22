@@ -16,6 +16,14 @@ const SND_BELL := "res://art/packs/kenney-impact-sounds/Audio/impactBell_heavy_0
 const SND_CHANT := "res://art/packs/owlishmedia-creepy-chanting/chant11.ogg"
 const SND_MOTE := "res://art/packs/kenney-interface-sounds/Audio/glass_002.ogg"
 const SND_RING := "res://art/packs/ninja-adventure/Audio/Sounds/Magic & Skill/Spirit.ogg"
+const SND_POP := "res://art/packs/kenney-interface-sounds/Audio/pluck_001.ogg"
+const SND_FLIP := "res://art/packs/kenney-casino-audio/Audio/card-place-2.ogg"
+const SND_CHIME := "res://art/packs/kenney-interface-sounds/Audio/glass_006.ogg"
+const SND_THUMP := "res://art/packs/kenney-impact-sounds/Audio/impactPunch_heavy_002.ogg"
+const SND_BLIP := "res://art/packs/ignisforge-sfx-sampler/blip_05.ogg"
+const SND_TICK := "res://art/packs/kenney-interface-sounds/Audio/tick_002.ogg"
+const SND_DING := "res://art/packs/kenney-impact-sounds/Audio/impactBell_heavy_002.ogg"
+const SND_STAMP := "res://art/packs/kenney-impact-sounds/Audio/impactPlank_medium_002.ogg"
 
 ## The lighter "glow" step of each rarity ramp (docs/ASSETS.md), for halos and cores.
 const GLOW := {
@@ -154,6 +162,79 @@ static func label(text: String, color: Color, size := 10, path := JERSEY) -> Lab
 	l.add_theme_constant_override("outline_size", 3)
 	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	return l
+
+
+# --- the flock -------------------------------------------------------------------
+
+const EYES := Color("d8ff8a")
+
+## One of the flock at the back of an overlay: a black hooded shape against the dark,
+## nothing lit but two eyes that glow and blink. `home` is its center.
+static func cultist(parent: Control, home: Vector2, sheet: String, cell: Rect2, near: bool, flip: bool) -> TextureRect:
+	var t := TextureRect.new()
+	t.texture = region(sheet, cell)
+	t.set_meta("cell", cell)
+	t.size = Vector2(16, 16)
+	t.position = home - Vector2(8, 8)
+	t.set_meta("home", t.position)
+	t.set_meta("blink", randf_range(0.5, 6.0))
+	t.flip_h = flip
+	t.material = silhouette(Color("100b17") if near else Color("0b0811"))
+	t.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var g := TextureRect.new()
+	g.texture = res(LIGHT) as Texture2D
+	g.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	g.size = Vector2(14, 10)
+	g.position = Vector2(0, 2.5)
+	g.material = additive()
+	g.modulate = Color(EYES, 0.42 if near else 0.24)
+	g.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	g.set_meta("glow", true)
+	t.add_child(g)
+	for ex: int in [5, 9]:
+		var eye := ColorRect.new()
+		eye.color = Color(EYES, 1.0 if near else 0.7)
+		eye.size = Vector2(1, 1)
+		eye.position = Vector2(ex if not flip else 15 - ex, 7)
+		eye.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		t.add_child(eye)
+	parent.add_child(t)
+	return t
+
+
+## Blink the flock's eyes, each on its own clock.
+static func blink(flock: Array[TextureRect], delta: float) -> void:
+	for c in flock:
+		var b: float = float(c.get_meta("blink", 3.0)) - delta
+		if b < -0.13:
+			b = randf_range(2.0, 7.0)
+		c.set_meta("blink", b)
+		var open := b > 0.0
+		for n: Node in c.get_children():
+			(n as CanvasItem).visible = open
+
+
+## The dark around an overlay: nearly black at the edges, a little thinner under the lamp,
+## so the lamp is the only light in the room. `center` is in screen pixels.
+static func room_dim(parent: Control, center := Vector2(240, 150)) -> TextureRect:
+	var g := Gradient.new()
+	g.offsets = PackedFloat32Array([0.0, 0.3, 0.62, 1.0])
+	g.colors = PackedColorArray([Color(Palette.NIGHT, 0.85), Color(Palette.NIGHT, 0.92), Color(Palette.NIGHT, 0.97), Color(Palette.NIGHT, 0.985)])
+	var t := GradientTexture2D.new()
+	t.gradient = g
+	t.fill = GradientTexture2D.FILL_RADIAL
+	t.fill_from = Vector2(center.x / 480.0, center.y / 270.0)
+	t.fill_to = t.fill_from + Vector2(0.62, 0.0)
+	t.width = 96
+	t.height = 54
+	var r := TextureRect.new()
+	r.texture = t
+	r.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	r.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	r.set_anchors_preset(Control.PRESET_FULL_RECT)
+	r.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	parent.add_child(r)
+	return r
 
 
 # --- particles -------------------------------------------------------------------
@@ -323,6 +404,130 @@ static func beam(parent: Node, x: float, bottom: float, tier: String, width := 1
 	return b
 
 
+# --- the reveal ladder -------------------------------------------------------------
+
+## The stage under a revealed card for the tiers without a cutscene, one rung per tier.
+## Common: a cream puff, four specks and a soft pop. Rare: plus a ring in its blue, twelve
+## sparks, a chime and a 0.04 s hit-stop. Epic: plus a purple beam, two ray layers turning
+## against each other behind the card, a bass thump, a 0.07 s hit-stop and a 2 px shake of
+## `shake_node`. Effects go on `parent` (keep it above any dim). Returns the node holding
+## what lingers (beam, rays); fade_stage() clears it.
+static func reveal(parent: Control, center: Vector2, tier: String, shake_node: CanvasItem = null) -> Control:
+	var stage := Control.new()
+	stage.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	stage.size = Vector2(480, 270)
+	parent.add_child(stage)
+	var col := rarity_color(tier)
+	var rank := ["common", "rare", "epic"].find(tier)
+	if rank >= 2:
+		var slow := Rays.new()
+		slow.color = col
+		slow.count = 10
+		slow.speed = 0.45
+		slow.alpha = 0.32
+		slow.position = center
+		stage.add_child(slow)
+		var fast := Rays.new()
+		fast.color = glow_color(tier)
+		fast.count = 7
+		fast.speed = -0.8
+		fast.alpha = 0.22
+		fast.width = 0.06
+		fast.position = center
+		stage.add_child(fast)
+		for r: Rays in [slow, fast]:
+			r.modulate.a = 0.0
+			r.create_tween().tween_property(r, "modulate:a", 1.0, 0.25)
+		beam(stage, center.x, center.y + 46, tier, 30.0, 1.4)
+		loud(parent, SND_THUMP, 0.55, -1.0)
+		flash(parent, col, 0.22, 0.25)
+	# Every tier: the cream puff, four specks, the pop.
+	smoke(stage, center + Vector2(0, 14), 5, Palette.CREAM)
+	burst(stage, center, glow_color(tier), 4, 70.0, 0.8)
+	Sfx.play_path(SND_POP, 1.15 - rank * 0.1, -6.0)
+	if rank >= 1:
+		ring(stage, center, col, 52.0, 0.5)
+		ring(stage, center, glow_color(tier), 30.0, 0.3)
+		sparks(stage, center, tier, 12)
+		Sfx.play_path(SND_CHIME, 1.0 if rank == 1 else 0.8, -6.0)
+	if rank >= 2 and shake_node:
+		shake(shake_node, 2.0, 0.2)
+	if rank == 1:
+		await hit_stop(parent.get_tree(), 0.04)
+	elif rank >= 2:
+		await hit_stop(parent.get_tree(), 0.07)
+	return stage
+
+
+## Fade a reveal stage out and free it.
+static func fade_stage(stage: Control, seconds := 0.3) -> void:
+	if stage == null or not is_instance_valid(stage):
+		return
+	var tw := stage.create_tween()
+	tw.tween_property(stage, "modulate:a", 0.0, seconds)
+	tw.tween_callback(stage.queue_free)
+
+
+## Turn a card in: edge on, through its back, to its face at `to` scale, then a squash
+## (1.2 / 0.8) that springs back. Await it.
+static func flip_in(c: Control, to := Vector2.ONE, seconds := 0.32) -> void:
+	c.pivot_offset = c.size / 2.0
+	Sfx.play_path(SND_FLIP, randf_range(0.95, 1.1), -6.0)
+	var tw := c.create_tween()
+	tw.tween_method(func(ph: float) -> void:
+		c.scale = Vector2(to.x * cos(ph), to.y), -1.5 * PI, 0.0, seconds).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	await tw.finished
+	await land(c, to)
+
+
+## The squash on landing: wide and short, then back with a spring.
+static func land(c: Control, to := Vector2.ONE) -> void:
+	c.pivot_offset = c.size / 2.0
+	var tw := c.create_tween()
+	tw.tween_property(c, "scale", Vector2(to.x * 1.2, to.y * 0.8), 0.05)
+	tw.tween_property(c, "scale", to, 0.28).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	await tw.finished
+
+
+## A card at rest still breathes: a slow wobble of two degrees either way.
+static func wobble(c: Control, degrees := 2.0) -> Tween:
+	c.pivot_offset = c.size / 2.0
+	var tw := c.create_tween().set_loops()
+	tw.tween_property(c, "rotation", deg_to_rad(degrees), 0.7).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	tw.tween_property(c, "rotation", deg_to_rad(-degrees), 0.7).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	return tw
+
+
+## The item's name typed on letter by letter with blips, in the tier's light over a dark
+## drop shadow, centered on `center`. Returns the label (fade it out when done).
+static func type_name(parent: Node, text: String, tier: String, center: Vector2, size := 20) -> Label:
+	var l := label(text, glow_color(tier), size)
+	l.add_theme_color_override("font_outline_color", Palette.NIGHT)
+	l.add_theme_constant_override("outline_size", 4)
+	l.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.85))
+	l.add_theme_constant_override("shadow_offset_x", 0)
+	l.add_theme_constant_override("shadow_offset_y", 2)
+	l.add_theme_constant_override("shadow_outline_size", 4)
+	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	l.size = Vector2(320, 26)
+	l.position = (center - l.size / 2.0).round()
+	l.visible_characters_behavior = TextServer.VC_CHARS_AFTER_SHAPING
+	l.visible_characters = 0
+	l.z_index = 80
+	parent.add_child(l)
+	var n := text.length()
+	var pitch := 1.0 + ["common", "rare", "epic", "legendary", "mythic"].find(tier) * 0.08
+	var tw := l.create_tween()
+	tw.tween_method(func(v: float) -> void:
+		var k := int(v)
+		if k != l.visible_characters:
+			l.visible_characters = k
+			if k % 2 == 1 and text.substr(k - 1, 1) != " ":
+				Sfx.play_path(SND_BLIP, pitch + randf_range(-0.04, 0.04), -16.0), 0.0, float(n), n * 0.035)
+	tw.tween_callback(func() -> void: l.visible_characters = -1)
+	return l
+
+
 # --- screen ----------------------------------------------------------------------
 
 ## A full-screen color flash on the overlay layer.
@@ -379,9 +584,10 @@ static func zoom(c: Control, to := 1.12, seconds := 0.8) -> Tween:
 # --- money -----------------------------------------------------------------------
 
 ## Bone-white motes fountain up from `from`, then home into `to` one after another; the jar
-## flashes, the bell and the choir sound once, and "+$20 House Fund" floats up. Real money
-## only. Await it: returns when the last mote has landed.
-static func money_landed(parent: Control, from: Vector2, to: Vector2, amount_cents: int, label: String) -> void:
+## flashes, the bell and the choir sound once, and "+$20 House Fund" floats up from
+## `text_at` (default: above `to`), with `tag` (e.g. "simulated") as a small grey chip beside
+## it. Real money only. Await it: returns when the last mote has landed.
+static func money_landed(parent: Control, from: Vector2, to: Vector2, amount_cents: int, label: String, tag := "", text_at := Vector2.INF) -> void:
 	loud(parent, SND_CASH, 1.0, -8.0)
 	var count := clampi(amount_cents / 100, 8, 40)
 	var tree := parent.get_tree()
@@ -413,11 +619,121 @@ static func money_landed(parent: Control, from: Vector2, to: Vector2, amount_cen
 	burst(parent, to, Palette.CREAM, 10, 70.0, 0.5)
 	loud(parent, SND_BELL, 1.0, -10.0)
 	loud(parent, SND_CHANT, 1.0, -2.0)
-	float_text(parent, to + Vector2(30, -20), "+%s %s" % [dollars(amount_cents), label], Palette.CREAM, 16)
+	var at := to + Vector2(0, -24) if text_at == Vector2.INF else text_at
+	var l := float_text(parent, at, "+%s %s" % [dollars(amount_cents), label], Palette.CREAM, 16)
+	if tag != "":
+		chip(parent, Vector2(l.position.x + l.size.x + 3, at.y - 4), tag)
+
+
+## A small grey tag (e.g. "simulated") that hangs beside a number, then fades.
+static func chip(parent: Control, at: Vector2, text: String) -> Control:
+	var c := Control.new()
+	c.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	c.z_index = 10
+	var l := label(text, Palette.MUTED.lightened(0.15), 8, M5X7)
+	l.add_theme_font_size_override("font_size", 16)
+	l.add_theme_constant_override("outline_size", 0)
+	c.add_child(l)
+	l.reset_size()
+	c.size = Vector2(l.size.x + 4, 9)
+	l.position = Vector2(2, -4)
+	var bg := ColorRect.new()
+	bg.color = Color(Palette.NIGHT, 0.85)
+	bg.size = c.size
+	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	c.add_child(bg)
+	c.move_child(bg, 0)
+	var edge := ReferenceRect.new()
+	edge.border_color = Color(Palette.MUTED, 0.6)
+	edge.editor_only = false
+	edge.size = c.size
+	edge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	c.add_child(edge)
+	c.position = at.round()
+	parent.add_child(c)
+	var tw := c.create_tween()
+	tw.tween_property(c, "position:y", c.position.y - 18, 1.2)
+	tw.tween_property(c, "modulate:a", 0.0, 0.4)
+	tw.tween_callback(c.queue_free)
+	return c
+
+
+## Count a painted balance from `from` to `to`, exactly: the digits roll up a line on each
+## step with a tick that climbs in pitch, flash cream on the last step, and the bell rings.
+## `show` paints a value (formatting only; no money math beyond stepping between the two
+## real balances). Await it.
+static func count_up(owner: Control, digits: Label, from: int, to: int, show: Callable, seconds := 0.7) -> void:
+	if from == to or not is_instance_valid(owner):
+		show.call(to)
+		return
+	var steps := clampi(absi(to - from), 1, 14)
+	var home := digits.position
+	for i in range(1, steps + 1):
+		if not is_instance_valid(owner) or not owner.is_inside_tree():
+			return
+		# Integer steps between the two real balances; the last step is exactly `to`.
+		var v := from + (to - from) * i / steps
+		show.call(v)
+		digits.position = home + Vector2(0, 3)
+		var tw := digits.create_tween()
+		tw.tween_property(digits, "position", home, seconds / steps * 0.8).set_ease(Tween.EASE_OUT)
+		Sfx.play_path(SND_TICK, 0.9 + i * 0.06, -12.0)
+		await owner.get_tree().create_timer(seconds / steps).timeout
+	if not is_instance_valid(owner):
+		return
+	digits.position = home
+	show.call(to)
+	digits.modulate = Color(1.6, 1.6, 1.5)
+	digits.create_tween().tween_property(digits, "modulate", Color.WHITE, 0.35)
+	Sfx.play_path(SND_DING, 1.2, -10.0)
+
+
+## The amount stamped onto the mouth like a paper tag: it drops in big, thunks flat, the
+## mouth shakes a pixel, then the tag fades.
+static func stamp(parent: Control, at: Vector2, text: String, shake_node: CanvasItem = null) -> void:
+	var tag := Control.new()
+	tag.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	tag.z_index = 11
+	var l := label(text, Palette.NIGHT, 10)
+	l.add_theme_constant_override("outline_size", 0)
+	tag.add_child(l)
+	l.reset_size()
+	tag.size = Vector2(l.size.x + 6, 11)
+	l.position = Vector2(3, -2)
+	var paper := ColorRect.new()
+	paper.color = Palette.CREAM
+	paper.size = tag.size
+	paper.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	tag.add_child(paper)
+	tag.move_child(paper, 0)
+	var edge := ReferenceRect.new()
+	edge.border_color = Color(Palette.NIGHT, 0.6)
+	edge.editor_only = false
+	edge.size = tag.size
+	edge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	tag.add_child(edge)
+	tag.position = (at - tag.size / 2.0).round()
+	tag.pivot_offset = tag.size / 2.0
+	tag.scale = Vector2(2.2, 2.2)
+	tag.rotation = deg_to_rad(-8)
+	parent.add_child(tag)
+	var tw := tag.create_tween().set_parallel(true)
+	tw.tween_property(tag, "scale", Vector2.ONE, 0.09).set_ease(Tween.EASE_IN)
+	tw.tween_property(tag, "rotation", deg_to_rad(-4), 0.09)
+	tw.chain().tween_callback(func() -> void:
+		Sfx.play_path(SND_STAMP, 0.9, -6.0)
+		if shake_node:
+			shake(shake_node, 1.0, 0.12)
+	)
+	tw.chain().tween_property(tag, "scale", Vector2(1.15, 0.85), 0.04)
+	tw.chain().tween_property(tag, "scale", Vector2.ONE, 0.12).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.chain().tween_interval(1.1)
+	tw.chain().tween_property(tag, "modulate:a", 0.0, 0.3)
+	tw.chain().tween_callback(tag.queue_free)
 
 
 ## A number or word that pops up and drifts away.
-static func float_text(parent: Control, pos: Vector2, text: String, color: Color, size := 8) -> void:
+static func float_text(parent: Control, pos: Vector2, text: String, color: Color, size := 8) -> Label:
 	var l := label(text, color, size)
 	l.z_index = 10
 	parent.add_child(l)
@@ -430,6 +746,7 @@ static func float_text(parent: Control, pos: Vector2, text: String, color: Color
 	tw.parallel().tween_property(l, "position:y", l.position.y - 18, 1.2)
 	tw.tween_property(l, "modulate:a", 0.0, 0.4)
 	tw.tween_callback(l.queue_free)
+	return l
 
 
 ## "$20" for whole dollars, "$20.50" otherwise. Formatting only.
@@ -493,6 +810,32 @@ class Beam:
 			t.height = 64
 			CasinoFx._cache["_beam_fade"] = t
 		return CasinoFx._cache["_beam_fade"]
+
+
+class Rays:
+	extends Control
+	## God rays turning behind a card: `count` wedges, turning at `speed` rad/s.
+	var color := Color.WHITE
+	var count := 12
+	var speed := 0.5
+	var alpha := 0.45
+	var width := 0.09
+	var reach := 220.0
+	var _a := randf() * TAU
+
+	func _init() -> void:
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+		material = CasinoFx.additive()
+
+	func _process(delta: float) -> void:
+		_a += delta * speed
+		queue_redraw()
+
+	func _draw() -> void:
+		for i in count:
+			var a := _a + TAU * i / count
+			var pts := PackedVector2Array([Vector2.ZERO, Vector2(cos(a - width), sin(a - width)) * reach, Vector2(cos(a + width), sin(a + width)) * reach])
+			draw_polygon(pts, PackedColorArray([Color(color, alpha), Color(color, 0.0), Color(color, 0.0)]))
 
 
 class Mote:

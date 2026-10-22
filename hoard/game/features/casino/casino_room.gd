@@ -566,6 +566,7 @@ func _pull(price: int, said: String, make: Callable, m: CasinoRoomMachine) -> vo
 		return
 	Game.busy = true
 	_skippable = true
+	choir.glance(VEX_AT.x)
 	await vex.say(said, 0.6)
 	_quiet = 0.0
 	_skippable = false
@@ -591,6 +592,16 @@ func _after(result: Variant) -> void:
 	var money: Dictionary = (result as Dictionary).get("money", {})
 	if money.has("to_account"):
 		last_dest = str(money.to_account)
+	var tier := str((result as Dictionary).get("item", {}).get("tier", "common"))
+	if tier != "common" and is_inside_tree():
+		# The room answers: a gasp, then a short cheer; a big one sets the lamp swinging.
+		Art.play("ninja-adventure/Audio/Sounds/Voice/Voice3.ogg", 0.9, -8.0)
+		choir.cheer(1.0)
+		get_tree().create_timer(0.25).timeout.connect(func() -> void:
+			Art.play("kenney-casino-audio/Audio/chips-collide-3.ogg", 1.0, -8.0)
+			Art.play("kenney-casino-audio/Audio/chips-collide-1.ogg", 1.15, -10.0))
+		if tier != "rare":
+			lamp.swing(0.05 if tier == "epic" else 0.09)
 	await Game.refresh()
 	if is_inside_tree():
 		_say(line())
