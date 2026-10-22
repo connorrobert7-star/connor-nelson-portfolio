@@ -205,11 +205,12 @@ func room_lantern(floor_at: Vector2, height: float, color := Kit.WARM, pool := 6
 	lamp.position = floor_at - Vector2(0, height)
 	lamp.z_index = 3
 	room_air.add_child(lamp)
+	# The chain hangs behind the shelves and tags (under the props), the lamp in front.
 	var chain := Line2D.new()
-	chain.points = PackedVector2Array([Vector2(0, top - lamp.position.y), Vector2(0, -14)])
+	chain.points = PackedVector2Array([Vector2(lamp.position.x, top), lamp.position + Vector2(0, -14)])
 	chain.width = 1
 	chain.default_color = Color("1a1210")
-	lamp.add_child(chain)
+	room_walls.add_child(chain)
 	var body := Node2D.new()
 	lamp.add_child(body)
 	body.draw.connect(func() -> void:
