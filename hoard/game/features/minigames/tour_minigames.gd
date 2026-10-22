@@ -232,10 +232,13 @@ func _leave_early(kit: TourKit, o: MinigameOverlay) -> void:
 	var exit := o.hud.get_node("Exit") as Control
 	await kit.tap_control(exit)
 	await kit.until(func() -> bool: return o.done and o._end_ready, 15.0)
-	await kit.wait(0.6)
+	await kit.until(func() -> bool: return o.can_leave(), 3.0)  # the way-out door has faded in
 
 
 func _close(kit: TourKit) -> void:
+	var o := kit.overlay() as MinigameOverlay
+	if o:
+		await kit.until(func() -> bool: return o.can_leave(), 3.0)  # the tally has had its moment
 	await kit.tap_screen(_screen(kit, Vector2(240, 135)))
 	await kit.until(func() -> bool: return kit.overlay() == null, 5.0)
 	await kit.wait(0.3)

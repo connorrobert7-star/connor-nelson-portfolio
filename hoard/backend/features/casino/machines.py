@@ -379,6 +379,18 @@ def equip(ctx: Ctx, item_id: str) -> dict:
     return {"equipped": equipped(ctx)}
 
 
+def unequip(ctx: Ctx, item_id: str) -> dict:
+    """Take a worn piece off: its slot goes empty. Taking off what isn't worn changes nothing."""
+    piece = catalog.wearable(item_id)
+    if piece is None:
+        raise ApiError(422, "There's no piece like that.")
+    ctx.conn.execute(
+        "DELETE FROM casino_equipped WHERE slot = ? AND item_id = ?", [piece["slot"], item_id]
+    )
+    sync_equipped(ctx)
+    return {"equipped": equipped(ctx)}
+
+
 # --- What the room shows --------------------------------------------------------------
 
 

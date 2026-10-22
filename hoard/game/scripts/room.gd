@@ -25,7 +25,6 @@ var room_air := Node2D.new()
 var _room_hot: Array[Dictionary] = []  # {rect: Rect2, it: Dictionary}: tap a thing, not its spot
 var _room_flicker: Array[Dictionary] = []  # {node, alpha, amount, speed, seed}
 var _room_t := 0.0
-var _room_route: Array[Vector2] = []
 
 
 func build() -> void:
@@ -46,16 +45,10 @@ func _ready() -> void:
 	if origin != Vector2i.ZERO:
 		add_child(room_air)
 		camera.position = Vector2(room_rect().get_center())
-		leader.arrived.connect(func() -> void:
-			if not _room_route.is_empty() and not Game.busy:
-				leader.walk_to(_room_route.pop_front())
-		)
 
 
 func _process(delta: float) -> void:
 	super._process(delta)
-	if not _room_route.is_empty() and Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down") != Vector2.ZERO:
-		_room_route.clear()
 	_room_t += delta
 	for f: Dictionary in _room_flicker:
 		var n: CanvasItem = f.node
@@ -96,48 +89,19 @@ func is_walkable(feet: Rect2) -> bool:
 	return true
 
 
-## Tapping anywhere on a thing (a shelf, Marlo, a tag) walks to its spot and uses it.
+## Tapping anywhere on a thing (a shelf, Marlo, a tag) walks to its spot and uses it; the
+## walk goes round the furniture (Level.walk_route).
 func _on_tap(point: Vector2) -> void:
 	var to := point
 	for h: Dictionary in _room_hot:
 		if (h.rect as Rect2).has_point(point):
 			to = (h.it as Dictionary).pos
 			break
-	_room_route.clear()
 	super._on_tap(to)
-	if origin != Vector2i.ZERO and leader.target != Vector2.INF:
-		_room_route = _room_path(leader.position, to)
-		if not _room_route.is_empty():
-			leader.walk_to(_room_route.pop_front())
 
 
-## Waypoints around the furniture from `from` to `to` (empty: walk straight).
-func _room_path(from: Vector2, to: Vector2) -> Array[Vector2]:
-	var out: Array[Vector2] = []
-	var grid := AStarGrid2D.new()
-	grid.region = Rect2i(origin, Vector2i(map[0].length(), map.size()))
-	grid.cell_size = Vector2(TILE, TILE)
-	grid.offset = Vector2(TILE, TILE) / 2.0
-	grid.diagonal_mode = AStarGrid2D.DIAGONAL_MODE_ONLY_IF_NO_OBSTACLES
-	grid.update()
-	for cell: Vector2i in _blocked:
-		if grid.is_in_boundsv(cell):
-			grid.set_point_solid(cell)
-	var a := Vector2i(((from - Vector2(0, 2)) / TILE).floor())
-	var b := Vector2i(((to - Vector2(0, 2)) / TILE).floor())
-	if not grid.is_in_boundsv(a) or not grid.is_in_boundsv(b) or grid.is_point_solid(a) or grid.is_point_solid(b):
-		return out
-	var path := grid.get_point_path(a, b)
-	if path.size() <= 2:
-		return out
-	var last_dir := Vector2.ZERO
-	for i in range(1, path.size() - 1):
-		var d := (path[i + 1] - path[i]).normalized()
-		if d != last_dir:
-			out.append(path[i] + Vector2(0, 4))
-		last_dir = d
-	out.append(to)
-	return out
+func tile_bounds() -> Rect2i:
+	return Rect2i(origin, Vector2i(map[0].length(), map.size()))
 
 
 ## The last interactable added also answers taps anywhere in `rect`, and shows no prompt.

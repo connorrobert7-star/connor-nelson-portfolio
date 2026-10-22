@@ -27,6 +27,7 @@ var _scene := Node2D.new()
 var _moon := Sprite2D.new()
 var _music := AudioStreamPlayer.new()
 var _elapsed := 0.0
+var _beat_gen := 0  ## bumped as each beat is cleared, so a skipped beat's late bits never land
 var _total := 1.0
 
 
@@ -68,7 +69,8 @@ static func coalesce(away: Array) -> Array[Dictionary]:
 
 
 func _ready() -> void:
-	add_backdrop(1.0)
+	# The backdrop lets taps through to the scene: a tap skips to the next beat.
+	add_backdrop(1.0).mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_build_sky()
 	add_child(_scene)
 	_music.stream = load(str(FollowerArt.AUDIO.away_bed)) as AudioStream
@@ -80,8 +82,7 @@ func _ready() -> void:
 
 
 func _gui_input(event: InputEvent) -> void:
-	var tap := (event is InputEventMouseButton and (event as InputEventMouseButton).pressed) or (event is InputEventScreenTouch and (event as InputEventScreenTouch).pressed)
-	if tap:
+	if Level._is_tap(event):
 		accept_event()
 		_skip = true
 
@@ -165,6 +166,7 @@ func _tv(on: bool) -> void:
 
 
 func _clear() -> void:
+	_beat_gen += 1
 	for c in _scene.get_children():
 		c.queue_free()
 
@@ -350,6 +352,7 @@ func _beat_hug(p: Dictionary, seconds: float) -> void:
 	leader.position = Vector2(200, 210)
 	leader.scale = Vector2(3, 3)
 	_scene.add_child(leader)
+	BookOverlay.wear_on(leader)  # the follower runs to him as he is dressed
 	var f: Dictionary = Game.state.get("followers", {})
 	var d: Dictionary = (f.get("personal", {}) as Dictionary).duplicate()
 	d.bubble = "love"
@@ -446,9 +449,11 @@ func _animate(node: Node, step: Callable) -> void:
 	tw.tween_method(step, 0.0, 30.0, 30.0)
 
 
+## Run `fn` a little later in this beat; a tap that skips to the next beat drops it.
 func _later(seconds: float, fn: Callable) -> void:
+	var gen := _beat_gen
 	await get_tree().create_timer(seconds).timeout
-	if is_inside_tree():
+	if is_inside_tree() and gen == _beat_gen:
 		fn.call()
 
 

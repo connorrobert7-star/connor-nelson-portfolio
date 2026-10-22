@@ -94,7 +94,116 @@ const AUDIO := {
 	"away_bed": PACKS + "nihilex-dark-ambient/06.There_In_Spirit.ogg",
 }
 
+## A follower's body wearing a cloak: from the shoulder row down to just above the feet,
+## every pixel but the outline takes the cloak's dark, mid or light by how bright it was
+## (`bands` are the body's own two luminance cut points, so a black penguin and a white lamb
+## both come out shaded), and the shoulder row is the cloak's lit edge.
+const CLOAK_SHADER := """
+shader_type canvas_item;
+uniform float region_top = 0.0;
+uniform float shoulder = 8.0;
+uniform float hem = 99.0;
+uniform vec3 bands = vec3(0.1, 0.4, 0.7);
+uniform vec4 cloak_dark : source_color = vec4(0.2, 0.2, 0.3, 1.0);
+uniform vec4 cloak_mid : source_color = vec4(0.4, 0.4, 0.5, 1.0);
+uniform vec4 cloak_light : source_color = vec4(0.7, 0.7, 0.8, 1.0);
+varying vec4 tint;
+void vertex() {
+	tint = COLOR;
+}
+void fragment() {
+	vec4 c = texture(TEXTURE, UV);
+	float row = floor(UV.y / TEXTURE_PIXEL_SIZE.y + 0.001) - region_top;
+	if (row >= shoulder && row < hem && c.a > 0.5) {
+		float l = dot(c.rgb, vec3(0.2126, 0.7152, 0.0722));
+		if (l > bands.x) {
+			vec3 k = l < bands.y ? cloak_dark.rgb : (l < bands.z ? cloak_mid.rgb : cloak_light.rgb);
+			if (row < shoulder + 1.0) {
+				k = cloak_light.rgb;
+			}
+			c.rgb = k;
+		}
+	}
+	COLOR = c * tint;
+}
+"""
+
 static var _cache: Dictionary = {}
+static var _cloak_shader: Shader
+
+
+static func cloak_material() -> ShaderMaterial:
+	if _cloak_shader == null:
+		_cloak_shader = Shader.new()
+		_cloak_shader.code = CLOAK_SHADER
+	var m := ShaderMaterial.new()
+	m.shader = _cloak_shader
+	return m
+static var _images: Dictionary = {}  # sheet path -> Image, read back once
+static var _shapes: Dictionary = {}  # texture key -> shape()
+
+
+## A body texture's outline, for dressing it: `used` (its opaque box, in texture pixels) and
+## per row of the texture the leftmost and rightmost opaque column (-1 for an empty row).
+## Each texture is read back once a session.
+static func shape(t: Texture2D) -> Dictionary:
+	if t == null:
+		return {}
+	var key := ""
+	var path := t.resource_path
+	var region := Rect2()
+	if t is AtlasTexture:
+		path = (t as AtlasTexture).atlas.resource_path
+		region = (t as AtlasTexture).region
+	key = "%s|%s" % [path, region]
+	if path == "":
+		key = str(t.get_instance_id())
+	if _shapes.has(key):
+		return _shapes[key]
+	var img: Image = null
+	if path != "" and t is AtlasTexture:
+		if not _images.has(path):
+			var whole := (t as AtlasTexture).atlas.get_image()
+			if whole and whole.is_compressed():
+				whole.decompress()
+			if whole:
+				whole.convert(Image.FORMAT_RGBA8)
+			_images[path] = whole
+		var sheet: Image = _images[path]
+		if sheet:
+			img = sheet.get_region(Rect2i(region))
+	else:
+		img = t.get_image()
+		if img and img.is_compressed():
+			img.decompress()
+	var out := {}
+	if img and not img.is_empty():
+		var left := PackedInt32Array()
+		var right := PackedInt32Array()
+		var lums: Array[float] = []
+		for y in img.get_height():
+			var l := -1
+			var r := -1
+			for x in img.get_width():
+				var c := img.get_pixel(x, y)
+				if c.a >= 0.5:
+					if l < 0:
+						l = x
+					r = x
+					lums.append(c.get_luminance())
+			left.append(l)
+			right.append(r)
+		# Its outline (the darkest shade) and two cut points that split the rest in thirds.
+		lums.sort()
+		var bands := Vector3(0.1, 0.4, 0.7)
+		if not lums.is_empty():
+			var floor_l: float = lums[0] + 0.02
+			var rest: Array = lums.filter(func(v: float) -> bool: return v > floor_l)
+			if rest.size() >= 3:
+				bands = Vector3(floor_l, rest[rest.size() / 3], rest[rest.size() * 2 / 3])
+		out = {"used": img.get_used_rect(), "left": left, "right": right, "size": img.get_size(), "bands": bands}
+	_shapes[key] = out
+	return out
 
 
 static func tex(path: String) -> Texture2D:

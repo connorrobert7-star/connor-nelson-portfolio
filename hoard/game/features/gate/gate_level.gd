@@ -639,6 +639,9 @@ func _hint_boss() -> void:
 # --- input -------------------------------------------------------------------------
 
 func _unhandled_input(event: InputEvent) -> void:
+	# A finger on a phone sends a touch and the click Godot makes from it: answer it once.
+	if event is InputEventScreenTouch and Input.is_emulating_mouse_from_touch():
+		return
 	var is_button := event is InputEventMouseButton and (event as InputEventMouseButton).button_index == MOUSE_BUTTON_LEFT
 	var is_touch := event is InputEventScreenTouch
 	if not (is_button or is_touch):
@@ -655,6 +658,12 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if _mode == Mode.STRIKE or _mode == Mode.SCENE or _mode == Mode.CHARGE:
 		get_viewport().set_input_as_handled()
+		if _mode != Mode.CHARGE:
+			# A beat is playing out: the tap still lands (a ring and a soft click) and waits.
+			var at := make_input_local(event)
+			var tp: Vector2 = (at as InputEventMouseButton).position if is_button else (at as InputEventScreenTouch).position
+			TapMarker.spawn(self, tp, "ground")
+			Sfx.ui("tap", 0.8)
 		return
 	if Game.busy or Game.state.is_empty():
 		return
@@ -774,7 +783,9 @@ func _fire() -> void:
 	var from := _stacks.stack_pos(i)
 	_unzoom()
 	# The stack and the gate wait for the answer: nothing leaves until the money moved.
-	var res: Array = await Game.call_api("POST", "/gate/attack", {"debt_id": boss.debt_id, "amount_cents": amount})
+	# Its events (the dropped cosmetic's plate) wait for the strike to play out, so the plate
+	# never names the drop before the boss has died on screen.
+	var res: Array = await Game.api.request("POST", "/gate/attack", {}, {"debt_id": boss.debt_id, "amount_cents": amount})
 	if not is_inside_tree():
 		Game.busy = false
 		return
@@ -791,6 +802,8 @@ func _fire() -> void:
 		lt.tween_property(leader, "position:y", y0 - 7.0, 0.08).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 		lt.tween_property(leader, "position:y", y0, 0.14).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
 		await _strike(boss, from, res[0])
+		for e: Dictionary in (res[0] as Dictionary).get("_events", []):
+			Game.event_fired.emit(e)
 	await Game.refresh()
 	if not is_inside_tree():
 		return

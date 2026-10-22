@@ -23,8 +23,10 @@ func build_village(village: Level, _plot: Rect2i) -> void:
 		var p: Dictionary = plots[bid]
 		village.add_interactable(p.sign_at + Vector2(0, -8), func() -> String: return "", site.tap_build)
 		village.add_interactable(p.flag_at + Vector2(0, -8), func() -> String: return "", site.tap_flag)
-		# The facade itself, a step above the door line (the house has its own pokes).
-		if bid != "house":
+		# The facade itself, a step above the door line, builds only where there is no door
+		# (the house has its own pokes). On a building with a door, the facade walks him in:
+		# a build tap there sat on the door's top frame, right where a thumb lands.
+		if bid != "house" and not _has_door(p.rect):
 			village.add_interactable(p.base + Vector2(0, -14), func() -> String: return "", site.tap_build)
 	# The land: a sign by each gated parcel's rope line; only the next parcel's one shows.
 	var land := BuildingSite.new()
@@ -37,6 +39,16 @@ func build_village(village: Level, _plot: Rect2i) -> void:
 		if spec.has("stake"):
 			var at := BuildingSite.land_sign_at(pid)
 			village.add_interactable(at + Vector2(0, -8), func() -> String: return "", land.tap_land.bind(pid))
+
+
+## True for a building whose plot has a way in (the tavern, and the plots features open).
+static func _has_door(rect: Rect2i) -> bool:
+	if rect == Village.TAVERN:
+		return true
+	for pid: String in Village.PLOTS:
+		if (Village.PLOTS[pid] as Dictionary).rect == rect:
+			return true
+	return false
 
 
 func dress_village(village: Level, _plot: Rect2i) -> void:

@@ -106,6 +106,7 @@ var _bomb: TextureButton
 var _boss_bar: ColorRect
 var _boss_fill: ColorRect
 var _smite_cd := 0.0
+var _smite_next: Unit  ## a tap during the cooldown: it strikes the moment the bolt is ready
 var _focus: Unit
 var _note := 0
 var _skip := false
@@ -509,6 +510,7 @@ func _spawn_party(at: Vector2) -> void:
 	lead.is_leader = true
 	_stats(lead, p.leader, hp_k, dmg_k)
 	_make_node(lead, ArcadeFx.anim_sprite(p.leader.sprite, 7.0), at)
+	BookOverlay.wear_on(lead.sprite)  # the wizard leads in what the book put on him
 	party.append(lead)
 	var count := int(mods.get("followers", 2))
 	for i in count:
@@ -648,7 +650,13 @@ func _aura(u: Unit) -> void:
 func tick(delta: float) -> void:
 	_smite_cd -= delta
 	if phase != Phase.FIGHT:
+		_smite_next = null
 		return
+	if _smite_next != null and _smite_cd <= 0.0:
+		var queued := _smite_next
+		_smite_next = null
+		if queued.hp > 0.0:
+			_smite(queued)
 	var k := float(mods.get("enemy_speed", 1.0))
 	for u in party:
 		_party_step(u, delta)
@@ -897,8 +905,10 @@ func _slam(e: Unit) -> void:
 func press(pos: Vector2) -> void:
 	if phase == Phase.STAIRS:
 		_skip = true
+		nudge(pos)
 		return
 	if phase != Phase.FIGHT:
+		nudge(pos)  # at the door or between rooms: holding hurries it along
 		return
 	var best: Unit = null
 	var best_d := 26.0
@@ -913,7 +923,17 @@ func press(pos: Vector2) -> void:
 		ArcadeFx.burst(_arena, pos, Palette.MUTED, 4, 30.0, 0.25)
 		return
 	if _smite_cd > 0.0:
+		# Still charging from the last bolt: this one is kept, and the spot sparks now.
+		_smite_next = best
+		_focus = best
+		ArcadeFx.burst(_arena, best.at() + Vector2(0, -16), Color("ffe9a8"), 5, 50.0, 0.2, 0.0)
+		ArcadeFx.sfx(ArcadeFx.SND_TICK, 1.3, -12.0)
 		return
+	_smite(best)
+
+
+## The leader's lightning on one enemy.
+func _smite(best: Unit) -> void:
 	_smite_cd = float(d.party.smite.cooldown)
 	_focus = best
 	var at := best.at()
@@ -927,7 +947,12 @@ func press(pos: Vector2) -> void:
 
 
 func _throw_bomb() -> void:
-	if phase != Phase.FIGHT or _bomb == null or not _bomb.visible:
+	if _bomb == null or not _bomb.visible:
+		return
+	if phase != Phase.FIGHT or not playing:
+		# Nothing to throw it at yet: it rattles and waits for the next room.
+		ArcadeFx.sfx(ArcadeFx.SND_CLICK, 0.7, -8.0)
+		ArcadeFx.pop(_bomb, 0.3, 0.3)
 		return
 	var spec: Dictionary = d.party.bomb
 	var radius := float(spec.radius)

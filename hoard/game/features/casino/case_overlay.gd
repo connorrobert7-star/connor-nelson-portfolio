@@ -448,13 +448,17 @@ func _press(at: Vector2) -> void:
 					_hold = 0.0
 					CasinoFx.loud(self, SND_HEART, 1.0, -6.0)
 					return
-			if not _cabinet.get_rect().has_point(at) or at.y < 52:
-				_back_out()
+			if (not _cabinet.get_rect().has_point(at) or at.y < 52) and _t >= 0.35:
+				_back_out()  # (sooner than that, it's the tail of the double tap that opened it)
+			else:
+				Sfx.ui("tap")  # on the cabinet but not a slot: a soft click all the same
 		Phase.REEL:
+			Sfx.ui("tap")
 			if _reel_time >= SKIP_AFTER and _s < _skip_s():
 				_ff = true
 		_:
 			_tapped = true
+			Sfx.ui("tap")
 
 
 func _release() -> void:

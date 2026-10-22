@@ -42,7 +42,8 @@ func _process(delta: float) -> void:
 
 
 func _gui_input(event: InputEvent) -> void:
-	if (event is InputEventMouseButton or event is InputEventScreenTouch) and event.is_pressed():
+	# One touch on a phone is one tap (Level._is_tap skips the copy Godot makes of it).
+	if Level._is_tap(event):
 		accept_event()
 		tapped.emit()
 

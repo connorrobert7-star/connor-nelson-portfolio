@@ -43,6 +43,8 @@ var _held: Array[Array] = []  # toasts waiting for the overlays to close: [text,
 var _day_button: Button
 var _waking: TextureRect
 var _hud_tween: Tween
+var _travelling := false
+var _next_trip: Array = []  # [level_id, spawn] asked for mid-trip
 
 
 func _ready() -> void:
@@ -85,9 +87,18 @@ func _ready() -> void:
 # --- places ------------------------------------------------------------------
 
 func go_to(level_id: String, spawn: Vector2i) -> void:
+	if _travelling:
+		# One trip at a time: a second ask (a double tap, a door in the new place) lands
+		# after the first, never as a second place in the world.
+		_next_trip = [level_id, spawn]
+		return
+	_travelling = true
 	Game.busy = true
 	var iris := fade.material as ShaderMaterial
-	if level:
+	var from_id := ""
+	if level and is_instance_valid(level):
+		from_id = level.place_id
+		level.set_process_unhandled_input(false)
 		# Close the iris on the wizard at the door.
 		iris.set_shader_parameter("center", _leader_screen())
 		Sfx.play_path("res://art/packs/kenney-interface-sounds/Audio/maximize_006.ogg", 0.8, -16.0, "UI")
@@ -96,9 +107,13 @@ func go_to(level_id: String, spawn: Vector2i) -> void:
 		await out.finished
 		Sfx.play("door")
 		level.queue_free()
+	var back_to := ""
 	if spawn == Level.RETURN:
 		spawn = village_return
+		back_to = from_id
 	level = make_level(level_id)
+	level.place_id = level_id
+	level.came_from = back_to
 	level.setup(self, spawn)
 	level.travel.connect(func(id: String, at: Vector2i) -> void: go_to.call_deferred(id, at))
 	world.add_child(level)
@@ -116,7 +131,14 @@ func go_to(level_id: String, spawn: Vector2i) -> void:
 	var back := create_tween()
 	back.tween_method(func(r: float) -> void: iris.set_shader_parameter("radius", r), 0.0, IRIS_OPEN, 0.3).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	await back.finished
-	Game.busy = false
+	_travelling = false
+	if not _next_trip.is_empty():
+		var trip := _next_trip
+		_next_trip = []
+		go_to(trip[0], trip[1])
+		return
+	# Free the player, unless something the new place opened on arrival holds him.
+	Game.busy = _overlays.get_child_count() > 0 or dialogue.visible
 
 
 ## On first load, wait (iris closed, candle flickering) until /state is in.
@@ -454,7 +476,7 @@ func _on_failed(message: String) -> void:
 
 
 func _on_panel_input(event: InputEvent) -> void:
-	if (event is InputEventMouseButton or event is InputEventScreenTouch) and event.is_pressed():
+	if Level._is_tap(event):
 		panel.visible = false
 
 

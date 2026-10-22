@@ -11,6 +11,9 @@ const FUSE_Y := 7.0
 const FUSE_X0 := 46.0
 const FUSE_X1 := 434.0
 const HAND := "res://art/packs/kenney-cursor-pixel-pack/Tilemap/tilemap_packed.png"
+## How long the tally stays up before a tap can close the game (the way-out door has faded in
+## by then, and a thumb still hammering blocks has seen what it won).
+const END_GRACE := 1.0
 
 static var _catalog_cache: Dictionary = {}
 
@@ -36,6 +39,7 @@ var _fuse_glow: Sprite2D
 var _fuse_label: Label
 var _flames: Array[Sprite2D] = []
 var _end_ready := false
+var _end_at := 0  # when the tally shelf settled (ticks, ms): taps before END_GRACE only nudge
 var _coin_step := 0
 var _last_whole := -1
 var _edge: Array[ColorRect] = []
@@ -120,6 +124,8 @@ func _begin() -> void:
 	setup()
 	_build_hud()
 	await countdown()
+	if done or not is_inside_tree():
+		return  # the door was tapped during the count: the run ends with nothing
 	playing = true
 
 
@@ -191,15 +197,19 @@ func _build_hud() -> void:
 	exit.ignore_texture_size = true
 	exit.stretch_mode = TextureButton.STRETCH_SCALE
 	exit.size = Vector2(20, 20)
+	exit.pivot_offset = exit.size / 2.0  # it pops about its middle when tapped
 	exit.position = Vector2(4, 14)
 	exit.focus_mode = Control.FOCUS_NONE
 	exit.name = "Exit"
 	exit.pressed.connect(func() -> void:
 		ArcadeFx.sfx(ArcadeFx.SND_CLICK)
-		if _end_ready:
+		ArcadeFx.pop(exit, 0.3)
+		if can_leave():
 			_leave()
-		elif playing:
-			end_run()
+		elif _end_ready:
+			nudge(exit.position + exit.size / 2.0)
+		elif not done:
+			end_run()  # mid-run or still counting down: the coins so far are kept
 	)
 	hud.add_child(exit)
 
@@ -220,6 +230,8 @@ func _build_hud() -> void:
 ## 3, 2, 1, then a flash.
 func countdown() -> void:
 	for n in [3, 2, 1]:
+		if done:
+			return
 		var l := ArcadeFx.label(str(n), 64, Palette.CREAM, true, 8)
 		hud.add_child(l)
 		l.reset_size()
@@ -233,6 +245,8 @@ func countdown() -> void:
 		tw.tween_property(l, "modulate:a", 0.0, 0.1)
 		tw.tween_callback(l.queue_free)
 		await get_tree().create_timer(0.5).timeout
+	if done:
+		return
 	ArcadeFx.sfx(ArcadeFx.SND_GO, 1.2, -2.0)
 	ArcadeFx.flash(hud, Palette.CREAM, 0.35, 0.2)
 	ArcadeFx.shake(world, 2.0, 0.15)
@@ -270,6 +284,12 @@ func _draw_fuse() -> void:
 				music_player.pitch_scale = 1.0 + (10 - whole) * 0.01
 
 
+## A number from this game's row in games.json (max_ore, max_fish), 0 if it has none.
+## The server refuses a run over its limit, so a run ends when its haul is full.
+func limit(key: String) -> int:
+	return int(catalog.get("games", {}).get("games", {}).get(game_id(), {}).get(key, 0))
+
+
 ## Light the screen's edges for a moment (fever, last seconds).
 func edge_glow(color: Color, alpha := 0.6, seconds_ := 0.5) -> void:
 	for r in _edge:
@@ -295,14 +315,22 @@ func _gui_input(event: InputEvent) -> void:
 	if mb.pressed:
 		clear_hint()
 		holding = true
-		if _end_ready:
+		if can_leave():
 			_leave()
 		elif playing:
 			press(pos)
+		else:
+			nudge(pos)  # counting down or tallying: the tap still lands somewhere
 	else:
 		holding = false
 		if playing:
 			release(pos)
+
+
+## A tap the game has no use for right now still answers: a soft tick and a few motes.
+func nudge(pos: Vector2) -> void:
+	ArcadeFx.sfx(ArcadeFx.SND_TICK, randf_range(0.85, 0.95), -14.0)
+	ArcadeFx.burst(hud, pos, Palette.MUTED, 4, 30.0, 0.25, 0.0)
 
 
 ## A hand that taps at `pos` until the player taps anything. The only teaching there is.
@@ -368,6 +396,7 @@ func end_run() -> void:
 	done = true
 	playing = false
 	holding = false
+	clear_hint()
 	ArcadeFx.sfx(ArcadeFx.SND_WHISTLE, 1.0, -4.0)
 	if music_player:
 		var tw := music_player.create_tween()
@@ -380,12 +409,20 @@ func end_run() -> void:
 	await reveal(result_body)
 	await _tally()
 	Game.refresh()
+	_end_at = Time.get_ticks_msec()
 	_end_ready = true
+
+
+## The tally has been on screen long enough to be seen: a thumb still hammering blocks when
+## the fuse ran out only nudges until the way-out door has faded in.
+func can_leave() -> bool:
+	return _end_ready and Time.get_ticks_msec() - _end_at >= int(END_GRACE * 1000.0)
 
 
 func _tally() -> void:
 	# The server's word on the coins: the minimum, the cap, or a quarter once the flames are out.
-	var final := int(result_body.get("coins", coins_shown))
+	# No answer means nothing was paid, so the pouch counts down to what really landed: none.
+	var final := int(result_body.get("coins", 0))
 	var from := coins_shown
 	ArcadeFx.sfx(ArcadeFx.SND_COINS, 1.0, -6.0)
 	var tw := create_tween()

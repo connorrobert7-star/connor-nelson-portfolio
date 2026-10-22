@@ -239,13 +239,14 @@ func _ready() -> void:
 	for y in [-2, -1]:
 		for x in W:
 			set_tile(Vector2i(x, y), legend["T"])
-	_cam_pos = _cam_target(Vector2.ZERO)
-	camera.position = _cam_pos.round()
 	# Coming back through a door in the wall (the gate) would land outside it: step inside.
 	var tile := Vector2i((leader.position / TILE).floor())
-	while tile.y > BANK_ROW and (_blocked.has(tile) or _open.has(tile) or tile.y > ROAD_ROW):
-		tile.y -= 1
-	leader.position = feet_at(tile)
+	if _blocked.has(tile) or _open.has(tile) or tile.y > ROAD_ROW:
+		while tile.y > BANK_ROW and (_blocked.has(tile) or _open.has(tile) or tile.y > ROAD_ROW):
+			tile.y -= 1
+		leader.position = Vector2(leader.position.x, feet_at(tile).y)
+	_cam_pos = _cam_target(Vector2.ZERO)
+	camera.position = _cam_pos.round()
 	# Pop out of the door with a little hop.
 	leader.scale = Vector2(1.25, 0.75)
 	var tw := leader.create_tween()
@@ -756,7 +757,12 @@ func _plots() -> void:
 		if f:
 			f.build_village(self, plot.rect)
 		if level_id != "":
-			add_door(plot.door, level_id, Room.ENTRANCE)
+			# A tap on the building walks in; the gate's plot starts on the open road, so its
+			# facade is only the gatehouse under the wall.
+			var facade: Rect2i = plot.rect
+			if plot_id == "gate":
+				facade = Rect2i(plot.rect.position.x, ROAD_ROW + 1, plot.rect.size.x, plot.rect.end.y - ROAD_ROW - 1)
+			add_door(plot.door, level_id, Room.ENTRANCE, facade)
 			if plot.get("wide", false):
 				add_door(plot.door + Vector2i.RIGHT, level_id, Room.ENTRANCE)
 			_open_plots[plot_id] = level_id
@@ -897,7 +903,7 @@ func _tavern_and_shop() -> void:
 	_bleed(tf, "freesound-cc0-picks/473790_Monk_Chanting.mp3", -26)
 	_chatter(tf, ["ninja-adventure/Audio/Sounds/Voice/Voice%d.ogg", 10], -22, Vector2(0.9, 2.6))
 	block(TAVERN)
-	add_door(TAVERN_DOOR, "tavern", Room.ENTRANCE)
+	add_door(TAVERN_DOOR, "tavern", Room.ENTRANCE, TAVERN)
 	var sf := Vector2((SHOP.position.x + SHOP.size.x / 2.0) * TILE, SHOP.end.y * TILE)
 	VillageArt.sprite(props, VillageArt.tiles(VillageArt.HOUSES, 16, 0, 3, 3), sf + Vector2(0, 1))
 	_buzz(VillageArt.neon(props, "Sign 1/Sign 1 Glow - OPEN.png", Vector2i(31, 24), 72, sf + Vector2(0, -52), 12, 18), Color(1.0, 0.85, 0.4), 1.0)
@@ -906,7 +912,8 @@ func _tavern_and_shop() -> void:
 	_chatter(sf, ["kenney-interface-sounds/Audio/tick_00%d.ogg", 1], -26, Vector2(0.95, 1.05), [1, 2, 4])
 	_lamp("shop", sf + Vector2(32, 14), Color(0.4, 1.0, 0.8))
 	block(SHOP)
-	add_door(SHOP_DOOR, "shop", Room.ENTRANCE)
+	# The OPEN sign over the roof is part of the shop for a tap: it walks him in too.
+	add_door(SHOP_DOOR, "shop", Room.ENTRANCE, SHOP.grow_side(SIDE_TOP, 1))
 
 
 ## The square: a stone slab with lamps on the corners and the ledger stone in the middle.

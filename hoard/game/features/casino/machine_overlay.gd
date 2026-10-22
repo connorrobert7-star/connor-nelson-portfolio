@@ -320,11 +320,17 @@ func _gui_input(event: InputEvent) -> void:
 				if m.get_rect().has_point(at):
 					if id != dest:
 						_select(id, true)
+					else:
+						m.poke()
+						Sfx.play_path(SND_SELECT, 1.2, -14.0)
 					return
-			if not _machine_rect().has_point(at):
-				back_out()
+			if not _machine_rect().has_point(at) and _t >= 0.35:
+				back_out()  # (sooner than that, it's the tail of the double tap that opened it)
+			else:
+				Sfx.ui("tap")  # on the machine but on no part of it: a soft click all the same
 		_:
 			_tapped = true
+			Sfx.ui("tap")  # it hurries what's playing; the click says the tap landed
 
 
 func _unhandled_key_input(event: InputEvent) -> void:

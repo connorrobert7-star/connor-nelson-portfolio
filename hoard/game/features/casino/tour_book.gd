@@ -88,6 +88,33 @@ func _book(kit: TourKit) -> void:
 	await kit.tap_control(book.tab_control(0))
 	await kit.until(func() -> bool: return book.moment == "look", 3.0)
 	await kit.shot("book_04_worn")
+	# Up close on the stage: a worn charm is big enough to read (a candle keeps its flame).
+	var charm := book.piece_on_leader("charm")
+	if charm and charm.get_child_count() > 1:
+		var art := (charm.get_child(1) as Sprite2D).texture
+		kit.check(maxi(art.get_width(), art.get_height()) >= 6, "the worn charm is big enough to read (%dx%d)" % [art.get_width(), art.get_height()])
+	var view := kit.get_viewport().get_texture().get_image()
+	var st := kit.get_viewport().get_screen_transform()
+	var stage := Rect2i(Rect2(st * BookOverlay.STAGE.position, st.basis_xform(BookOverlay.STAGE.size)))
+	view.get_region(stage.intersection(Rect2i(Vector2i.ZERO, view.get_size()))).save_png("%s/book_04c_stage_closeup.png" % kit.out)
+
+	# A second tap on a worn piece takes it off (it flies home to its pocket); a tap puts it
+	# back on.
+	var hat := str(Game.state.casino.equipped.get("hat", ""))
+	if kit.check(hat != "", "a hat is worn to take off"):
+		await _go_to_page_of(kit, book, hat)
+		await kit.tap_control(book.cell_control(hat))
+		await kit.until(func() -> bool: return book.moment == "look" and not Game.state.casino.equipped.has("hat"), 5.0)
+		kit.check(not Game.state.casino.equipped.has("hat"), "tapping the worn hat takes it off")
+		kit.check(book.piece_on_leader("hat") == null, "and the stage wizard has his own pointy hat back")
+		await kit.wait(0.3)
+		await kit.shot("book_04b_hat_off")
+		await kit.tap_control(book.cell_control(hat))
+		await kit.until(func() -> bool: return book.moment == "look" and str(Game.state.casino.equipped.get("hat", "")) == hat, 5.0)
+		kit.check(str(Game.state.casino.equipped.get("hat", "")) == hat, "and a tap puts it back on")
+		kit.check(book.piece_on_leader("hat") != null, "back on the stage wizard's head")
+		await kit.tap_control(book.tab_control(0))
+		await kit.until(func() -> bool: return book.moment == "look", 3.0)
 
 	# The trade-up press: open the rail, tap ten greys in, pull the lever.
 	await _trade_up(kit, book, "common")
@@ -162,7 +189,8 @@ func _trophies(kit: TourKit, book: BookOverlay) -> void:
 		return
 	var slot := str(book.items[mine].slot)
 	await _go_to_page_of(kit, book, mine)
-	await kit.tap_control(book.cell_control(mine))
+	if str(Game.state.casino.equipped.get(slot, "")) != mine:  # a tap on a worn one takes it off
+		await kit.tap_control(book.cell_control(mine))
 	await kit.until(func() -> bool: return str(Game.state.casino.equipped.get(slot, "")) == mine and book.moment == "look", 5.0)
 	kit.check(str(Game.state.casino.equipped.get(slot, "")) == mine, "tapping the %s trophy wears it" % mine)
 	kit.check(book.piece_on_leader(slot) != null, "the trophy shows on the wizard")
@@ -341,6 +369,7 @@ func _draw(kit: TourKit) -> void:
 	kit.main.open_overlay(od)
 	await kit.until(func() -> bool: return od.moment == "look", 6.0)
 	kit.check(od.moment == "look", "a seen result doesn't replay")
+	await kit.wait(0.5)  # a tap the instant it opens is read as the tail of a double tap
 	await kit.tap_screen(_screen(kit, Vector2(460, 236)))
 	await kit.until(func() -> bool: return kit.overlay() == null, 3.0)
 

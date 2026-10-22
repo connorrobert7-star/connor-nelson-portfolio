@@ -58,6 +58,7 @@ var _reel_tick := 0.0
 var _hand: Sprite2D
 var _ever_held := false
 var _catch_x := 14.0
+var _jerk := 0.0  ## a tap too early tugs the bobber up; it settles back
 
 
 func game_id() -> String:
@@ -263,6 +264,7 @@ func _build_dock() -> void:
 	_leader.position = Vector2(DOCK_END, DOCK_Y + 4)
 	_leader.z_index = 10
 	world.add_child(_leader)
+	BookOverlay.wear_on(_leader)  # dressed as the book has him
 	_omg = ArcadeFx.anim_sprite({"rect": [0, 32, 32, 32], "frames": 5, "step": 32}, 12.0, OMG)
 	_omg.position = Vector2(DOCK_END, DOCK_Y - 40)
 	_omg.visible = false
@@ -377,14 +379,18 @@ func press(pos: Vector2) -> void:
 			_cast(to)
 		Phase.WAITING:
 			# Too early: the bobber jerks and the wait starts over a little.
-			_bobber.position.y -= 3
+			_jerk = 3.0
 			_wait += 0.4
 			ArcadeFx.sfx(SND_BLOOP, 0.7, -10.0)
+			_ring(_bob_home, 6.0)
 		Phase.BITE:
 			_hook()
 		Phase.REEL:
 			_ever_held = true
 			_hand.visible = false
+		_:
+			# The line is in the air or coming back in: the tap still answers.
+			nudge(pos)
 
 
 func _cast(to: Vector2) -> void:
@@ -509,7 +515,8 @@ func tick(delta: float) -> void:
 				dip = 2.0
 				ArcadeFx.sfx(SND_BLOOP, randf_range(0.9, 1.2), -12.0)
 				_ring(_bob_home, 8.0)
-			_bobber.position = _bob_home + Vector2(0, sin(_clock * 3.0) * 1.0 + dip)
+			_jerk = move_toward(_jerk, 0.0, delta * 12.0)
+			_bobber.position = _bob_home + Vector2(0, sin(_clock * 3.0) * 1.0 + dip - _jerk)
 			if _wait <= 0.0:
 				_bite()
 		Phase.BITE:
@@ -640,6 +647,13 @@ func _land() -> void:
 	)
 	ArcadeFx.float_text(world, from + Vector2(0, -16), "+%d" % value, ArcadeFx.BRASS, 16)
 	earn(value, from)
+	var cap := limit("max_fish")
+	if cap > 0 and caught.size() >= cap:
+		# The creel is full: one more would not count, so the whistle goes once it lands.
+		await get_tree().create_timer(0.8).timeout
+		if is_inside_tree():
+			end_run()
+		return
 	_reel_in(0.8)
 
 

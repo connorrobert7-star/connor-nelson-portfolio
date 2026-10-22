@@ -64,19 +64,30 @@ const WIZARD := PACKS + "0x72-dungeontileset-ii/0x72_DungeonTilesetII_v1.7/0x72_
 const WIZARD_IDLE := Rect2(128, 164, 16, 28)
 const FIG_SCALE := 3.0
 
-# Where each worn piece sits (1x, feet at 0,0), how many pixels wide it is, and its glow.
-# The aura goes behind the body. WORLD is the walking leader; STAGE the wizard in the book.
+# How the worn pieces fit the wizard, in his own pixels (the stage's figure is the same
+# wizard scaled 3x, so the numbers match). Where they sit comes from his frames
+# (Leader.POSE): the hat on his brim line, the charm at his belt on the side he faces, the
+# cloak as his robe's colors with a cape edge behind, the aura as light at his feet.
+# `hat` and `charm` are target sizes in pixels; `at` is where a piece flies to on the stage
+# when it's put on. WORLD is the walking leader; STAGE the wizard in the book.
 const WORLD_LOOK := {
-	"aura": {"at": Vector2(0, -11), "px": 28.0, "glow": 28.0, "back": true},
-	"cloak": {"at": Vector2(0, -4), "px": 10.0, "glow": 9.0},
-	"hat": {"at": Vector2(1, -17), "px": 13.0, "glow": 11.0},
-	"charm": {"at": Vector2(12, -10), "px": 11.0, "glow": 10.0},
+	"aura": {"glow": 11.0, "motes": 7, "trail": true},
+	"cloak": {},
+	"hat": {"px": 12},
+	"charm": {"px": 8},
+}
+## The wizard inside the arcade games and the night scene: as in the world, minus the trail.
+const GAME_LOOK := {
+	"aura": {"glow": 11.0, "motes": 7, "trail": false},
+	"cloak": {},
+	"hat": {"px": 12},
+	"charm": {"px": 8},
 }
 const STAGE_LOOK := {
-	"aura": {"at": Vector2(1, -9), "px": 24.0, "glow": 16.0, "back": true},
-	"cloak": {"at": Vector2(-3, -7), "px": 14.0, "glow": 8.0, "back": true},
-	"hat": {"at": Vector2(1, -16), "px": 12.0, "glow": 8.0},
-	"charm": {"at": Vector2(-10, -14), "px": 7.0, "glow": 6.0},
+	"aura": {"glow": 11.0, "motes": 7, "trail": false, "at": Vector2(0, -4)},
+	"cloak": {"at": Vector2(-3, -6)},
+	"hat": {"px": 12, "at": Vector2(0, -15)},
+	"charm": {"px": 8, "at": Vector2(5, -5)},
 	"follower_skin": {"at": Vector2(13, -4), "px": 9.0, "glow": 7.0},
 }
 
@@ -144,6 +155,9 @@ void fragment() {
 # Plain data only: Godot keeps static objects alive past its exit check.
 static var _catalog: Dictionary = {}
 static var _sets: Array = []
+static var _sheet_images: Dictionary = {}  # icon sheet path -> Image, read back once a session
+static var _cuts: Dictionary = {}  # "sheet|rect" -> the icon cut to its opaque pixels (or null)
+static var _worn_art: Dictionary = {}  # "slot|item|px" -> what a worn piece draws
 
 ## Where the book is, for the tour and anyone listening: open, look, flip, equip, feed,
 ## pull, stamp, reveal, landed, closed.
@@ -161,6 +175,9 @@ var traded := 0
 var last_trade: Dictionary = {}
 
 var _changed := false
+## A tap that would close the book this soon after it opened is the tail of the tap that
+## opened it (a double tap on the stand): it rustles a page instead.
+const OPEN_GRACE := 0.35
 var _root := Control.new()
 var _bookart: BookArt
 var _spreads: Array[Control] = []
@@ -417,6 +434,8 @@ func _build_stage() -> void:
 		_fig_frames.append(a)
 	_fig_sprite.texture = _fig_frames[0]
 	_fig_sprite.offset = Vector2(0, -WIZARD_IDLE.size.y / 2.0)
+	_fig_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	_fig_sprite.material = Leader.wear_material()
 	_figure.add_child(_fig_sprite)
 	_figure.add_child(_fig_front)
 
@@ -560,20 +579,24 @@ func _flip_to(index: int) -> void:
 
 
 func _dress_figure() -> void:
-	_fig_pieces = BookOverlay.dress_pieces(_fig_back, _fig_front, equipped, items, STAGE_LOOK)
+	_fig_pieces = BookOverlay.dress_pieces(_fig_back, _fig_front, equipped, items, STAGE_LOOK, _fig_sprite)
+	_pose_figure()
 	_refresh_worn()
 
 
 func _process(delta: float) -> void:
 	_fig_t += delta
-	if not _fig_frames.is_empty():
-		_fig_sprite.texture = _fig_frames[int(_fig_t * 7.0) % _fig_frames.size()]
-	var charm := piece_on_leader("charm")
-	if charm:
-		charm.position.y = STAGE_LOOK.charm.at.y + roundf(sin(_fig_t * 2.2) * 1.0)
-	var aura := piece_on_leader("aura")
-	if aura and aura.has_node("Turn"):
-		(aura.get_node("Turn") as Node2D).rotation = _fig_t * 0.8
+	_pose_figure()
+
+
+## The stage wizard's idle frame, and what he wears following it.
+func _pose_figure() -> void:
+	if _fig_frames.is_empty():
+		return
+	var i := int(_fig_t * 7.0) % _fig_frames.size()
+	_fig_sprite.texture = _fig_frames[i]
+	Leader.pose_material(_fig_sprite.material as ShaderMaterial, "idle", i)
+	BookOverlay.pose_pieces(_fig_pieces, "idle", i, false, _fig_t)
 
 
 # --- input ---------------------------------------------------------------------------
@@ -594,7 +617,10 @@ func _unhandled_key_input(event: InputEvent) -> void:
 
 
 func _tap(at: Vector2) -> void:
-	if mode == Mode.BUSY:
+	if mode == Mode.BUSY or moment == "open":
+		# Still opening, flipping or pressing: the pages rustle, and nothing closes under
+		# a quick second tap.
+		BookOverlay.sound(SND_FLIP % 2, 1.5, -20.0)
 		return
 	if items.is_empty():
 		_close()
@@ -622,7 +648,8 @@ func _tap(at: Vector2) -> void:
 	if STAGE.has_point(at):
 		_hop()
 		return
-	if BOOK.has_point(at):
+	if BOOK.has_point(at) or _fig_t < OPEN_GRACE:
+		# On the book, or the second half of the double tap that opened it: a page rustles.
 		BookOverlay.sound(SND_FLIP % 2, 1.4, -18.0)
 		return
 	_close()
@@ -637,9 +664,7 @@ func _tap_cell(c: Cell) -> void:
 		BookOverlay.sound(SND_THUD % (randi() % 3), 1.2, -12.0)
 		return
 	if equipped.get(str(c.item.slot), "") == str(c.item.id):
-		c.wiggle()
-		_name_at(c)
-		BookOverlay.sound(SND_CLOTH % (randi() % 4 + 1), 1.2, -10.0)
+		_unequip(c)  # tapped again: he takes it off
 		return
 	_equip(c)
 
@@ -681,6 +706,36 @@ func _equip(c: Cell) -> void:
 	BookOverlay.sound(SND_CLOTH % (randi() % 4 + 1), 1.0, -4.0)
 	Sfx.play("pop")
 	_hop()
+	_refresh()
+	Game.refresh()
+	mode = Mode.LOOK
+	moment = "look"
+
+
+## A second tap on a worn piece: it pops off the stage wizard and flies home to its pocket.
+func _unequip(c: Cell) -> void:
+	mode = Mode.BUSY
+	moment = "unequip"
+	var slot := str(c.item.slot)
+	var id := str(c.item.id)
+	var from: Vector2 = _figure.global_position + (STAGE_LOOK.get(slot, {}).get("at", Vector2(0, -10)) as Vector2) * FIG_SCALE
+	var res: Array = await Game.call_api("POST", "/casino/unequip", {"item_id": id})
+	if res[1] != "":
+		_refuse(c.global_position + Vector2(16, -4), res[1])
+		c.shiver()
+		mode = Mode.LOOK
+		moment = "look"
+		return
+	equipped = (res[0].get("equipped", equipped) as Dictionary).duplicate()
+	_changed = true
+	BookOverlay.sound(SND_CLOTH % (randi() % 4 + 1), 0.8, -6.0)
+	_dress_figure()
+	_hop()
+	CasinoFx.burst(_fx, from, Palette.RARITY[c.tier], 8, 60.0, 0.35)
+	var fly := await _fly(_icon(id), Rect2(from - Vector2(16, 16), Vector2(32, 32)), c.get_global_rect(), 0.28, 22.0)
+	fly.queue_free()
+	c.wiggle()
+	BookOverlay.sound(SND_WHOOSH, 0.9, -14.0)
 	_refresh()
 	Game.refresh()
 	mode = Mode.LOOK
@@ -1164,44 +1219,406 @@ static func shake(c: Control, strength: float, seconds: float) -> void:
 	tw.tween_property(c, "position", Vector2.ZERO, 0.03)
 
 
-## Put the worn pieces on a figure of the leader: `back` draws behind the leader's sprite,
-## `front` over it, placed by `look` (WORLD_LOOK or STAGE_LOOK). Returns slot -> piece.
-static func dress_pieces(back: Node2D, front: Node2D, worn: Dictionary, catalog: Dictionary, look: Dictionary) -> Dictionary:
+## Put the worn pieces on a figure of the wizard: `back` draws behind his sprite, `front`
+## over it, `body` is the sprite itself (its material hides his pointy hat under a worn one
+## and recolors his robe for a cloak). Sizes come from `look` (WORLD_LOOK or STAGE_LOOK);
+## pose_pieces() moves them with each frame. Returns slot -> piece.
+static func dress_pieces(back: Node2D, front: Node2D, worn: Dictionary, catalog: Dictionary, look: Dictionary, body: CanvasItem = null) -> Dictionary:
 	for n: Node in back.get_children() + front.get_children():
 		n.queue_free()
+	var mat: ShaderMaterial = body.material as ShaderMaterial if body else null
+	if mat:
+		mat.set_shader_parameter("hide_hat", false)
+		mat.set_shader_parameter("recolor", false)
 	var made: Dictionary = {}
-	for slot: String in ["aura", "cloak", "follower_skin", "hat", "charm"]:
+	# The charm goes on before the hat, so where a big charm and a helmet meet the helmet is
+	# in front.
+	for slot: String in ["aura", "cloak", "follower_skin", "charm", "hat"]:
 		var it: Dictionary = catalog.get(str(worn.get(slot, "")), {})
 		if it.is_empty() or not look.has(slot):
 			continue
 		var spec: Dictionary = look[slot]
 		var col: Color = Palette.RARITY.get(str(it.tier), Palette.CREAM)
-		var tex := icon_of(it)
-		var fit: float = float(spec.px) / tex.region.size.x
+		var cut := BookOverlay.cut_icon(it)
 		var holder := Node2D.new()
-		holder.position = spec.at
-		(back if spec.get("back", false) else front).add_child(holder)
-		if slot == "aura":
-			glow_sprite(holder, Vector2(0, float(spec.px) / 8.0), col, float(spec.glow), 0.55)
-		else:
-			glow_sprite(holder, Vector2.ZERO, col, float(spec.glow), 0.35)
-		var s := Sprite2D.new()
-		s.texture = tex
-		s.scale = Vector2(fit, fit)
-		if slot == "aura":
-			# An aura is light: its pack colors glow (additive), its dark pixels vanish, and it turns.
-			s.material = additive()
-			s.modulate = Color(1, 1, 1, 0.6)
-			s.name = "Turn"
-		holder.add_child(s)
+		holder.name = slot.to_pascal_case()
+		match slot:
+			"hat":
+				var s := Sprite2D.new()
+				s.centered = false
+				s.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+				var eyes := -1.0
+				if cut:
+					var worn_art := BookOverlay.hat_art(it, cut, float(spec.px))
+					eyes = worn_art.eyes
+					s.texture = worn_art.texture
+				else:
+					s.texture = icon_of(it)
+					s.scale = Vector2(0.75, 0.75)
+				# A mask or helmet comes down over the face, its eyes on his eyes; a hat sits
+				# on top of his head.
+				holder.set_meta("eyes", eyes)
+				holder.add_child(s)
+				front.add_child(holder)
+				if mat:
+					mat.set_shader_parameter("hide_hat", true)
+			"charm":
+				var cord := ColorRect.new()
+				cord.color = Color("2a2030")
+				cord.size = Vector2(1, 1)
+				cord.mouse_filter = Control.MOUSE_FILTER_IGNORE
+				holder.add_child(cord)
+				var s := Sprite2D.new()
+				s.centered = false
+				s.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+				if cut:
+					s.texture = BookOverlay.charm_art(it, cut, float(spec.px))
+				else:
+					s.texture = icon_of(it)
+					s.scale = Vector2(0.5, 0.5)
+				holder.add_child(s)
+				front.add_child(holder)
+			"cloak":
+				var pal := BookOverlay.palette_of(cut, col)
+				if mat:
+					mat.set_shader_parameter("recolor", true)
+					mat.set_shader_parameter("cloak_dark", pal[0])
+					mat.set_shader_parameter("cloak_mid", pal[1])
+				var cape := Cape.new()
+				cape.dark = pal[0]
+				cape.mid = pal[1]
+				cape.light = pal[2]
+				holder.add_child(cape)
+				back.add_child(holder)
+			"aura":
+				var pal := BookOverlay.palette_of(cut, col)
+				var light: Color = pal[2].lerp(col, 0.25)
+				var r: float = spec.glow
+				var floor_glow := glow_sprite(holder, Vector2.ZERO, light, r, 0.9)
+				floor_glow.scale.y *= 0.45
+				floor_glow.name = "Floor"
+				var body_glow := glow_sprite(holder, Vector2(0, -11), pal[1].lerp(light, 0.5), r * 1.2, 0.3)
+				body_glow.name = "Body"
+				var p := CPUParticles2D.new()
+				p.name = "Motes"
+				p.amount = int(spec.motes)
+				p.lifetime = 1.8
+				p.preprocess = 1.8
+				p.local_coords = not bool(spec.get("trail", false))
+				p.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
+				p.emission_rect_extents = Vector2(6, 1)
+				p.direction = Vector2.UP
+				p.spread = 18.0
+				p.gravity = Vector2(0, -3)
+				p.initial_velocity_min = 3.0
+				p.initial_velocity_max = 7.0
+				var ramp := Gradient.new()
+				ramp.offsets = PackedFloat32Array([0.0, 0.25, 1.0])
+				ramp.colors = PackedColorArray([Color(light, 0.0), Color(light, 0.9), Color(pal[1], 0.0)])
+				p.color_ramp = ramp
+				p.material = additive()
+				holder.add_child(p)
+				back.add_child(holder)
+			"follower_skin":
+				# A companion standing beside the stage wizard, not something he wears.
+				holder.position = spec.at
+				glow_sprite(holder, Vector2.ZERO, col, float(spec.glow), 0.35)
+				var s := Sprite2D.new()
+				var tex := icon_of(it)
+				s.texture = tex
+				s.scale = Vector2.ONE * float(spec.px) / tex.region.size.x
+				holder.add_child(s)
+				front.add_child(holder)
 		made[slot] = holder
 	return made
+
+
+## Move the worn pieces to this frame of the wizard (mirrored when `flip`): the hat on the
+## brim line over the head, the charm at the belt on the side he faces swinging a pixel with
+## the run, the cape edge down his back, the aura at his feet. Whole pixels only.
+static func pose_pieces(pieces: Dictionary, anim: String, index: int, flip: bool, t: float) -> void:
+	if pieces.is_empty():
+		return
+	var a := Leader.anchors(anim, index, false)
+	var hat := _piece(pieces, "hat")
+	if hat and hat.get_child_count() > 0:
+		var s := hat.get_child(0) as Sprite2D
+		var size := (s.texture.get_size() * s.scale).round()
+		var w := int(size.x)
+		var h := int(size.y)
+		# A hat's lowest row covers his top row of hair; a mask's eyes land on his eyes
+		# (rows 2 and 3 under the brim line).
+		var bottom: int = a.brim + 2
+		var eyes: float = hat.get_meta("eyes", -1.0)
+		if eyes >= 0.0:
+			bottom = a.brim + 3 + h - roundi(eyes)
+		var left := roundi(float(a.head_x) - w / 2.0)
+		if flip:
+			left = -(left + w)
+		hat.position = Vector2(0, bottom)
+		s.position = Vector2(left, -h)
+		s.flip_h = flip
+	var charm := _piece(pieces, "charm")
+	if charm and charm.get_child_count() > 1:
+		var s := charm.get_child(1) as Sprite2D
+		var size := (s.texture.get_size() * s.scale).round()
+		var w := int(size.x)
+		# Hung on a short cord from his waist (the beard's last row, just above the robe),
+		# a pixel in from his front edge, swinging back and forth as he runs; a tall one
+		# hangs from higher up so it never drags below his feet.
+		var h := int(size.y)
+		var belt: int = mini(a.neck - 1, -1 - h)
+		var hook := Leader.edge(anim, index, belt + 28, true, flip)
+		hook += 1 if flip else -1
+		var sway: int = [0, 1, 0, -1][index] if anim == "run" else 0
+		if flip:
+			sway = -sway
+		charm.position = Vector2(hook, belt)
+		var left := floori(0.5 - w / 2.0) + sway
+		s.position = Vector2(left, 1)
+		s.flip_h = flip
+	var cloak := _piece(pieces, "cloak")
+	if cloak and cloak.get_child_count() > 0:
+		var cape := cloak.get_child(0) as Cape
+		if cape.anim != anim or cape.index != index or cape.flip != flip:
+			cape.anim = anim
+			cape.index = index
+			cape.flip = flip
+			cape.queue_redraw()
+	var aura := _piece(pieces, "aura")
+	if aura:
+		aura.position = Vector2(0, -1)
+		var floor_glow := aura.get_node_or_null("Floor") as CanvasItem
+		if floor_glow:
+			floor_glow.modulate.a = 0.78 + 0.18 * sin(t * 2.0)
+
+
+static func _piece(pieces: Dictionary, slot: String) -> Node2D:
+	var p: Variant = pieces.get(slot)
+	return p if p is Node2D and is_instance_valid(p) else null
+
+
+## An item's icon cut to its opaque pixels (null when the sheet can't be read). Each sheet is
+## read back from the GPU once a session and each icon cut once (every door trip redresses
+## the leader).
+static func cut_icon(item: Dictionary) -> Image:
+	var path := str(item.get("icon", {}).get("sheet", ""))
+	if path == "":
+		return null
+	var key := "%s|%s" % [path, str(item.icon.get("rect", []))]
+	if _cuts.has(key):
+		return _cuts[key]
+	if not _sheet_images.has(path):
+		var tex := load(path) as Texture2D
+		var img: Image = tex.get_image() if tex else null
+		if img and not img.is_empty():
+			if img.is_compressed():
+				img.decompress()
+			img.convert(Image.FORMAT_RGBA8)
+		_sheet_images[path] = img
+	var sheet: Image = _sheet_images[path]
+	var cut: Image = null
+	if sheet != null and not sheet.is_empty():
+		var r: Array = item.icon.rect
+		var icon := sheet.get_region(Rect2i(int(r[0]), int(r[1]), int(r[2]), int(r[3])))
+		var used := icon.get_used_rect()
+		if used.has_area():
+			cut = icon.get_region(used)
+	_cuts[key] = cut
+	return cut
+
+
+## A worn hat's art and, for a mask or helmet, its eye row: {texture, eyes} (eyes -1 for a
+## hat). Made once per piece and size.
+static func hat_art(item: Dictionary, cut: Image, px: float) -> Dictionary:
+	var key := "hat|%s|%s" % [str(item.get("id", "")), px]
+	if _worn_art.has(key):
+		return _worn_art[key]
+	var eyes := BookOverlay.mask_eyes(cut)
+	var out := {}
+	if eyes >= 0.0:
+		out = BookOverlay.fit_mask(cut, eyes)
+	else:
+		out = {"image": BookOverlay.fit(cut, px, true), "eyes": -1.0}
+	out["texture"] = ImageTexture.create_from_image(out.image)
+	out.erase("image")
+	_worn_art[key] = out
+	return out
+
+
+## A hat or mask for some other head (a follower's), `head` pixels wide: {texture, eyes}.
+## A mask is cut at the jaw (fit_mask); a hat is sized to sit across the head with a pixel of
+## brim each side. Made once per piece and head width.
+static func head_art(item: Dictionary, cut: Image, head: float) -> Dictionary:
+	var key := "head|%s|%s" % [str(item.get("id", "")), head]
+	if _worn_art.has(key):
+		return _worn_art[key]
+	var eyes := BookOverlay.mask_eyes(cut)
+	var out := {}
+	if eyes >= 0.0:
+		out = BookOverlay.fit_mask(cut, eyes, head)
+	else:
+		out = {"image": BookOverlay.fit(cut, head, true), "eyes": -1.0}
+	out["texture"] = ImageTexture.create_from_image(out.image)
+	out.erase("image")
+	_worn_art[key] = out
+	return out
+
+
+## A worn charm's art (see fit_charm). Made once per piece and size.
+static func charm_art(item: Dictionary, cut: Image, px: float) -> Texture2D:
+	var key := "charm|%s|%s" % [str(item.get("id", "")), px]
+	if not _worn_art.has(key):
+		_worn_art[key] = ImageTexture.create_from_image(BookOverlay.fit_charm(cut, px))
+	return _worn_art[key]
+
+
+## A mask or helmet sized to his head, not to a hat's cap: as wide as his head give or take a
+## pixel each side, and cut off at the jaw two rows under its eyes, so his beard, his robe
+## (a cloak's colors) and his charm stay in sight. The cut row is closed with the mask's own
+## outline color. Returns {image, eyes} (the eyes' row in the image).
+static func fit_mask(cut: Image, eyes: float, head := 0.0) -> Dictionary:
+	var w := float(cut.get_width())
+	var h := float(cut.get_height())
+	if head <= 0.0:
+		head = float(Leader.HEAD_COLS.y - Leader.HEAD_COLS.x + 1)
+	var k := 1.0 / 3.0
+	for f: float in [1.0, 0.75, 0.5]:
+		if w * f <= head + 2.0:
+			k = f
+			break
+	var img := cut.duplicate() as Image
+	if k < 1.0:
+		img.resize(maxi(1, roundi(w * k)), maxi(1, roundi(h * k)), Image.INTERPOLATE_NEAREST)
+	var eye_row := roundi(eyes * k)
+	img = img.get_region(Rect2i(0, 0, img.get_width(), mini(img.get_height(), eye_row + 3)))
+	var dark := Color.WHITE
+	for y in img.get_height():
+		for x in img.get_width():
+			var c := img.get_pixel(x, y)
+			if c.a >= 0.5 and c.get_luminance() < dark.get_luminance():
+				dark = c
+	var last := img.get_height() - 1
+	for x in img.get_width():
+		if img.get_pixel(x, last).a >= 0.5:
+			img.set_pixel(x, last, dark)
+	return {"image": img, "eyes": float(eye_row)}
+
+
+## A charm at a size that reads on him: a tall thin one (a candle, a key, a lantern) keeps
+## its top at full size (the flame, the bow); anything else the biggest of 1x, 3/4 or 1/2
+## that fits `target` on its longer side, give or take one. Never smaller than half.
+static func fit_charm(cut: Image, target: float) -> Image:
+	var w := cut.get_width()
+	var h := cut.get_height()
+	if h >= w * 1.8 and w <= 8 and h > target:
+		var top := cut.get_region(Rect2i(0, 0, w, int(target)))
+		var dark := Color.WHITE
+		for y in top.get_height():
+			for x in w:
+				var c := top.get_pixel(x, y)
+				if c.a >= 0.5 and c.get_luminance() < dark.get_luminance():
+					dark = c
+		for x in w:
+			if top.get_pixel(x, top.get_height() - 1).a >= 0.5:
+				top.set_pixel(x, top.get_height() - 1, dark)
+		return top
+	var k := 0.5
+	for f: float in [1.0, 0.75]:
+		if maxf(w, h) * f <= target + 1.0:
+			k = f
+			break
+	var out := cut.duplicate() as Image
+	if k < 1.0:
+		out.resize(maxi(1, roundi(w * k)), maxi(1, roundi(h * k)), Image.INTERPOLATE_NEAREST)
+	return out
+
+
+## The cut icon at a whole-pixel-friendly size (1x, 3/4, 1/2 or 1/3, nearest): the biggest
+## that fits `target` pixels, with two to spare across for a hat's brim (`hat`), or on its
+## longer side give or take one for a charm.
+static func fit(img: Image, target: float, hat: bool) -> Image:
+	var w := float(img.get_width())
+	var h := float(img.get_height())
+	var best := 1.0 / 3.0
+	for k: float in [1.0, 0.75, 0.5, 1.0 / 3.0]:
+		var ok := (w * k <= target + 2.0 and h * k <= target) if hat else maxf(w, h) * k <= target + 1.0
+		if ok:
+			best = k
+			break
+	var out := img.duplicate() as Image
+	if best < 1.0:
+		out.resize(maxi(1, roundi(w * best)), maxi(1, roundi(h * best)), Image.INTERPOLATE_NEAREST)
+	return out
+
+
+## Where a mask's eyes are (their middle row in `img`), or -1 for a hat. A mask or helmet
+## has a pair of dark sockets inside its outline, mirrored left and right, around half way
+## down; a hat's dark band runs to one side, and a crown's gaps sit high.
+static func mask_eyes(img: Image) -> float:
+	var w := img.get_width()
+	var h := img.get_height()
+	var left := 0
+	var right := 0
+	var rows := 0.0
+	for y in range(1, h - 1):
+		for x in range(1, w - 1):
+			var c := img.get_pixel(x, y)
+			if c.a < 0.5 or c.get_luminance() >= 0.16:
+				continue
+			if img.get_pixel(x - 1, y).a < 0.5 or img.get_pixel(x + 1, y).a < 0.5 \
+					or img.get_pixel(x, y - 1).a < 0.5 or img.get_pixel(x, y + 1).a < 0.5:
+				continue
+			if x < w / 2.0 - 0.5:
+				left += 1
+			else:
+				right += 1
+			rows += y
+	var n := left + right
+	if n < 12 or absi(left - right) > 2:
+		return -1.0
+	var mid := rows / n
+	return mid if mid >= h * 0.45 else -1.0
+
+
+## The darkest, middle and light colors of an icon (outline black left out), by how many
+## pixels wear them; `fallback` shades the three when there's no icon to read.
+static func palette_of(img: Image, fallback: Color) -> Array[Color]:
+	var counts: Dictionary = {}
+	var total := 0
+	if img:
+		for y in img.get_height():
+			for x in img.get_width():
+				var c := img.get_pixel(x, y)
+				if c.a < 0.5 or c.get_luminance() < 0.1:
+					continue
+				var key := Color(c.r, c.g, c.b).to_html(false)
+				counts[key] = int(counts.get(key, 0)) + 1
+				total += 1
+	if total == 0:
+		return [fallback.darkened(0.45), fallback.darkened(0.15), fallback.lightened(0.25)]
+	var cols: Array = []
+	for key: String in counts:
+		cols.append(Color(key))
+	cols.sort_custom(func(p: Color, q: Color) -> bool: return p.get_luminance() < q.get_luminance())
+	var out: Array[Color] = []
+	for at: float in [0.12, 0.5, 0.9]:
+		var run := 0
+		for c: Color in cols:
+			run += int(counts[c.to_html(false)])
+			if run >= at * total:
+				out.append(c)
+				break
+	while out.size() < 3:
+		out.append(cols[-1])
+	return out
 
 
 ## The one platform hook: the leader calls this from its _ready so what the book put on
 ## shows in the world too.
 static func dress_leader(leader: Node2D, sprite: Node2D) -> void:
 	var w := Worn.new()
+	w.leader = leader as Leader
 	leader.add_child(w)
 	leader.move_child(w, sprite.get_index())
 	leader.add_child(w.front)
@@ -1210,9 +1627,11 @@ static func dress_leader(leader: Node2D, sprite: Node2D) -> void:
 # --- the leader in the world -----------------------------------------------------------
 
 ## Worn pieces on the walking leader. It is the "back" layer (under the sprite); `front` is
-## added after the sprite by dress_leader. Redresses whenever /state changes.
+## added after the sprite by dress_leader. Redresses whenever /state changes, and follows
+## his frame and his facing every frame.
 class Worn extends Node2D:
 	var front := Node2D.new()
+	var leader: Leader
 	var _last: Dictionary = {}
 	var _t := 0.0
 	var _pieces: Dictionary = {}
@@ -1229,16 +1648,107 @@ class Worn extends Node2D:
 		var catalog: Dictionary = await BookOverlay.load_catalog()
 		if not is_inside_tree():
 			return
-		_pieces = BookOverlay.dress_pieces(self, front, _last, catalog, BookOverlay.WORLD_LOOK)
+		_pieces = BookOverlay.dress_pieces(self, front, _last, catalog, BookOverlay.WORLD_LOOK, leader.body if leader else null)
+		_pose()
 
 	func _process(delta: float) -> void:
 		_t += delta
-		var charm: Variant = _pieces.get("charm")
-		if charm is Node2D and is_instance_valid(charm):
-			(charm as Node2D).position.y = BookOverlay.WORLD_LOOK.charm.at.y + roundf(sin(_t * 2.2) * 1.5)
-		var aura: Variant = _pieces.get("aura")
-		if aura is Node2D and is_instance_valid(aura) and (aura as Node2D).has_node("Turn"):
-			((aura as Node2D).get_node("Turn") as Node2D).rotation = _t * 0.8
+		_pose()
+
+	# The leader turns his frame in its physics step; the pieces follow in the same step (a
+	# child's physics runs right after its parent's), so no frame shows them a step behind.
+	func _physics_process(_delta: float) -> void:
+		_pose()
+
+	func _pose() -> void:
+		if leader and not _pieces.is_empty():
+			BookOverlay.pose_pieces(_pieces, leader.pose_anim, leader.pose_frame, leader.body.flip_h, _t)
+
+
+## Dress a wizard sprite cut from the sheet wherever else he shows up (the mine, the pond,
+## the dungeon's party, the night scene): what the book put on goes on as the sprite's own
+## children (the cape and the aura behind it), so the pieces share its scale, squash, flash
+## and facing, and follow its frame. The sprite's feet sit at its origin (offset (0, -14)).
+static func wear_on(sprite: Node2D, look: Dictionary = GAME_LOOK) -> WornOn:
+	var w := WornOn.new()
+	w.body = sprite
+	w.look = look
+	sprite.add_child(w)
+	return w
+
+
+## What he wears on a wizard sprite outside the world (see wear_on). It is the front layer;
+## the back one is a sibling drawn behind the sprite.
+class WornOn extends Node2D:
+	var body: Node2D  # a Sprite2D cut by region, or an AnimatedSprite2D of the idle strip
+	var look: Dictionary = {}
+	var _back := Node2D.new()
+	var _last: Variant = null
+	var _t := 0.0
+	var _pieces: Dictionary = {}
+
+	func _ready() -> void:
+		_back.show_behind_parent = true
+		body.add_child(_back)
+		body.move_child(_back, 0)
+		if body.material == null:
+			body.material = Leader.wear_material()
+		Game.state_changed.connect(_redress)
+		_redress()
+
+	func _redress() -> void:
+		var eq: Dictionary = Game.state.get("casino", {}).get("equipped", {})
+		if _last is Dictionary and eq == _last:
+			return
+		_last = eq.duplicate()
+		var catalog: Dictionary = await BookOverlay.load_catalog()
+		if not is_inside_tree():
+			return
+		_pieces = BookOverlay.dress_pieces(_back, self, _last, catalog, look, body as CanvasItem)
+		_pose()
+
+	func _process(delta: float) -> void:
+		_t += delta
+		_pose()
+
+	func _pose() -> void:
+		var anim := "idle"
+		var index := 0
+		var flip := false
+		if body is AnimatedSprite2D:
+			index = (body as AnimatedSprite2D).frame % 4
+			flip = (body as AnimatedSprite2D).flip_h
+		elif body is Sprite2D:
+			var at := (body as Sprite2D).region_rect.position
+			if at.x >= Leader.RUN.x:
+				anim = "run"
+			index = clampi(int((at.x - (Leader.RUN.x if anim == "run" else Leader.IDLE.x)) / Leader.FRAME.x), 0, 3)
+			flip = (body as Sprite2D).flip_h
+		Leader.pose_material(body.material as ShaderMaterial, anim, index)
+		BookOverlay.pose_pieces(_pieces, anim, index, flip, _t)
+
+
+## A cloak's edge down the wizard's back: a pixel of the cloak and its dark rim beside his
+## robe, from the neck to the hem, on whichever side is behind him.
+class Cape extends Node2D:
+	var anim := "idle"
+	var index := 0
+	var flip := false
+	var dark := Color.BLACK
+	var mid := Color.GRAY
+	var light := Color.WHITE
+
+	func _draw() -> void:
+		var neck: int = Leader.POSE[anim][index].neck
+		var out := 1 if flip else -1
+		for row in range(neck, Leader.HEM_ROW + 2):
+			var x := Leader.edge(anim, index, row, false, flip)
+			var y := row - 28
+			if row == neck or row == Leader.HEM_ROW + 1:
+				draw_rect(Rect2(x + out, y, 1, 1), Color("222222"))
+				continue
+			draw_rect(Rect2(x + out, y, 1, 1), light if row == neck + 1 else mid)
+			draw_rect(Rect2(x + out * 2, y, 1, 1), Color("222222") if row > neck + 1 else dark)
 
 
 # --- pieces of the book ------------------------------------------------------------------

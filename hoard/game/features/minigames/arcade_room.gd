@@ -426,6 +426,13 @@ func _process(delta: float) -> void:
 		st.queue_redraw()
 
 
+## A finger on a phone sends a touch and the click Godot makes from it: answer it once.
+func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventScreenTouch and Input.is_emulating_mouse_from_touch():
+		return
+	super._unhandled_input(event)
+
+
 func _play(i: int) -> void:
 	if Game.busy:
 		return

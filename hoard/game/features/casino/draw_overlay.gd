@@ -294,7 +294,7 @@ func _won(t: BoardTicket) -> void:
 
 func _wait(seconds: float) -> void:
 	var held := 0.0
-	while held < seconds:
+	while held < seconds and is_inside_tree():
 		await get_tree().process_frame
 		held += get_process_delta_time() * (3.0 if _hurry else 1.0)
 
@@ -319,6 +319,12 @@ func _unhandled_key_input(event: InputEvent) -> void:
 func _tap(at: Vector2) -> void:
 	if _busy:
 		_hurry = true
+		_drum.kick(0.6)
+		return
+	if moment == "open":
+		# Still laying the room out: a quick second tap turns the drum, it never closes.
+		_drum.kick(0.6)
+		BookOverlay.sound(SND_THUD % (randi() % 3), 1.4, -16.0)
 		return
 	if at.distance_to(HUB) <= RADIUS + 6 or Rect2(PRIEST_FEET - Vector2(16, 34), Vector2(32, 36)).has_point(at):
 		_spin()
@@ -333,7 +339,8 @@ func _tap(at: Vector2) -> void:
 			_line.swing(i)
 			BookOverlay.sound(SND_PAPER % (i % 4 + 1), 1.3, -10.0)
 			return
-	if BOARD.has_point(at) or DAIS.grow(4).has_point(at) or SLATE.has_point(at):
+	if BOARD.has_point(at) or DAIS.grow(4).has_point(at) or SLATE.has_point(at) or _t < 0.35:
+		# (So soon after opening, it's the tail of the double tap on the drum: a thud, no close.)
 		BookOverlay.sound(SND_THUD % (randi() % 3), 1.4, -16.0)
 		return
 	_close()

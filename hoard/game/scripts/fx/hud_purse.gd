@@ -57,13 +57,13 @@ func _gui_input(event: InputEvent) -> void:
 			_cal_hover = h
 			Sfx.ui("hover")
 		return
-	var pos := Vector2.INF
-	if event is InputEventMouseButton and (event as InputEventMouseButton).pressed and (event as InputEventMouseButton).button_index == MOUSE_BUTTON_LEFT:
-		pos = (event as InputEventMouseButton).position
-	elif event is InputEventScreenTouch and (event as InputEventScreenTouch).pressed:
-		pos = (event as InputEventScreenTouch).position
-	if pos == Vector2.INF:
+	# A finger arrives twice on a phone (the touch and the click Godot makes from it):
+	# Level._is_tap answers one of them, so one touch turns one week.
+	if not Level._is_tap(event):
+		if event is InputEventScreenTouch:
+			accept_event()
 		return
+	var pos: Vector2 = (event as InputEventMouseButton).position if event is InputEventMouseButton else (event as InputEventScreenTouch).position
 	accept_event()
 	flip_week(1 if pos.x < _cal_rect.get_center().x else -1)
 

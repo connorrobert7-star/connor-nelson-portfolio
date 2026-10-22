@@ -15,6 +15,66 @@ const IDLE_FPS := 6.0
 const RUN_FPS := 10.0
 const STEPS := "res://art/packs/kenney-impact-sounds/Audio/footstep_%s_%03d.ogg"
 
+## Where worn things attach on each frame, measured from the sheet (rows and columns of the
+## 16x28 frame): `brim` is the line his own pointy hat sits on (everything above it is that
+## hat), `neck` the first row of robe under the beard; `left` and `right` are the outermost
+## opaque columns of rows 18..27. The head spans columns 3..13 on every frame; the robe's
+## hem is row 26.
+const POSE := {
+	"idle": [
+		{"brim": 16, "neck": 22, "left": [3, 3, 3, 3, 4, 4, 4, 4, 3, 3], "right": [13, 13, 14, 14, 14, 13, 13, 13, 13, 13]},
+		{"brim": 16, "neck": 23, "left": [3, 3, 3, 3, 3, 4, 4, 3, 2, 2], "right": [14, 13, 13, 14, 14, 14, 13, 13, 13, 13]},
+		{"brim": 18, "neck": 24, "left": [2, 3, 3, 3, 3, 3, 3, 2, 1, 1], "right": [15, 14, 13, 13, 14, 14, 14, 13, 13, 14]},
+		{"brim": 17, "neck": 23, "left": [3, 3, 3, 3, 3, 4, 4, 3, 2, 2], "right": [14, 13, 13, 14, 14, 14, 13, 13, 13, 13]},
+	],
+	"run": [
+		{"brim": 17, "neck": 23, "left": [3, 3, 3, 3, 3, 4, 3, 2, 1, 1], "right": [14, 13, 13, 14, 14, 14, 13, 13, 13, 13]},
+		{"brim": 15, "neck": 21, "left": [3, 3, 3, 4, 4, 4, 4, 3, 2, 2], "right": [13, 14, 14, 14, 13, 13, 13, 13, 12, 11]},
+		{"brim": 15, "neck": 23, "left": [3, 3, 3, 3, 3, 4, 3, 2, 1, 1], "right": [14, 13, 13, 14, 14, 14, 13, 13, 13, 13]},
+		{"brim": 17, "neck": 24, "left": [3, 3, 3, 3, 3, 3, 3, 1, 0, 0], "right": [14, 14, 13, 13, 14, 14, 14, 13, 13, 14]},
+	],
+}
+const HEAD_COLS := Vector2i(3, 13)
+const HEM_ROW := 26
+## The robe's two colors on the sheet (the pointy hat shares them).
+const ROBE_DARK := Color("5956bd")
+const ROBE_MID := Color("5698cc")
+## On the wizard's own sprite: a worn hat replaces his pointy one (rows down to the frame's
+## brim go clear), and a worn cloak recolors his robe below it (a palette swap, exact colors
+## only, so the beard, face and outline stay his).
+const WEAR_SHADER := """
+shader_type canvas_item;
+uniform float region_top = 164.0;
+uniform float brim_row = 16.0;
+uniform bool hide_hat = false;
+uniform bool recolor = false;
+uniform vec4 robe_dark : source_color = vec4(0.349, 0.337, 0.741, 1.0);
+uniform vec4 robe_mid : source_color = vec4(0.337, 0.596, 0.8, 1.0);
+uniform vec4 cloak_dark : source_color = vec4(0.349, 0.337, 0.741, 1.0);
+uniform vec4 cloak_mid : source_color = vec4(0.337, 0.596, 0.8, 1.0);
+varying vec4 tint;
+void vertex() {
+	tint = COLOR;
+}
+void fragment() {
+	vec4 c = texture(TEXTURE, UV);
+	float row = floor(UV.y / TEXTURE_PIXEL_SIZE.y + 0.001) - region_top;
+	if (hide_hat && row <= brim_row) {
+		c.a = 0.0;
+	}
+	if (recolor && row > brim_row) {
+		if (distance(c.rgb, robe_dark.rgb) < 0.03) {
+			c.rgb = cloak_dark.rgb;
+		} else if (distance(c.rgb, robe_mid.rgb) < 0.03) {
+			c.rgb = cloak_mid.rgb;
+		}
+	}
+	COLOR = c * tint;
+}
+"""
+
+static var _wear_shader: Shader
+
 var is_walkable: Callable  # func(Rect2) -> bool, set by the level
 ## func(Vector2) -> String: "grass", "concrete", "wood" or "carpet" under the feet.
 var surface_at: Callable
@@ -23,6 +83,13 @@ var target := Vector2.INF
 ## Which way he is walking (zero when standing), for the camera's lead.
 var walk_dir := Vector2.ZERO
 signal arrived
+## The frame showing now ("idle" or "run", 0..3), for what he wears to follow.
+var pose_anim := "idle"
+var pose_frame := 0
+## The wizard's sprite (worn pieces read its flip; the book's dressing sets its material).
+var body: Sprite2D:
+	get:
+		return _sprite
 
 var _stuck_t := 0.0
 
@@ -49,6 +116,7 @@ func _ready() -> void:
 	_sprite.region_enabled = true
 	_sprite.region_rect = Rect2(IDLE, FRAME)
 	_sprite.offset = Vector2(0, -FRAME.y / 2.0)  # bottom of the frame on the feet
+	_sprite.material = Leader.wear_material()
 	add_child(_sprite)
 	BookOverlay.dress_leader(self, _sprite)  # what the collection book put on (features/casino)
 
@@ -95,6 +163,9 @@ func _physics_process(delta: float) -> void:
 	_anim_t += delta
 	var frame := int(_anim_t * (RUN_FPS if _running else IDLE_FPS)) % 4
 	_sprite.region_rect = Rect2((RUN if _running else IDLE) + Vector2(frame * FRAME.x, 0), FRAME)
+	pose_anim = "run" if _running else "idle"
+	pose_frame = frame
+	Leader.pose_material(_sprite.material as ShaderMaterial, pose_anim, pose_frame)
 	if _running and frame != _last_frame and (frame == 0 or frame == 2):
 		_footstep(dir)
 	_last_frame = frame
@@ -176,3 +247,60 @@ func _dust(away: Vector2, count: int) -> void:
 	add_child(p)
 	p.emitting = true
 	p.finished.connect(p.queue_free)
+
+
+# --- what he wears ---------------------------------------------------------------------
+
+## A material for a wizard sprite cut from the sheet (the walking leader, the book's stage,
+## the wizards in the games). One shader for all of them, compiled once a session (WebGL has
+## no shader cache on disk, so a new one on every arrival would hitch the iris).
+static func wear_material() -> ShaderMaterial:
+	if _wear_shader == null:
+		_wear_shader = Shader.new()
+		_wear_shader.code = WEAR_SHADER
+	var m := ShaderMaterial.new()
+	m.shader = _wear_shader
+	m.set_shader_parameter("region_top", IDLE.y)
+	m.set_shader_parameter("robe_dark", ROBE_DARK)
+	m.set_shader_parameter("robe_mid", ROBE_MID)
+	return m
+
+
+## Point the material at this frame's brim line.
+static func pose_material(m: ShaderMaterial, anim: String, index: int) -> void:
+	if m:
+		m.set_shader_parameter("brim_row", float(POSE[anim][index].brim))
+
+
+## Where things attach on a frame, in the leader's own pixels (feet at 0, 0; the frame's
+## left edge at x -8 and its top at y -28), mirrored when he faces left. `head` is the head's
+## middle (x) on the brim line (y); `neck`, `belt` and `hem` are rows; `back` and `front` are
+## the outermost columns at a row on the side he faces away from and toward.
+static func anchors(anim: String, index: int, flip: bool) -> Dictionary:
+	var p: Dictionary = POSE[anim][index]
+	var top := -int(FRAME.y)
+	var brim: int = p.brim
+	var neck: int = p.neck
+	var head_mid := (HEAD_COLS.x + HEAD_COLS.y + 1) / 2.0 - 8.0
+	return {
+		"brim": top + brim,
+		"head_x": -head_mid if flip else head_mid,
+		"head_w": HEAD_COLS.y - HEAD_COLS.x + 1,
+		"neck": top + neck,
+		"belt": top + neck + 2,
+		"hem": top + HEM_ROW,
+		"flip": flip,
+	}
+
+
+## The outermost opaque pixel's left edge (leader pixels) on frame row `row` (18..27), on the
+## back or the front side of the body.
+static func edge(anim: String, index: int, row: int, front: bool, flip: bool) -> int:
+	var p: Dictionary = POSE[anim][index]
+	var i := clampi(row - 18, 0, 9)
+	# On the sheet he faces right: the front is the frame's right edge, the back its left.
+	# Flipped, the same pixels land mirrored about x 0.
+	var col: int = p.right[i] if front else p.left[i]
+	var x := col - 8
+	return -x - 1 if flip else x
+

@@ -73,6 +73,11 @@ def post_equip(ctx: Ctx, item_id: str) -> dict:
     return machines.equip(ctx, item_id)
 
 
+@route("POST", "/casino/unequip")
+def post_unequip(ctx: Ctx, item_id: str) -> dict:
+    return machines.unequip(ctx, item_id)
+
+
 @daily(order=60)
 def sunday_draw(ctx: Ctx, day: date) -> None:
     draw.on_day(ctx, day)

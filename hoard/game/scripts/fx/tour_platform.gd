@@ -67,7 +67,32 @@ func run(kit: TourKit) -> void:
 		await kit.tap_screen(screen * (purse.global_position + cal.position + Vector2(cal.size.x * 0.85, cal.size.y / 2.0)))
 		await kit.until(func() -> bool: return Game.weeks_ago == 0, 5.0)
 		kit.check(Game.weeks_ago == 0, "a tap on its right half comes back to this week")
+		await kit.wait(0.6)
+		# On a phone: one finger is one week, not the touch and the click Godot makes of it.
+		await _touch(kit, screen * (purse.global_position + cal.position + Vector2(cal.size.x * 0.2, cal.size.y / 2.0)))
+		await kit.until(func() -> bool: return not Game.busy, 5.0)
+		await kit.wait(0.6)
+		kit.check(Game.weeks_ago == 1, "one finger on the calendar turns one week (%d)" % Game.weeks_ago)
+		await _touch(kit, screen * (purse.global_position + cal.position + Vector2(cal.size.x * 0.85, cal.size.y / 2.0)))
+		await kit.until(func() -> bool: return Game.weeks_ago == 0 and not Game.busy, 5.0)
 		await kit.wait(0.5)
+		kit.check(Game.weeks_ago == 0, "and one finger on its right half comes back (%d)" % Game.weeks_ago)
+
+	# The red error toast retries on a tap: one finger is one retry.
+	Game.failed.emit("Backend not reachable (tour)")
+	await kit.wait(0.6)
+	var err: Toast = null
+	for c in main._toasts.get_children():
+		if c is Toast and (c as Toast).kind == "error" and not c.has_meta("leaving"):
+			err = c
+	if kit.check(err != null, "a connection error shows as a red toast"):
+		var taps := [0]
+		err.tapped.connect(func() -> void: taps[0] += 1)
+		await _touch(kit, screen * err.get_global_rect().get_center())
+		await kit.wait(0.6)
+		kit.check(taps[0] == 1, "one finger on the error toast is one retry (%d)" % taps[0])
+		await kit.until(func() -> bool: return not Game.busy, 5.0)
+		await kit.wait(0.4)
 
 	# Purse count-up.
 	var before: int = main._purse._target_coins
@@ -125,3 +150,17 @@ func run(kit: TourKit) -> void:
 	d._chosen.emit(2)
 	d.close()
 	await kit.wait(0.3)
+
+
+## One finger down and up on a screen point (touch-to-click is on, as on a phone).
+func _touch(kit: TourKit, p: Vector2) -> void:
+	var ev := InputEventScreenTouch.new()
+	ev.index = 0
+	ev.pressed = true
+	ev.position = p
+	Input.parse_input_event(ev)
+	await kit.frames(1)
+	var up := ev.duplicate() as InputEventScreenTouch
+	up.pressed = false
+	Input.parse_input_event(up)
+	await kit.frames(2)

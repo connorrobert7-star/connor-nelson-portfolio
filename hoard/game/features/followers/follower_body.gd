@@ -35,9 +35,14 @@ var rig := Node2D.new()
 var body := Sprite2D.new()
 var aura: Sprite2D
 var item_aura: Sprite2D
+## What it wears, on its own body (children of the body sprite, so they share its scale and
+## follow its facing): a hat or helmet seated on its top row, a mask from the skin slot on its
+## face, and a cloak as its body from the shoulders down redone in the cloak's colors (shade
+## for shade, a lit edge where it drapes; see FollowerArt.cloak_material). A creature skin (a
+## cat, an owl, an imp) is not worn but taken on: the follower becomes it.
 var hat := Sprite2D.new()
 var mask := Sprite2D.new()
-var cloak := Sprite2D.new()
+var cloak: ShaderMaterial  # on the body while a cloak is worn
 var veil := Sprite2D.new()
 var halo := Sprite2D.new()
 var bubble := Sprite2D.new()
@@ -70,6 +75,10 @@ var _step := 0.0
 var _height := 16.0
 var _width := 16.0
 var _shown_candles := 0.0
+var _wearing: Dictionary = {}
+var _skin: Texture2D = null  # a creature skin it has taken on
+var _head: Dictionary = {}  # where the worn pieces sit, from the body's own pixels
+var _worn_flip := false
 
 
 func _init(follower_kind := "cultist", follower_id := "", at := Vector2.ZERO) -> void:
@@ -90,13 +99,12 @@ func _ready() -> void:
 	hover_ring.scale.y *= 0.4
 	add_child(hover_ring)
 	add_child(rig)
-	cloak.visible = false
 	rig.add_child(body)
-	rig.add_child(cloak)
-	mask.visible = false
-	rig.add_child(mask)
-	hat.visible = false
-	rig.add_child(hat)
+	for s: Sprite2D in [mask, hat]:
+		s.visible = false
+		s.centered = false
+		s.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		body.add_child(s)
 	veil.texture = FollowerArt.tex(FollowerArt.VEIL)
 	veil.visible = false
 	rig.add_child(veil)
@@ -131,6 +139,7 @@ func apply(d: Dictionary, look: Dictionary, faith_band: String) -> void:
 	if kind == "personal":
 		egg = not bool(d.get("hatched", false))
 		stage = int(d.get("stage", 0))
+	_skin = _skin_of(d.get("wearing", {}))
 	_set_look()
 	_set_wearing(d.get("wearing", {}))
 	veil.visible = veiled and not egg
@@ -166,17 +175,31 @@ func _set_look() -> void:
 			body.offset = Vector2(0, -13)
 			_height = 17.0
 			_width = 14.0
+	if _skin and not egg:
+		# A creature skin: it takes that shape, about as big as it was.
+		var k := px if kind == "holding" else (maxi(1, roundi(_height / 16.0)) if kind == "personal" else 1)
+		body.texture = _skin
+		body.offset = Vector2(0, -_skin.get_height() / 2.0)
+		if kind != "holding" or not resizing:
+			body.scale = Vector2(k, k)
+		_height = float(_skin.get_height() * k)
+		_width = float(_skin.get_width() * k) * 0.9
+
+
+## The skin slot's creature (null for none, or for a mask, which is worn on the face).
+func _skin_of(wearing: Dictionary) -> Texture2D:
+	var skin: Dictionary = wearing.get("follower_skin", {})
+	if skin.is_empty():
+		return null
+	var cut := BookOverlay.cut_icon(skin)
+	if cut and BookOverlay.mask_eyes(cut) >= 0.0:
+		return null
+	return FollowerArt.icon(skin.get("icon", {}))
 
 
 func _set_wearing(wearing: Dictionary) -> void:
-	var icon_scale := 0.5 if _height < 22.0 else (1.0 if _height < 44.0 else 2.0)
-	for pair: Array in [[hat, "hat"], [mask, "follower_skin"], [cloak, "cloak"]]:
-		var s: Sprite2D = pair[0]
-		var item: Dictionary = wearing.get(pair[1], {})
-		s.visible = not item.is_empty() and not egg
-		if s.visible:
-			s.texture = FollowerArt.icon(item.get("icon", {}))
-			s.scale = Vector2.ONE * icon_scale
+	_wearing = wearing
+	_dress()
 	var aura_item: Dictionary = wearing.get("aura", {})
 	item_aura.visible = not aura_item.is_empty() and not egg
 	if item_aura.visible:
@@ -185,11 +208,111 @@ func _set_wearing(wearing: Dictionary) -> void:
 		item_aura.scale = Vector2.ONE * (_height * 1.6 / 128.0)
 
 
+## Fit what it wears to the body it has now, read from its own pixels: the head is three rows
+## from its crown (the first row about as wide as the top of it), the shoulders a little under
+## half way down.
+func _dress() -> void:
+	hat.visible = false
+	mask.visible = false
+	body.material = null
+	_head = {}
+	if egg:
+		return
+	var sh := FollowerArt.shape(body.texture)
+	if sh.is_empty() or not (sh.used as Rect2i).has_area():
+		return
+	var used: Rect2i = sh.used
+	var size: Vector2i = sh.size
+	# The crown of its head: the first row as wide as most of its head (a lamb's curl or an
+	# ear tip above it is not where a hat sits); the head is the three rows from there.
+	var widest := 0
+	for y in range(used.position.y, used.position.y + maxi(3, used.size.y / 3)):
+		if sh.left[y] >= 0:
+			widest = maxi(widest, int(sh.right[y]) - int(sh.left[y]) + 1)
+	var top := used.position.y
+	while top < used.end.y - 1 and (sh.left[top] < 0 or int(sh.right[top]) - int(sh.left[top]) + 1 < widest * 0.6):
+		top += 1
+	var l := size.x
+	var r := -1
+	for y in range(top, mini(top + 3, used.end.y)):
+		if sh.left[y] >= 0:
+			l = mini(l, sh.left[y])
+			r = maxi(r, sh.right[y])
+	# The body sprite is centered on its offset: texture pixel (0, 0) sits here, body-local.
+	var origin := (-Vector2(size) / 2.0 + body.offset).round()
+	_head = {"origin": origin, "top": top, "mid": (l + r + 1) / 2.0, "w": mini(r - l + 1, 14), "h": used.end.y - top}
+	var hat_item: Dictionary = _wearing.get("hat", {})
+	if not hat_item.is_empty():
+		_fit_head_piece(hat, hat_item)
+	var skin: Dictionary = _wearing.get("follower_skin", {})
+	if not skin.is_empty() and _skin == null:
+		_fit_head_piece(mask, skin)
+	var cloak_item: Dictionary = _wearing.get("cloak", {})
+	if not cloak_item.is_empty():
+		var col: Color = Palette.RARITY.get(str(cloak_item.get("tier", "common")), Palette.COMMON)
+		var pal := BookOverlay.palette_of(BookOverlay.cut_icon(cloak_item), col)
+		if cloak == null:
+			cloak = FollowerArt.cloak_material()
+		cloak.set_shader_parameter("shoulder", float(top + maxi(3, roundi(used.size.y * 0.45))))
+		cloak.set_shader_parameter("hem", float(used.end.y - 1))
+		cloak.set_shader_parameter("bands", sh.bands)
+		cloak.set_shader_parameter("cloak_dark", pal[0])
+		cloak.set_shader_parameter("cloak_mid", pal[1])
+		cloak.set_shader_parameter("cloak_light", pal[2])
+		body.material = cloak
+		_sync_cloak()
+	_worn_flip = body.flip_h
+	_place_worn()
+
+
+## A hat or a mask, cut to its pixels and sized to the head's width.
+func _fit_head_piece(s: Sprite2D, item: Dictionary) -> void:
+	var cut := BookOverlay.cut_icon(item)
+	if cut == null:
+		return
+	var art := BookOverlay.head_art(item, cut, float(_head.w))
+	s.texture = art.texture
+	s.set_meta("eyes", art.eyes)
+	s.visible = true
+
+
+## Seat the head pieces for the way it faces: a hat's lowest two rows over its top two, a
+## mask's eyes a third of the way down its body. Whole pixels, mirrored with the body.
+func _place_worn() -> void:
+	if _head.is_empty():
+		return
+	var origin: Vector2 = _head.origin
+	for s: Sprite2D in [mask, hat]:
+		if not s.visible or s.texture == null:
+			continue
+		var w := s.texture.get_width()
+		var h := s.texture.get_height()
+		var eyes: float = s.get_meta("eyes", -1.0)
+		var y := float(_head.top) + 2.0 - h
+		if eyes >= 0.0:
+			y = float(_head.top) + roundf(float(_head.h) * 0.3) - eyes
+			y = maxf(y, float(_head.top) - 3.0)
+		var x := roundf(float(_head.mid) - w / 2.0)
+		var at := origin + Vector2(x, y)
+		if body.flip_h:
+			at.x = -(at.x + w)
+		s.position = at
+		s.flip_h = body.flip_h
+
+
+## The cloak's rows are counted from the top of the frame showing now (a penguin's frames sit
+## on different rows of its sheet).
+func _sync_cloak() -> void:
+	if body.material == null or body.material != cloak:
+		return
+	var y := 0.0
+	if body.texture is AtlasTexture:
+		y = (body.texture as AtlasTexture).region.position.y
+	cloak.set_shader_parameter("region_top", y)
+
+
 func _place_parts() -> void:
 	var head := -_height
-	hat.position = Vector2(0, head + 2.0 * hat.scale.y)
-	mask.position = Vector2(0, head * 0.62)
-	cloak.position = Vector2(0, head * 0.32)
 	veil.position = Vector2(0, head + 6.0)
 	veil.scale = Vector2.ONE * maxf(0.6, _width * 1.1 / 20.0)
 	halo.position = Vector2(0, head - 3.0)
@@ -322,6 +445,11 @@ func _interest_point() -> Vector2:
 
 func _animate_frames(delta: float) -> void:
 	_step += delta
+	if _skin and not egg:
+		body.texture = _skin
+		body.flip_h = _look == -1
+		_follow_flip()
+		return
 	match kind:
 		"personal":
 			if egg:
@@ -353,6 +481,15 @@ func _animate_frames(delta: float) -> void:
 				cell = FollowerArt.PENGUIN_SIDE
 			body.texture = FollowerArt.penguin(cell)
 			body.flip_h = _look == -1
+	_follow_flip()
+
+
+## What it wears turns with it.
+func _follow_flip() -> void:
+	_sync_cloak()
+	if body.flip_h != _worn_flip:
+		_worn_flip = body.flip_h
+		_place_worn()
 
 
 ## Mood bubbles: pop in, hold, pop out, wait, again. Crying and the naming question come often.
@@ -537,6 +674,7 @@ func level_up() -> void:
 ## The personal follower grows a stage: flash, swell, pop.
 func grow(to_stage: int) -> void:
 	stage = to_stage
+	_skin = _skin_of(data.get("wearing", {}))
 	_set_look()
 	_set_wearing(data.get("wearing", {}))
 	_place_parts()

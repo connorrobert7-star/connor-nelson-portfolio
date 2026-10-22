@@ -23,7 +23,7 @@ func _init(offered: Array = [], at_stage := 1) -> void:
 
 
 func _ready() -> void:
-	add_backdrop(0.93)
+	add_backdrop(0.93).mouse_filter = Control.MOUSE_FILTER_IGNORE  # taps beside the names reach the rite
 	var g := FollowerArt.glow(Color(Palette.BILE, 0.35), 110.0)
 	g.position = Vector2(240, 170)
 	add_child(g)
@@ -75,11 +75,23 @@ func _process(delta: float) -> void:
 			l.rotation = sin(_t * 1.1 + i) * 0.04
 
 
+## A tap beside the names still answers: they bob toward the finger, and a soft note.
+func _gui_input(event: InputEvent) -> void:
+	var mb := event as InputEventMouseButton
+	if _done or mb == null or not mb.pressed or mb.button_index != MOUSE_BUTTON_LEFT:
+		return
+	accept_event()
+	FollowerArt.play("pop", 0.7, -14.0)
+	for l in _words:
+		var tw := l.create_tween()
+		tw.tween_property(l, "scale", Vector2(1.12, 1.12), 0.08).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		tw.tween_property(l, "scale", Vector2.ONE, 0.18).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+
 func _on_word_input(event: InputEvent, i: int) -> void:
 	if _done:
 		return
-	var tap := (event is InputEventMouseButton and (event as InputEventMouseButton).pressed) or (event is InputEventScreenTouch and (event as InputEventScreenTouch).pressed)
-	if tap:
+	if Level._is_tap(event):
 		accept_event()
 		_choose(i)
 

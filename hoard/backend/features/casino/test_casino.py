@@ -353,7 +353,12 @@ def test_a_failed_transfer_stops_before_any_load_is_touched(ctx, monkeypatch):
         assert not [e for e in ctx.events if e.get("kind") == "item"]
 
 
-FREE_ROUTES = {("GET", "/casino/catalog"), ("POST", "/casino/tradeup"), ("POST", "/casino/equip")}
+FREE_ROUTES = {
+    ("GET", "/casino/catalog"),
+    ("POST", "/casino/tradeup"),
+    ("POST", "/casino/equip"),
+    ("POST", "/casino/unequip"),
+}
 
 
 def test_no_route_moves_money_without_a_logged_grant_or_lowers_a_balance(engine):
@@ -370,6 +375,7 @@ def test_no_route_moves_money_without_a_logged_grant_or_lowers_a_balance(engine)
         ("/casino/catalog", None),
         ("/casino/tradeup", {"inventory_ids": commons[:10]}),
         ("/casino/equip", {"item_id": "hollow_ash_cowl"}),
+        ("/casino/unequip", {"item_id": "hollow_ash_cowl"}),
     ]
     for path, body in calls:
         method = "GET" if body is None else "POST"
@@ -587,6 +593,39 @@ def test_equip_replaces_the_slot_and_trading_away_unequips(ctx):
     assert [r["item_id"] for r in flagged] == [hats[0]]
     machines.trade_up(ctx, first)
     assert machines.equipped(ctx) == {}
+
+
+def test_a_worn_piece_comes_off_and_only_its_own_slot_empties(ctx):
+    hats = [i["id"] for i in catalog.items() if i["slot"] == "hat" and i["tier"] == "common"]
+    cloak = next(i["id"] for i in catalog.items() if i["slot"] == "cloak")
+    _give(ctx, hats[0], 1)
+    _give(ctx, hats[1], 1)
+    _give(ctx, cloak, 1)
+    machines.equip(ctx, hats[0])
+    machines.equip(ctx, cloak)
+    # Taking off a hat that isn't the one worn leaves the worn one on.
+    assert machines.unequip(ctx, hats[1]) == {"equipped": {"cloak": cloak, "hat": hats[0]}}
+    assert machines.unequip(ctx, hats[0]) == {"equipped": {"cloak": cloak}}
+    flagged = ctx.conn.execute("SELECT item_id FROM inventory WHERE equipped = 1").fetchall()
+    assert [r["item_id"] for r in flagged] == [cloak]
+    # Off twice is still off; a piece that doesn't exist is refused.
+    assert machines.unequip(ctx, hats[0]) == {"equipped": {"cloak": cloak}}
+    with pytest.raises(ApiError) as err:
+        machines.unequip(ctx, "nope")
+    assert err.value.status == 422
+    # And it can go straight back on.
+    assert machines.equip(ctx, hats[0]) == {"equipped": {"cloak": cloak, "hat": hats[0]}}
+
+
+def test_unequip_from_the_book(client):
+    r = client.post("/casino/case", json={"case_id": "case_10", "to_account": "sav_1"}).json()
+    item = r["item"]
+    client.post("/casino/equip", json={"item_id": item["id"]})
+    out = client.post("/casino/unequip", json={"item_id": item["id"]}).json()
+    assert out == {"equipped": {}}
+    casino = client.get("/state").json()["casino"]
+    assert casino["equipped"] == {}
+    assert casino["owned"] == {item["id"]: 1}
 
 
 def test_trophies_show_in_the_book_and_can_be_worn_but_never_pressed(client, engine):

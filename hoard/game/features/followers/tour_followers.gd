@@ -95,6 +95,21 @@ func run(k: TourKit) -> void:
 	await _drag(shrine._wardrobe.position + item_node.position, _center(flock.bodies["hold_VTI"]))
 	await kit.until(func() -> bool: return not (_follower("hold_VTI").get("wearing", {}) as Dictionary).is_empty(), 5.0)
 	kit.check((_follower("hold_VTI").wearing as Dictionary).has(str(item.slot)), "VTI wears the %s" % str(item.name))
+	# On its body, not pasted over it: a hat or mask on its head, a cloak in its colors.
+	var dressed := flock.bodies["hold_VTI"] as FollowerBody
+	var worn_slot := str(item.slot)
+	var shows := func() -> bool:
+		match worn_slot:
+			"hat":
+				return dressed.hat.visible and dressed.hat.get_parent() == dressed.body
+			"cloak":
+				return dressed.body.material != null and dressed.body.material == dressed.cloak
+			"aura":
+				return dressed.item_aura.visible
+			_:
+				return dressed.mask.visible or dressed.get("_skin") != null
+	await kit.until(shows, 3.0)
+	kit.check(shows.call(), "and wears the %s on its body" % worn_slot)
 	await kit.tap_world(ShrineLevel.CHEST + Vector2(0, -14))
 	await kit.wait(0.6)
 	await kit.shot("followers_08_dressed")

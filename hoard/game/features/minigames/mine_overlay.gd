@@ -133,6 +133,7 @@ func _build_leader() -> void:
 	_leader.z_index = 20
 	world.add_child(_leader)
 	ArcadeFx.glow(_leader, Vector2(0, -12), Color("ffb05a"), 22.0, 0.22)
+	BookOverlay.wear_on(_leader)  # what the book put on him comes down the mine too
 
 
 ## Mine timbering down both sides of the shaft: posts, braces into the rock and lanterns
@@ -444,12 +445,17 @@ func _break(cell: Dictionary, c: int, r: int) -> void:
 
 
 func _pop_ore(ore_id: String, at: Vector2) -> void:
+	var cap := limit("max_ore")
+	if done or (cap > 0 and ore_total() >= cap):
+		return
 	var spec: Dictionary = {}
 	for o: Dictionary in _ores().ores:
 		if o.id == ore_id:
 			spec = o
 	var value := int(spec.coins)
 	ore_counts[ore_id] = int(ore_counts[ore_id]) + 1
+	if cap > 0 and ore_total() >= cap:
+		end_run.call_deferred()  # the haul is full: more would not count
 	if fever_left > 0.0:
 		fever_coins += value
 	var paid := value * (2 if fever_left > 0.0 else 1)
@@ -491,16 +497,33 @@ func _blow(c: int, r: int) -> void:
 	ArcadeFx.shake(world, 5.0, 0.3)
 	ArcadeFx.hit_stop(get_tree(), 0.07)
 	ArcadeFx.burst(world, at, Color("ffb05a"), 30, 180.0, 0.6)
-	await get_tree().create_timer(0.08).timeout
+	# The blocks around the keg, held by themselves: the rows can drop a level during the
+	# fuse, so each one is found again where it is now before it breaks.
+	var around: Array = []
 	for dy in [-1, 0, 1]:
 		for dx in [-1, 0, 1]:
 			var rr: int = r + dy
 			var cc: int = c + dx
-			if rr < 0 or rr >= _rows.size() or cc < 0 or cc >= 8:
-				continue
-			var other: Variant = _rows[rr][cc]
-			if other != null:
-				_break(other as Dictionary, cc, rr)
+			if rr >= 0 and rr < _rows.size() and cc >= 0 and cc < 8 and _rows[rr][cc] != null:
+				around.append(_rows[rr][cc])
+	await get_tree().create_timer(0.08).timeout
+	if not is_inside_tree():
+		return
+	# Nothing drops while the blast clears, so every index below stays true.
+	var was := _busy_descend
+	_busy_descend = true
+	for cell: Dictionary in around:
+		var found := false
+		for rr in _rows.size():
+			for cc in (_rows[rr] as Array).size():
+				if is_same(_rows[rr][cc], cell):
+					_break(cell, cc, rr)
+					found = true
+					break
+			if found:
+				break
+	_busy_descend = was
+	_check_layer()
 
 
 func _check_layer() -> void:
@@ -596,6 +619,23 @@ func tick(delta: float) -> void:
 		_fever_label.scale = Vector2.ONE * (1.0 + 0.08 * sin(_clock * 18.0))
 		if fever_left <= 0.0:
 			_end_fever()
+
+
+func ore_total() -> int:
+	var n := 0
+	for k: String in ore_counts:
+		n += int(ore_counts[k])
+	return n
+
+
+## The whistle puts the fever out too: no coin rain or brass edges under the tally.
+func end_run() -> void:
+	if not done:
+		if fever_left > 0.0:
+			_end_fever()
+		chain = 0
+		_chain_label.create_tween().tween_property(_chain_label, "modulate:a", 0.0, 0.2)
+	await super.end_run()
 
 
 func result() -> Dictionary:

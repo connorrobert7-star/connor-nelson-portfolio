@@ -529,6 +529,10 @@ func _process(delta: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	# A finger on a phone sends a touch and the click Godot makes from it: answer it once
+	# (the second half used to shut the wardrobe the same moment it opened).
+	if event is InputEventScreenTouch and Input.is_emulating_mouse_from_touch():
+		return
 	if Game.busy or not Level._is_tap(event) or flock.carrying():
 		super._unhandled_input(event)
 		return

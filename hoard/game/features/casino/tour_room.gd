@@ -110,7 +110,7 @@ func run(kit: TourKit) -> void:
 	kit.check(kit.level() is Village, "the door leads out to the village")
 	await kit.wait(0.5)
 	if kit.level() is Village:
-		kit.check(kit.level().leader.position.distance_to(kit.level().feet_at(Village.SPAWN)) < 24.0, "you come out at the village square")
+		kit.check(kit.level().leader.position.distance_to(kit.level().door_front("casino")) < 4.0, "you come out in front of the casino's door")
 	await kit.shot("room_out_village")
 
 	# The village has no casino plot yet; try the hook on a patch of grass so it's ready.

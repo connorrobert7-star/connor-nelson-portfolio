@@ -121,7 +121,7 @@ func build() -> void:
 	legend = Room.LEGEND
 	solid = "Wwct"
 	follow_camera = false
-	exit_spawn = Village.SPAWN
+	exit_spawn = Level.RETURN  # back out in front of the casino's door
 	for tile: Vector2i in DOOR_TILES:
 		add_door(tile, "village", exit_spawn)
 	# One wide doorway across both tiles, so walking down the middle of the runner leads out.
@@ -412,15 +412,21 @@ func spot_rect(id: String) -> Rect2:
 
 
 func _on_tap(point: Vector2) -> void:
+	# Every tap lands like it does everywhere else: a ring where it hit and a click.
 	for h: Dictionary in _hotspots:
 		if (h.rect as Rect2).has_point(point):
 			_pending = h.it
+			TapMarker.spawn(self, point, "thing")
+			Sfx.ui("select")
 			if leader.position.distance_to(h.it.pos) < REACH:
 				_use_pending()
 			else:
 				_walk(h.it.pos)
 			return
 	_pending = {}
+	var ok := is_walkable(Rect2(point + Leader.FOOT.position, Leader.FOOT.size))
+	TapMarker.spawn(self, point, "ground" if ok else "nope")
+	Sfx.ui("tap", randf_range(0.95, 1.05))
 	_walk(point)
 
 
@@ -482,6 +488,10 @@ func _clear(a: Vector2, b: Vector2) -> bool:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	# A finger on a phone sends a touch and the click Godot makes from it: answer it once
+	# (the second half used to hush Vex the moment he started stating the odds).
+	if event is InputEventScreenTouch and Input.is_emulating_mouse_from_touch():
+		return
 	# A tap while Vex states the odds before a pull hurries him along.
 	if _skippable and vex.speaking and _is_tap(event):
 		get_viewport().set_input_as_handled()
@@ -588,6 +598,10 @@ func _open_free(make: Callable, m: CasinoRoomMachine) -> void:
 
 func _after(result: Variant) -> void:
 	if not (result is Dictionary):
+		# Backed out, or the house said no inside the machine: the room reads /state again
+		# so the lamp and Vex match what the server knows.
+		if is_inside_tree():
+			await Game.refresh()
 		return
 	var money: Dictionary = (result as Dictionary).get("money", {})
 	if money.has("to_account"):
