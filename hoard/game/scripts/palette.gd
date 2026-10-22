@@ -12,6 +12,9 @@ const BILE := Color("b6e04a")
 const GLOW := Color("ffd166")
 const TEAL := Color("2ec4b6")
 const PINK := Color("ff6fb5")
+## Play coins are brass; real money is bone. Never swap them.
+const BRASS := Color("e8b04a")
+const BONE := Color("f6ead2")
 
 const COMMON := Color("9aa0a6")
 const RARE := Color("3d8bff")

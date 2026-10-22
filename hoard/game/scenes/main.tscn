@@ -1,31 +1,35 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://scripts/main.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/dialogue.gd" id="2"]
+[ext_resource type="Shader" path="res://scripts/fx/iris.gdshader" id="3_iris"]
+[ext_resource type="Shader" path="res://scripts/fx/post.gdshader" id="4_post"]
 
 [sub_resource type="StyleBoxFlat" id="panel_style"]
-bg_color = Color(0.17, 0.15, 0.13, 0.9)
+bg_color = Color(0.0705882, 0.0470588, 0.0941176, 0.92)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(0.91, 0.86, 0.75, 1)
+border_color = Color(0.352941, 0.278431, 0.45098, 1)
 content_margin_left = 6.0
-content_margin_top = 4.0
+content_margin_top = 3.0
 content_margin_right = 6.0
-content_margin_bottom = 4.0
+content_margin_bottom = 3.0
+anti_aliasing = false
 
-[sub_resource type="StyleBoxFlat" id="dialogue_style"]
-bg_color = Color(0.13, 0.11, 0.1, 0.96)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.91, 0.86, 0.75, 1)
-content_margin_left = 8.0
-content_margin_top = 6.0
-content_margin_right = 8.0
-content_margin_bottom = 6.0
+[sub_resource type="ShaderMaterial" id="iris_mat"]
+shader = ExtResource("3_iris")
+shader_parameter/center = Vector2(240, 135)
+shader_parameter/radius = 0.0
+shader_parameter/rim = 7.0
+shader_parameter/night = Color(0.0705882, 0.0470588, 0.0941176, 1)
+
+[sub_resource type="ShaderMaterial" id="post_mat"]
+shader = ExtResource("4_post")
+shader_parameter/vignette = 0.3
+shader_parameter/grain = 0.012
+shader_parameter/ink = Color(0.113725, 0.0784314, 0.141176, 1)
 
 [node name="Main" type="Node"]
 script = ExtResource("1")
@@ -34,44 +38,17 @@ script = ExtResource("1")
 
 [node name="Hud" type="CanvasLayer" parent="."]
 
-[node name="Week" type="Label" parent="Hud"]
-offset_left = 6.0
-offset_top = 4.0
-offset_right = 300.0
-offset_bottom = 16.0
-theme_override_colors/font_color = Color(0.96, 0.93, 0.86, 1)
-theme_override_colors/font_outline_color = Color(0.17, 0.15, 0.13, 1)
-theme_override_constants/outline_size = 3
-theme_override_font_sizes/font_size = 8
-
-[node name="Purse" type="Label" parent="Hud"]
-anchors_preset = 1
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = -240.0
-offset_top = 4.0
-offset_right = -6.0
-offset_bottom = 16.0
-grow_horizontal = 0
-theme_override_colors/font_color = Color(0.96, 0.93, 0.86, 1)
-theme_override_colors/font_outline_color = Color(0.17, 0.15, 0.13, 1)
-theme_override_constants/outline_size = 3
-theme_override_font_sizes/font_size = 8
-horizontal_alignment = 2
-
 [node name="Prompt" type="Label" parent="Hud"]
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
 offset_left = -200.0
-offset_top = 20.0
+offset_top = 22.0
 offset_right = 200.0
-offset_bottom = 32.0
+offset_bottom = 36.0
 grow_horizontal = 2
-theme_override_colors/font_color = Color(0.95, 0.85, 0.55, 1)
-theme_override_colors/font_outline_color = Color(0.17, 0.15, 0.13, 1)
-theme_override_constants/outline_size = 3
-theme_override_font_sizes/font_size = 8
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 0.819608, 0.4, 1)
 horizontal_alignment = 1
 
 [node name="Panel" type="PanelContainer" parent="Hud"]
@@ -88,8 +65,6 @@ theme_override_styles/panel = SubResource("panel_style")
 
 [node name="Text" type="Label" parent="Hud/Panel"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.96, 0.93, 0.86, 1)
-theme_override_font_sizes/font_size = 8
 autowrap_mode = 3
 
 [node name="Dialogue" type="PanelContainer" parent="Hud"]
@@ -102,13 +77,28 @@ offset_top = -8.0
 offset_right = -8.0
 offset_bottom = -6.0
 grow_vertical = 0
-theme_override_styles/panel = SubResource("dialogue_style")
 script = ExtResource("2")
 
-[node name="Fade" type="ColorRect" parent="Hud"]
-modulate = Color(1, 1, 1, 0)
+[node name="Top" type="CanvasLayer" parent="."]
+layer = 10
+
+[node name="Iris" type="CanvasLayer" parent="."]
+layer = 50
+
+[node name="Fade" type="ColorRect" parent="Iris"]
+material = SubResource("iris_mat")
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 mouse_filter = 2
-color = Color(0.12, 0.11, 0.1, 1)
+color = Color(0.0705882, 0.0470588, 0.0941176, 1)
+
+[node name="Post" type="CanvasLayer" parent="."]
+layer = 100
+
+[node name="Grade" type="ColorRect" parent="Post"]
+material = SubResource("post_mat")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2

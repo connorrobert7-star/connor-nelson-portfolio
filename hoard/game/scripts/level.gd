@@ -33,6 +33,13 @@ var _zones: Array[Dictionary] = []  # {rect, text: Callable}
 var _interactables: Array[Dictionary] = []  # {pos, label: Callable, action: Callable}
 var _doors: Array[Dictionary] = []  # {rect, level, spawn}
 var _pending: Dictionary = {}  # the interactable a tap is walking to
+var _cam_pos := Vector2.ZERO  # the camera's smooth position (applied rounded)
+var _cam_lead := Vector2.ZERO
+var _marker: Node2D  # the chevron over a tapped thing, until the leader gets there
+
+## Camera feel: how far ahead it leads the walk, and how quickly it follows.
+const CAM_LEAD := 14.0
+const CAM_FOLLOW := 7.0
 
 
 func setup(main_node: Node, spawn: Vector2i) -> void:
@@ -52,19 +59,25 @@ func _ready() -> void:
 	leader.position = feet_at(_spawn)
 	leader.is_walkable = is_walkable
 	leader.arrived.connect(func() -> void:
+		_clear_marker()
 		if not _pending.is_empty() and leader.position.distance_to(_pending.pos) < REACH + 6:
+			leader.hop()
 			_use_pending()
 	)
+	leader.surface_at = surface_at
 	var size := Vector2(map[0].length(), map.size()) * TILE
+	add_child(camera)
 	if follow_camera:
-		leader.add_child(camera)
+		# The camera is the leader's sibling, not his child: it eases after him with a
+		# little lead instead of jerking with every step.
 		camera.limit_left = 0
 		camera.limit_top = 0
 		camera.limit_right = int(size.x)
 		camera.limit_bottom = int(size.y)
+		_cam_pos = _cam_target(Vector2.ZERO)
+		camera.position = _cam_pos.round()
 	else:
 		camera.position = size / 2.0
-		add_child(camera)
 	camera.make_current()
 	Game.state_changed.connect(_redress)
 	if not Game.state.is_empty():
@@ -85,7 +98,10 @@ func _redress() -> void:
 	dress()
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
+	_follow(delta)
+	if _marker and leader.target == Vector2.INF:
+		_clear_marker()
 	if Game.busy or Game.state.is_empty():
 		return
 	for door: Dictionary in _doors:
@@ -102,6 +118,52 @@ func _process(_delta: float) -> void:
 			main.show_panel((zone.text as Callable).call())
 			return
 	main.hide_panel()
+
+
+# --- camera ----------------------------------------------------------------------
+
+## Ease toward the leader plus a lead in the walk direction, rounded to whole pixels.
+## A zoomed camera belongs to whoever zoomed it (close-ups), so it's left alone.
+func _follow(delta: float) -> void:
+	if not follow_camera or camera.zoom != Vector2.ONE:
+		return
+	var dir := leader.walk_dir
+	if leader.target != Vector2.INF:
+		dir = (leader.target - leader.position).normalized()
+	_cam_lead = _cam_lead.lerp(dir * CAM_LEAD, 1.0 - exp(-delta / 0.4 * 3.0))
+	_cam_pos = _cam_pos.lerp(_cam_target(_cam_lead), 1.0 - exp(-CAM_FOLLOW * delta))
+	camera.position = _cam_pos.round()
+
+
+## Where the camera wants to be, kept inside the limits so it never drifts past an edge.
+func _cam_target(lead: Vector2) -> Vector2:
+	var t := leader.position + lead
+	var half := get_viewport_rect().size / 2.0 / camera.zoom
+	var lo := Vector2(camera.limit_left, camera.limit_top) + half
+	var hi := Vector2(camera.limit_right, camera.limit_bottom) - half
+	t.x = clampf(t.x, lo.x, hi.x) if lo.x <= hi.x else (lo.x + hi.x) / 2.0
+	t.y = clampf(t.y, lo.y, hi.y) if lo.y <= hi.y else (lo.y + hi.y) / 2.0
+	return t
+
+
+## What the ground under `feet` sounds like: grass, concrete, wood or carpet.
+## Levels can override this; the default reads the map.
+func surface_at(feet: Vector2) -> String:
+	if self is ShopRoom or self is TavernRoom:
+		return "wood"
+	var path := (get_script() as Script).resource_path
+	if path.contains("casino"):
+		var mid := map[0].length() * TILE / 2.0 if not map.is_empty() else 0.0
+		return "carpet" if absf(feet.x - mid) < TILE * 1.5 else "concrete"
+	var cell := Vector2i((feet / TILE).floor())
+	if cell.y < 0 or cell.y >= map.size() or cell.x < 0 or cell.x >= map[cell.y].length():
+		return "concrete"
+	var ch := map[cell.y][cell.x]
+	if self is Village:
+		return "grass" if ".,*".contains(ch) else "concrete"
+	if ch == "r":
+		return "carpet"
+	return "concrete"
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -135,15 +197,29 @@ func _on_tap(point: Vector2) -> void:
 		if d < best:
 			best = d
 			tapped = it
+	_clear_marker()
 	if tapped.is_empty():
 		_pending = {}
+		var ok := is_walkable(Rect2(point + Leader.FOOT.position, Leader.FOOT.size))
+		TapMarker.spawn(self, point, "ground" if ok else "nope")
+		Sfx.ui("tap", randf_range(0.95, 1.05))
 		leader.walk_to(point)
 		return
 	_pending = tapped
+	TapMarker.spawn(self, point, "thing")
+	Sfx.ui("select")
 	if leader.position.distance_to(tapped.pos) < REACH:
+		leader.hop()
 		_use_pending()
 	else:
+		_marker = TapMarker.chevron(self, tapped.pos)
 		leader.walk_to(tapped.pos)
+
+
+func _clear_marker() -> void:
+	if _marker and is_instance_valid(_marker):
+		_marker.queue_free()
+	_marker = null
 
 
 func _use_pending() -> void:
@@ -283,10 +359,11 @@ func is_walkable(feet: Rect2) -> bool:
 
 func small_label(text: String, pos: Vector2, width := 48.0) -> Label:
 	var ls := LabelSettings.new()
-	ls.font_size = 6
+	ls.font = preload("res://art/ui/fonts/m5x7.ttf")
+	ls.font_size = 16
 	ls.outline_size = 2
-	ls.outline_color = Color(0.17, 0.15, 0.13)
-	ls.font_color = Color(0.96, 0.93, 0.86)
+	ls.outline_color = Palette.NIGHT
+	ls.font_color = Palette.CREAM
 	var label := Label.new()
 	label.text = text
 	label.label_settings = ls

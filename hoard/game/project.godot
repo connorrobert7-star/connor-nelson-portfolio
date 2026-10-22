@@ -23,6 +23,13 @@ window/size/window_width_override=1440
 window/size/window_height_override=810
 window/stretch/mode="canvas_items"
 
+[gui]
+
+theme/custom="res://art/ui/hoard_theme.tres"
+theme/default_font_antialiasing=0
+theme/default_font_hinting=0
+theme/default_font_subpixel_positioning=0
+
 [hoard]
 
 backend_url="http://127.0.0.1:8000"
