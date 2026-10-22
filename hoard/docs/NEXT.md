@@ -1,7 +1,35 @@
 # Next
 
 What is written down but not built yet. The owner's own words for these are in
-`docs/DESIGN_NOTES.md`. Nothing here is started.
+`docs/DESIGN_NOTES.md`.
+
+## Where the October 22 run stopped (start here)
+
+Stopped on purpose (the owner's time budget). Everything below is committed and pushed; the
+published demo is the last state that passed the tests.
+
+- **Done:** the look pass for the arcade games, the gate fight and the shrine; the helper (Pip,
+  `backend/features/helper`, `game/features/helper`) with the scripted first five minutes; a
+  smaller web download (56 MB down to 39.5 MB, export filters from `tools/asset_audit.py`; the
+  casino and the village were checked in a browser with no missing files).
+- **The pot: partway.** The backend is in (`backend/features/casino/pot.py`, runs of lamps with one
+  hit, the pot as brokerage cash, the `place_order` slot, `pot_symbol(ctx)`; 303 tests pass). The
+  Godot side (run lamps and the jar on each machine, blanks, the pour on a hit, the pick at Marlo's
+  counter) was mid-way in `game/features/casino/*_overlay.gd` and `pot_parts.gd`. Finish it against
+  `docs/POT.md`, then run tour_machines and tour_play. Then replace `pot_symbol` with the owner's
+  target mix (DESIGN_NOTES, October 22).
+- **The speed lane** didn't finish its full walk of every scene in the browser; check the arcade,
+  gate, shrine, shop and tavern in the web build for missing files.
+- **Queued, not started:** the owner's prompt 1 (the Tree, the souls and Vex) and prompt 2 (Pantry in
+  the granary), in that order. The prompts and the workflow that runs them are in the session
+  scratchpad (`prompts/tree.md`, `prompts/pantry.md`, `prompts/tree_pantry_wf.js`); if that's gone,
+  ask the owner to paste the two prompts again.
+- **The Pantry app** (its own app, Expo + Supabase) is partway: the schema with the `hoard_*`
+  views, the domain logic (units, shortfall, cooking, use-it-up) with tests, the data layer with a
+  no-keys demo store, the recipe and Hoard-read edge functions and the README are done; the screens
+  are partway. It lives in a local repo in the session scratchpad (`pantry/`, plus
+  `pantry.bundle`) until the owner creates the private `pantry` repo on GitHub and gives Claude
+  access; then push it there.
 
 ## Piece 2: the pot (not built yet)
 
