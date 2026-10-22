@@ -50,6 +50,7 @@ book contents, wheel price and wedges, claw price and heap size.
 | `POST /casino/claw` | `to_account, drop_x` (0 to 1) | `{money, grabbed: {slot_index, tier}, item}` |
 | `POST /casino/tradeup` | `inventory_ids` (10 ids, same tier, not legendary or mythic) | `{item}` |
 | `POST /casino/equip` | `item_id` (a casino piece or a trophy) | `{equipped: {slot: item_id}}` |
+| `POST /casino/unequip` | `item_id` (the piece worn now) | `{equipped: {slot: item_id}}`, that slot empty |
 
 `reel` is about 45 cards with the winner at `winner_index` (about 38). Every route that grants an item
 also emits `ctx.emit("item", item_id=..., name=..., tier=...)`.
