@@ -8,6 +8,9 @@ extends Node2D
 
 const COURSE_PX := 4
 const BRICK := VillageArt.TOWN
+## Night on old stone: the castle brick lit warm and low, not the pack's daylight blue.
+const STONE_NIGHT := Color(0.6, 0.5, 0.52)
+const TORCH_EVERY := 6  # tiles between torches on the wall face
 
 var spans: Array = []
 var post_x := 0  # tile column of the measuring post
@@ -23,25 +26,34 @@ var _target_label: Label
 var _shown := -1
 var _state: Dictionary = {}
 var _glow: Array[Node] = []
+var _rubble := Node2D.new()
 
 
 func _ready() -> void:
 	add_child(_ghost)
+	_courses.modulate = STONE_NIGHT
+	_top.modulate = STONE_NIGHT
 	add_child(_courses)
 	add_child(_top)
 	_draw_ghost()
+	add_child(_rubble)
 	add_child(_marks)
 	add_child(_fx)
-	var mid := (float(spans[0][0]) + float(spans[0][1]) + 1.0) * 8.0
-	_fund_label = VillageArt.paint(self, "", Vector2(mid, -COURSE_PX * courses_total - 22), VillageArt.BONE, 20)
-	_target_label = VillageArt.paint(self, "", Vector2(mid, -COURSE_PX * courses_total - 8), Color(VillageArt.BONE, 0.6), 10)
-	VillageArt.bob(_fund_label, 1.0, 2.6)
+	# The fund is carved into a stone plinth set at the wall's foot; the target under it.
+	var mid := (float(spans[0][0]) + float(spans[0][1]) + 1.0) * 8.0 - 24.0
+	_fund_label = VillageArt.paint(self, "", Vector2(mid, -21), VillageArt.BONE, 10)
+	_fund_label.z_index = 2
+	VillageArt.carry(_fund_label, "stone")
+	_target_label = VillageArt.paint(self, "", Vector2(mid, -8), Color(VillageArt.BONE, 0.7), 10)
+	_target_label.z_index = 2
+	VillageArt.carry(_target_label, "carved")
+	VillageArt.pool(self, Vector2(mid, -16), Color(VillageArt.WARM, 0.22), 60, 0.1)
 
 
 func apply(wall: Dictionary) -> String:
 	_state = wall
-	_fund_label.text = VillageArt.dollars(int(wall.balance_cents))
-	_target_label.text = "of %s" % VillageArt.dollars(int(wall.target_cents))
+	VillageArt.number(_fund_label, VillageArt.dollars(int(wall.balance_cents)))
+	VillageArt.number(_target_label, "of %s" % VillageArt.dollars(int(wall.target_cents)))
 	courses_total = int(wall.courses_total)
 	_draw_marks(wall)
 	var now := int(wall.courses)
@@ -64,6 +76,7 @@ func _build(courses: int) -> void:
 		_course(k, false)
 	_shown = courses
 	_place_top()
+	_scatter_rubble()
 
 
 func _course(k: int, animate: bool) -> Array[Sprite2D]:
@@ -121,6 +134,23 @@ func _place_top() -> void:
 			s.centered = false
 			s.position = Vector2(x * 16, h - 5)
 			_top.add_child(s)
+		# Crenellations along the top, a walkway line under them, torches on the face.
+		var x0 := int(span[0]) * 16
+		var x1 := (int(span[1]) + 1) * 16
+		var merlons := BuildingSite.Painter.new()
+		merlons.fn = func(c: Node2D) -> void:
+			var mx := x0 + 1
+			while mx + 5 <= x1:
+				c.draw_rect(Rect2(mx - 1, h - 10, 7, 6), VillageArt.INK)
+				c.draw_rect(Rect2(mx, h - 9, 5, 5), VillageArt.STONE_LIGHT)
+				c.draw_rect(Rect2(mx, h - 9, 5, 1), Color(1, 1, 1, 0.55))
+				c.draw_rect(Rect2(mx + 4, h - 8, 1, 4), VillageArt.STONE)
+				mx += 9
+			c.draw_rect(Rect2(x0, h - 1, x1 - x0, 1), Color(0, 0, 0, 0.45))
+		_top.add_child(merlons)
+		if _shown >= 3:
+			for tx in range(int(span[0]) + 2, int(span[1]) - 1, TORCH_EVERY):
+				_torch(Vector2(tx * 16 + 8, h + 7))
 
 
 func _cap(full: bool) -> void:
@@ -136,6 +166,46 @@ func _cap(full: bool) -> void:
 			_glow.append(VillageArt.glow(_top, Vector2(x * 16 + 16, h - 2), Color(VillageArt.BONE, 0.55), 46, 0.4))
 		var w := (int(span[1]) - int(span[0]) + 1) * 16.0
 		_glow.append(VillageArt.embers(_top, Vector2(int(span[0]) * 16 + w / 2.0, h - 4), VillageArt.BONE, w, 14, 14))
+
+
+## A torch on the wall face: a bracket, a small flame, and a flickering pool on the stone and
+## the road in front of it (lit, so the wall's own modulate doesn't dim it).
+func _torch(at: Vector2) -> void:
+	var t := Node2D.new()
+	t.position = at
+	t.modulate = Color(1.0 / STONE_NIGHT.r, 1.0 / STONE_NIGHT.g, 1.0 / STONE_NIGHT.b)
+	_top.add_child(t)
+	var bracket := BuildingSite.Painter.new()
+	bracket.fn = func(c: Node2D) -> void:
+		c.draw_rect(Rect2(-1, -3, 3, 5), VillageArt.INK)
+		c.draw_rect(Rect2(0, -2, 1, 3), VillageArt.WOOD)
+	t.add_child(bracket)
+	var flame := VillageArt.anim(t, VillageArt.frames(VillageArt.FLAME, Vector2i(20, 30), 10, 12), Vector2(0, -6))
+	flame.scale = Vector2(0.35, 0.35)
+	flame.material = VillageArt.additive()
+	VillageArt.pool(t, Vector2(0, -4), Color(1.0, 0.6, 0.3, 0.45), 40, 0.2)
+	VillageArt.pool(t, Vector2(0, 22), Color(1.0, 0.6, 0.3, 0.22), 90, 0.18)
+
+
+## What's missing from the wall lies at its foot: rubble, more of it the lower the fund.
+func _scatter_rubble() -> void:
+	for c in _rubble.get_children():
+		c.queue_free()
+	var missing := clampi(courses_total - _shown, 0, courses_total)
+	if missing == 0:
+		return
+	var i := 0
+	for span: Array in spans:
+		var w := (int(span[1]) - int(span[0]) + 1) * 16
+		var n := int(missing * w / 90.0)
+		for k in n:
+			i += 1
+			var b := Sprite2D.new()
+			b.texture = VillageArt.tex(BRICK, Rect2(96 + (i % 3) * 5, 162, 6, 4))
+			b.modulate = STONE_NIGHT
+			b.position = Vector2(int(span[0]) * 16 + ((i * 53) % w), 2 + (i * 7) % 5)
+			b.rotation = ((i * 37) % 7 - 3) * 0.15
+			_rubble.add_child(b)
 
 
 ## The measuring post: three notches, one per month of expenses covered.
@@ -156,10 +226,16 @@ func _draw_marks(wall: Dictionary) -> void:
 		notch.position = Vector2(x, y)
 		notch.modulate = VillageArt.BONE if reached else Color(VillageArt.VIOLET, 0.6)
 		_marks.add_child(notch)
-		var l := VillageArt.paint(_marks, "%d mo" % int(m.months), Vector2(x - 20, y), notch.modulate, 16, VillageArt.FONT_SMALL)
-		l.size.x = 30
-		l.position.x = x - 40
-		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		# A notch cut across the post, its month in brass beside it.
+		var cut := BuildingSite.Painter.new()
+		cut.position = Vector2(x, y)
+		cut.fn = func(c: Node2D) -> void:
+			c.draw_rect(Rect2(-3, -1, 6, 2), VillageArt.INK)
+			c.draw_rect(Rect2(-3, 1, 6, 1), Color(VillageArt.BRASS, 0.8 if reached else 0.3))
+		_marks.add_child(cut)
+		notch.visible = false
+		var l := VillageArt.paint(_marks, str(int(m.months)), Vector2(x - 10, y), VillageArt.BRASS if reached else Color(VillageArt.BRASS, 0.45), 10)
+		VillageArt.carry(l, "brass")
 
 
 ## Bricks fall (money left the fund) or courses rise (money came in), from what was last seen.

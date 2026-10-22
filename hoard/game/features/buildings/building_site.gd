@@ -35,6 +35,9 @@ var _hammer := 0.5
 var _hammer_at := Vector2.ZERO
 var _seen_sent := -1
 var _busy := false
+var _painted := {}  # requirement key -> the number last painted (a change pops it)
+var _look: Sprite2D
+var _worker: Sprite2D
 
 
 class Painter extends Node2D:
@@ -77,6 +80,8 @@ func apply(e: Dictionary, b: Dictionary) -> void:
 		c.queue_free()
 	_sign = null
 	_flag = null
+	_look = null
+	_worker = null
 	_land_pid = ""
 	if e.is_empty():
 		return
@@ -100,7 +105,9 @@ func apply(e: Dictionary, b: Dictionary) -> void:
 		return
 	var look: Variant = e.get("look")
 	if look is Dictionary and (look as Dictionary).has("sheet"):
-		_draw_look(look)
+		_draw_look(look, int(e.get("tier", 1)))
+	if building_id != "house":
+		_dress_tier(int(e.get("tier", 0)))
 	if building:
 		_scaffold(plot.rect, float(e.get("progress", 0.0)), days_left, 1)
 	elif not next.is_empty():
@@ -148,25 +155,39 @@ func _signpost(at: Vector2, next: Dictionary, land: bool) -> void:
 	var right := at.x + shift + x + (widths[-1] / 2.0 if not widths.is_empty() else 0.0)
 	if right > Village.W * T - 4:
 		shift -= right - (Village.W * T - 4)
-	var x0 := shift - 5.0
-	var x1 := shift + x + 5.0
+	var x0 := floorf(shift - 6.0)
+	var x1 := ceilf(shift + x + 6.0)
 	var ready := bool(next.get("ready", false))
+	# A post with an arm; a plank hangs from the arm on two chains, the numbers painted on it
+	# and a lamp per requirement along its top edge.
 	var p := Painter.new()
 	p.fn = func(c: Node2D) -> void:
-		c.draw_rect(Rect2(-1, -24, 3, 24), WOOD)
-		c.draw_rect(Rect2(-1, -24, 1, 24), WOOD_LIGHT)
-		c.draw_rect(Rect2(minf(x0, -4), -27, maxf(x1, 4) - minf(x0, -4), 7), WOOD_DARK)
-		c.draw_rect(Rect2(minf(x0, -4), -27, maxf(x1, 4) - minf(x0, -4), 1), WOOD)
+		var a0 := minf(x0, -2.0)
+		var a1 := maxf(x1, 2.0)
+		c.draw_rect(Rect2(-2, -37, 5, 37), VillageArt.INK)
+		c.draw_rect(Rect2(-1, -36, 3, 36), WOOD)
+		c.draw_rect(Rect2(-1, -36, 1, 36), WOOD_LIGHT)
+		c.draw_rect(Rect2(a0 - 1, -38, a1 - a0 + 2, 4), VillageArt.INK)
+		c.draw_rect(Rect2(a0, -37, a1 - a0, 2), WOOD)
+		c.draw_rect(Rect2(a0, -37, a1 - a0, 1), WOOD_LIGHT)
+		for cx: float in [x0 + 3.0, x1 - 4.0]:
+			for cy in range(-35, -27):
+				c.draw_rect(Rect2(cx, cy, 1, 1), Color("9a8f86") if cy % 2 == 0 else Color("5a5450"))
+		c.draw_rect(Rect2(x0 - 1, -28, x1 - x0 + 2, 14), VillageArt.INK)
+		c.draw_rect(Rect2(x0, -27, x1 - x0, 12), WOOD_DARK)
+		c.draw_rect(Rect2(x0, -27, x1 - x0, 1), WOOD)
+		c.draw_rect(Rect2(x0, -16, x1 - x0, 1), Color(0, 0, 0, 0.35))
 		if ready:
-			c.draw_rect(Rect2(-13, -15, 26, 10), WOOD_DARK)
-			c.draw_rect(Rect2(-13, -15, 26, 1), WOOD_LIGHT)
+			c.draw_rect(Rect2(-14, -12, 28, 12), VillageArt.INK)
+			c.draw_rect(Rect2(-13, -11, 26, 10), WOOD_DARK)
+			c.draw_rect(Rect2(-13, -11, 26, 1), WOOD_LIGHT)
 	root.add_child(p)
 	for i in reqs.size():
 		var r: Dictionary = reqs[i]
 		var lx := shift + xs[i]
 		var col: Color = KIND.get(str(r.get("key", "")), VillageArt.BONE)
 		var lamp := Painter.new()
-		lamp.position = Vector2(lx, -23.5)
+		lamp.position = Vector2(lx, -27.5)
 		var lit := bool(r.get("met_at_check", false))
 		var now := bool(r.get("met_now", false))
 		lamp.fn = func(c: Node2D) -> void:
@@ -181,39 +202,85 @@ func _signpost(at: Vector2, next: Dictionary, land: bool) -> void:
 			tw.tween_property(lamp, "modulate:a", 1.0, 0.35)
 		var discounted := bool(next.get("discounted", false)) and int(r.get("need", 0)) < int(r.get("base_need", 0))
 		var color := DISCOUNT if discounted else (VillageArt.BONE if lit or now else Color(VillageArt.BONE, 0.6))
-		var l := VillageArt.paint(root, texts[i], Vector2(lx, -33), color, 10)
+		var l := VillageArt.paint(root, texts[i], Vector2(lx, -20), color, 10)
 		l.z_index = 3
+		var key := str(r.get("key", i))
+		if _painted.has(key) and _painted[key] != texts[i]:
+			VillageArt.pop(l)
+		_painted[key] = texts[i]
 		if discounted:
-			VillageArt.glow(root, Vector2(lx, -33), Color(DISCOUNT, 0.45), widths[i] + 14, 0.4)
+			VillageArt.glow(root, Vector2(lx, -20), Color(DISCOUNT, 0.45), widths[i] + 14, 0.4)
 	if ready:
 		var stake := Node2D.new()
 		stake.z_index = 3
 		root.add_child(stake)
 		var coin := Sprite2D.new()
 		coin.texture = VillageArt.sheet("res://art/coin.png")
-		coin.position = Vector2(-7, -10)
+		coin.position = Vector2(-7, -6)
 		stake.add_child(coin)
-		var price := VillageArt.paint(stake, str(int(next.get("coins", 0))), Vector2(4, -10.5), VillageArt.BRASS, 10)
+		var price := VillageArt.paint(stake, str(int(next.get("coins", 0))), Vector2(4, -7), VillageArt.BRASS, 10)
 		price.size.x = 20
 		price.position.x = -3
 		price.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 		if bool(next.get("can_build", false)):
-			VillageArt.glow(root, Vector2(0, -10), Color(VillageArt.BRASS, 0.6), 34, 0.5)
+			VillageArt.glow(root, Vector2(0, -6), Color(VillageArt.BRASS, 0.6), 34, 0.5)
 			VillageArt.bob(stake, 1.0, 1.0)
 
 
 # --- the building's look, scaffolding and the finished beat ---------------------------------
 
-func _draw_look(look: Dictionary) -> void:
+func _draw_look(look: Dictionary, tier: int) -> void:
 	var r: Array = look.get("rect", [0, 0, 16, 16])
 	var t := VillageArt.tex(str(look.sheet), Rect2(r[0], r[1], r[2], r[3]))
 	if t.atlas == null:
 		return
 	var s := VillageArt.sprite(_vis, t, plot.base)
 	s.scale = Vector2.ONE * float(look.get("scale", 1.0))
+	_look = s
+	var w := float(r[2]) * s.scale.x
+	var h := float(r[3]) * s.scale.y
+	var light := Color(str(look.glow)) if look.has("glow") else VillageArt.WARM
 	if look.has("glow"):
-		var g := VillageArt.glow(s, Vector2(0, -float(r[3]) / 2.0), Color(Color(str(look.glow)), 0.5), float(r[2]) * 1.6, 0.35)
+		var g := VillageArt.glow(s, Vector2(0, -float(r[3]) / 2.0), Color(light, 0.5), float(r[2]) * 1.6, 0.35)
 		g.z_index = 1
+	# A built look throws its light on the ground and out of its door.
+	var pool := VillageArt.pool(_vis, plot.base + Vector2(0, -4), Color(light.lerp(VillageArt.WARM, 0.5), 0.16 + 0.05 * tier), w * (1.4 + 0.2 * tier), 0.1)
+	pool.z_index = -1
+	VillageArt.spill(_vis, plot.base + Vector2(0, -2), Color(light, 0.3), 12, 34, 26).z_index = -1
+
+
+## Every tier changes the outline and the light: banners on poles at the corners from the
+## second, lanterns either side of the door from the third, a beacon on top from the fourth.
+func _dress_tier(tier: int) -> void:
+	if tier < 2:
+		return
+	var w := float((plot.rect as Rect2i).size.x * T)
+	var h := float((plot.rect as Rect2i).size.y * T)
+	if is_instance_valid(_look):
+		w = _look.texture.get_width() * _look.scale.x
+		h = _look.texture.get_height() * _look.scale.y
+	w = minf(w, float((plot.rect as Rect2i).size.x * T) + 16.0)
+	for side in [-1, 1]:
+		# Out at the plot's edges, clear of whatever stands in front of the facade.
+		var foot: Vector2 = plot.base + Vector2(side * maxf(w / 2.0 + 2.0, (plot.rect as Rect2i).size.x * T / 2.0 + 4.0), 0)
+		var pole := Painter.new()
+		pole.position = foot
+		pole.fn = func(c: Node2D) -> void:
+			c.draw_rect(Rect2(-1, -h - 18, 3, h + 18), VillageArt.INK)
+			c.draw_rect(Rect2(0, -h - 17, 1, h + 17), WOOD_LIGHT)
+			c.draw_circle(Vector2(0.5, -h - 19), 1.5, VillageArt.BRASS)
+		_vis.add_child(pole)
+		var flag := VillageArt.anim(pole, VillageArt.frames(VillageArt.FLAG, Vector2i(16, 16), 4, 6), Vector2(8 if side > 0 else -7, -h - 10))
+		flag.flip_h = side < 0
+		if tier >= 3:
+			var lantern := VillageArt.sprite(_vis, VillageArt.tiles(VillageArt.HOUSES, 29, 16), plot.base + Vector2(side * 14.0, 2))
+			lantern.z_index = 1
+			VillageArt.pool(lantern, Vector2(0, -8), Color(VillageArt.WARM, 0.7), 24, 0.2).z_index = 2
+			VillageArt.pool(_vis, plot.base + Vector2(side * 14.0, 0), Color(VillageArt.WARM, 0.25), 70, 0.15).z_index = -1
+	if tier >= 4:
+		var beacon := VillageArt.pool(_vis, plot.base + Vector2(0, -h - 6), Color(VillageArt.BRASS, 0.6), 40, 0.25)
+		beacon.z_index = 2
+		VillageArt.embers(_vis, plot.base + Vector2(0, -h - 4), Color(VillageArt.BRASS, 0.8), 12, 5, 14).z_index = 2
 
 
 func _scaffold(rect: Rect2i, progress: float, days_left: int, z: int) -> void:
@@ -259,6 +326,14 @@ func _scaffold(rect: Rect2i, progress: float, days_left: int, z: int) -> void:
 	_vis.add_child(p)
 	_hammer_at = p.position + Vector2(0, -h)
 	_sign = p
+	# A worker on the top plank, hammering: every knock throws sparks.
+	_worker = Sprite2D.new()
+	_worker.texture = VillageArt.tex(VillageArt.HOODED_A, Rect2(16, 112, 16, 16))
+	_worker.offset = Vector2(0, -8)
+	_worker.position = p.position + Vector2(w / 4.0, -h - 2)
+	_worker.z_index = z + 1
+	_vis.add_child(_worker)
+	_hammer_at = _worker.position + Vector2(-6, -6)
 
 
 func _check_finished(e: Dictionary) -> void:
@@ -274,6 +349,27 @@ func _finished() -> void:
 	VillageArt.burst(self, at + Vector2(0, 8), WOOD_LIGHT, 14, 50, 0.6, 160)
 	Sfx.play("pop")
 	Sfx.play("reveal_rare")
+	VillageArt.sfx("kenney-impact-sounds/Audio/impactBell_heavy_00%d.ogg" % randi_range(0, 4), 0.8, -8.0)
+	var base: Vector2 = (land_sign_at(_land_pid) if building_id == "land" else plot.base)
+	_dust_ring(base)
+	if is_instance_valid(_look):
+		# The building rises a little and settles, and a bright sweep crosses its face.
+		var y := _look.position.y
+		var tw := _look.create_tween()
+		tw.tween_property(_look, "position:y", y - 2.0, 0.12).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		tw.tween_property(_look, "position:y", y, 0.35).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
+		var size := _look.texture.get_size() * _look.scale
+		var sweep := Polygon2D.new()
+		sweep.polygon = PackedVector2Array([Vector2(-6, 0), Vector2(2, 0), Vector2(10, -size.y), Vector2(2, -size.y)])
+		sweep.color = Color(1, 0.95, 0.8, 0.55)
+		sweep.material = VillageArt.additive()
+		sweep.position = base + Vector2(-size.x / 2.0 - 8.0, 0)
+		sweep.z_index = 2
+		_vis.add_child(sweep)
+		var go := sweep.create_tween()
+		go.tween_property(sweep, "position:x", base.x + size.x / 2.0, 0.5).set_trans(Tween.TRANS_SINE)
+		go.parallel().tween_property(sweep, "modulate:a", 0.0, 0.5).set_ease(Tween.EASE_IN)
+		go.tween_callback(sweep.queue_free)
 	if village is Village:
 		(village as Village).shake(2.0, 0.2)
 	await VillageArt.wait(self, 0.7)
@@ -290,7 +386,27 @@ func _process(delta: float) -> void:
 	if village.leader.position.distance_to(_hammer_at) > 260.0:
 		return
 	VillageArt.sfx(HAMMER % randi_range(0, 4), randf_range(0.85, 1.15), -12.0)
-	VillageArt.burst(_vis, _hammer_at + Vector2(randf_range(-12, 12), 0), WOOD_LIGHT, 4, 30, 0.4)
+	VillageArt.burst(_vis, _hammer_at + Vector2(randf_range(-3, 3), 0), WOOD_LIGHT, 3, 30, 0.4)
+	VillageArt.burst(_vis, _hammer_at, Color(1.0, 0.85, 0.4), 5, 55, 0.25, 220)
+	if is_instance_valid(_worker):
+		VillageArt.squash(_worker, Vector2(1.2, 0.8), 0.16)
+		_worker.flip_h = not _worker.flip_h if randf() < 0.2 else _worker.flip_h
+
+
+## A ring of dust rolling out along the ground from a building's foot.
+func _dust_ring(at: Vector2) -> void:
+	var ring := Painter.new()
+	ring.position = at
+	ring.z_index = 3
+	ring.fn = func(c: Node2D) -> void:
+		for i in 20:
+			var a := TAU * i / 20.0
+			c.draw_rect(Rect2((Vector2(cos(a) * 12.0, sin(a) * 4.0)).round(), Vector2(2, 2)), Color(0.8, 0.72, 0.62, 0.8))
+	add_child(ring)
+	var tw := ring.create_tween()
+	tw.tween_property(ring, "scale", Vector2(3.2, 3.2), 0.6).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
+	tw.parallel().tween_property(ring, "modulate:a", 0.0, 0.6).set_ease(Tween.EASE_IN)
+	tw.tween_callback(ring.queue_free)
 
 
 # --- taps ----------------------------------------------------------------------------------

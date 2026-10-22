@@ -12,6 +12,11 @@ const T := 16
 const POST := Rect2(180, 80, 8, 14)
 const ROPE := Color("c9a46a")
 const RAG := Color("d8453a")
+## While closed the land beyond the rope is only shapes: lit near ink, never its own colors.
+const SHAPE := Color(0.17, 0.14, 0.24)
+const DECOR_LIT := Color(0.85, 0.85, 0.95)
+const WILD_LIT := Color(0.62, 0.6, 0.72)
+const FOG_TINT := Color(0.6, 0.5, 0.95)
 ## Overgrowth while closed, per kind of land: [sheet, col, row] single tiles.
 const WILD := {
 	"reach": [
@@ -69,6 +74,10 @@ var _haze := Node2D.new()
 var _stake := Node2D.new()
 var _decor_tiles: Array[Rect2i] = []
 var _rope_key := ""
+var _decor: Array[Sprite2D] = []
+var _fogs: Array[Sprite2D] = []
+var _rope_mist := Node2D.new()
+var _fog_t := 0.0
 
 
 func _ready() -> void:
@@ -78,11 +87,27 @@ func _ready() -> void:
 		add_child(n)
 	_haze.z_index = 3
 	add_child(_haze)
+	_rope_mist.z_index = 3
+	add_child(_rope_mist)
 	_build_decor()
 	_build_wild()
 	_build_bits()
 	_build_stake()
 	_build_haze()
+	_build_eyes()
+
+
+func _process(delta: float) -> void:
+	# Two layers of fog drift over the land in opposite directions.
+	if not _haze.visible:
+		return
+	_fog_t += delta
+	for i in _fogs.size():
+		# A slow drift back and forth inside the sheet, so its edges never show.
+		var f := _fogs[i]
+		var reach := (320.0 - f.region_rect.size.x) / 2.0
+		var speed := 4.0 if i == 0 else -7.0
+		f.region_rect.position.x = reach + sin(_fog_t * speed / maxf(reach, 1.0)) * reach
 
 
 ## The parcel in pixels.
@@ -117,6 +142,12 @@ func set_open(open: bool) -> void:
 	_haze.position = Vector2.ZERO
 	_stake.modulate.a = 1.0
 	_stake.position = Vector2.ZERO
+	_rope_mist.visible = not open
+	_rope_mist.modulate.a = 1.0
+	for d in _decor:
+		d.modulate = DECOR_LIT if open else SHAPE
+	for c in _wild.get_children():
+		(c as CanvasItem).modulate = Color(WILD_LIT, 1.0) if open else Color(SHAPE, 1.0)
 
 
 ## The rope runs along these boundary lines (pixel segments) where the parcel meets open land.
@@ -128,8 +159,11 @@ func set_ropes(segments: Array) -> void:
 	_rope_key = key
 	for c in _ropes.get_children():
 		c.queue_free()
+	for c in _rope_mist.get_children():
+		c.queue_free()
 	for seg: Array in segments:
 		_rope(seg[0], seg[1])
+		_mist_along(seg[0], seg[1])
 
 
 ## The reveal: stake pops, ropes drop, haze lifts, dust, grass comes up. The village pans here
@@ -160,11 +194,25 @@ func play_open(ground: Callable) -> void:
 			tw.tween_property(p, "modulate:a", 0.0, 0.3)
 	VillageArt.sfx("ninja-adventure/Audio/Sounds/Hit & Impact/Hit2.ogg", 0.8, -14)
 	await VillageArt.wait(self, 0.35)
-	# The haze lifts and drifts off.
+	# The fog rolls back from the rope line outward and thins away.
 	VillageArt.sfx("ninja-adventure/Audio/Sounds/Whoosh & Slash/Whoosh.ogg", 0.7, -8)
+	var away := (center() - _rope_mid()).normalized() * 40.0
 	var lift := _haze.create_tween()
-	lift.tween_property(_haze, "position:y", -36.0, 1.3).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
-	lift.parallel().tween_property(_haze, "modulate:a", 0.0, 1.1)
+	lift.tween_property(_haze, "position", away, 1.2).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	lift.parallel().tween_property(_haze, "modulate:a", 0.0, 1.2)
+	var mist := _rope_mist.create_tween()
+	mist.tween_property(_rope_mist, "modulate:a", 0.0, 0.6)
+	# Color floods in as a wave from the stake, a soft chime per step.
+	var far0 := 1.0
+	for d in _decor:
+		far0 = maxf(far0, d.position.distance_to(Vector2(stake_tile * T)))
+	for d in _decor:
+		var k := d.position.distance_to(Vector2(stake_tile * T)) / far0
+		var tw := d.create_tween()
+		tw.tween_interval(k * 1.0)
+		tw.tween_property(d, "modulate", DECOR_LIT, 0.35)
+	for i in 5:
+		_chime(i)
 	# The overgrowth sinks in a wave from the stake outward, dust where it goes.
 	var stake_px := Vector2(stake_tile * T)
 	var far := 1.0
@@ -203,10 +251,27 @@ func play_open(ground: Callable) -> void:
 	_rope_key = ""
 
 
+func _chime(step: int) -> void:
+	await VillageArt.wait(self, step * 0.22)
+	VillageArt.sfx("kenney-impact-sounds/Audio/impactBell_heavy_00%d.ogg" % (step % 5), 1.8 + step * 0.12, -20)
+
+
+func _rope_mid() -> Vector2:
+	var posts := _ropes.get_children()
+	if posts.is_empty():
+		return Vector2(rect.position * T)
+	var sum := Vector2.ZERO
+	for p in posts:
+		sum += (p as Node2D).position
+	return sum / posts.size()
+
+
 func _dust(at: Vector2, delay: float) -> void:
 	await VillageArt.wait(self, delay)
-	var sf := VillageArt.frames(VillageArt.SMOKE, Vector2i(32, 32), 6, 12)
-	sf.set_animation_loop("default", false)  # this fps is only used for one-shot puffs
+	# A copy: the cached frames are shared with looping chimney smoke.
+	var sf := VillageArt.frames(VillageArt.SMOKE, Vector2i(32, 32), 6, 12).duplicate() as SpriteFrames
+	sf.set_animation_speed("default", 12.0)
+	sf.set_animation_loop("default", false)
 	var puff := VillageArt.anim(self, sf, at, false)
 	puff.modulate = Color(0.85, 0.8, 0.75, 0.9)
 	puff.scale = Vector2(1.4, 1.4)
@@ -224,7 +289,8 @@ func _build_decor() -> void:
 	for d: Array in DECOR.get(land, []):
 		var feet := Vector2((rect.position.x + d[5]) * T + d[3] * 8.0, (rect.position.y + d[6] + 1) * T)
 		var s := VillageArt.sprite(self, VillageArt.tiles(d[0], d[1], d[2], d[3], d[4]), feet)
-		s.modulate = Color(0.85, 0.85, 0.95)
+		s.modulate = SHAPE
+		_decor.append(s)
 		var w: int = d[3]
 		var base := Vector2i(rect.position.x + int(d[5]), rect.position.y + int(d[6]))
 		_decor_tiles.append(Rect2i(base.x, base.y, w, 1))
@@ -247,7 +313,7 @@ func _build_wild() -> void:
 			var k: Array = kinds[h % kinds.size()]
 			var at := Vector2(x * T + 8 + (h % 7) - 3, (y + 1) * T - (h % 3))
 			var s := VillageArt.sprite(_wild, VillageArt.tiles(k[0], k[1], k[2]), at, h % 2 == 0)
-			s.modulate = Color(0.62, 0.6, 0.72)
+			s.modulate = SHAPE
 
 
 func _build_bits() -> void:
@@ -270,6 +336,15 @@ func _build_stake() -> void:
 	post.scale = Vector2(1.0, 1.2)
 	VillageArt.glow(_stake, at + Vector2(0, -16), Color(RAG, 0.45), 26, 0.5)
 	VillageArt.bob(flag, 0.5, 2.0)
+	# A lantern swings from the stake.
+	var hook := Node2D.new()
+	hook.position = at + Vector2(-3, -14)
+	_stake.add_child(hook)
+	var lantern := VillageArt.sprite(hook, VillageArt.tiles(VillageArt.HOUSES, 29, 16), Vector2(0, 12))
+	lantern.scale = Vector2(0.75, 0.75)
+	VillageArt.pool(lantern, Vector2(0, -8), Color(1.0, 0.7, 0.4, 0.8), 18, 0.25)
+	VillageArt.pool(_stake, at + Vector2(-3, -4), Color(1.0, 0.65, 0.35, 0.3), 70, 0.2)
+	VillageArt.sway(hook, 0.22, 2.4)
 
 
 ## The land under a dim veil, with slow mist drifting over it (kept inside the parcel).
@@ -277,8 +352,24 @@ func _build_haze() -> void:
 	var r := px_rect()
 	var veil := Polygon2D.new()
 	veil.polygon = PackedVector2Array([r.position, Vector2(r.end.x, r.position.y), r.end, Vector2(r.position.x, r.end.y)])
-	veil.color = Color(0.06, 0.03, 0.12, 0.42)
+	veil.color = Color(0.04, 0.02, 0.09, 0.5)
 	_haze.add_child(veil)
+	# Two layers of the pack's fog, scrolling against each other.
+	for i in 2:
+		var f := Sprite2D.new()
+		f.texture = VillageArt.sheet(VillageArt.FOG)
+		f.centered = false
+		f.region_enabled = true
+		f.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
+		f.region_rect = Rect2(0, 0, minf(r.size.x / 2.0, 300.0), minf(r.size.y / 2.0, 176.0))
+		f.scale = r.size / f.region_rect.size
+		f.flip_h = i == 1
+		f.flip_v = i == 1
+		f.position = r.position
+		f.material = VillageArt.additive()
+		f.modulate = Color(FOG_TINT, 0.1 if i == 0 else 0.07)
+		_haze.add_child(f)
+		_fogs.append(f)
 	var n := maxi(3, int(r.size.x * r.size.y / 9000.0))
 	for i in n:
 		var h := _hash(i * 7, i * 13 + 5)
@@ -293,6 +384,54 @@ func _build_haze() -> void:
 		drift.tween_property(mist, "position:x", at.x - dx, 5.0 + (h % 5)).set_trans(Tween.TRANS_SINE)
 
 
+## Fog banks up thick along the rope line.
+func _mist_along(a: Vector2, b: Vector2) -> void:
+	var n := maxi(2, int(a.distance_to(b) / 40.0))
+	var inward := (center() - a.lerp(b, 0.5)).normalized()
+	var horizontal := absf(b.x - a.x) > absf(b.y - a.y)
+	for i in n + 1:
+		var at := a.lerp(b, float(i) / n) + inward * 10.0
+		var m := VillageArt.glow(_rope_mist, at, Color(FOG_TINT, 0.2), 64, 0.3)
+		if horizontal:
+			m.scale.y *= 0.45
+		else:
+			m.scale.x *= 0.45
+		var tw := m.create_tween().set_loops()
+		var dx := Vector2(6, 0) if horizontal else Vector2(0, 6)
+		tw.tween_property(m, "position", at + dx, 3.0 + i % 3).set_trans(Tween.TRANS_SINE)
+		tw.tween_property(m, "position", at - dx, 3.0 + i % 3).set_trans(Tween.TRANS_SINE)
+
+
+## Pairs of eyes in the dark beyond the rope: they open, blink, and are gone.
+func _build_eyes() -> void:
+	for i in 3:
+		var eyes := BuildingSite.Painter.new()
+		eyes.material = VillageArt.additive()
+		eyes.z_index = 4
+		eyes.fn = func(c: Node2D) -> void:
+			c.draw_rect(Rect2(-2, 0, 1, 1), Color(1.0, 0.85, 0.5))
+			c.draw_rect(Rect2(2, 0, 1, 1), Color(1.0, 0.85, 0.5))
+		eyes.modulate.a = 0.0
+		_haze.add_child(eyes)
+		_blink(eyes, i * 2.3)
+
+
+func _blink(eyes: Node2D, delay: float) -> void:
+	await VillageArt.wait(self, delay + randf_range(1.0, 4.0))
+	while is_inside_tree() and not is_open:
+		var r := px_rect().grow(-24)
+		eyes.position = (r.position + Vector2(randf() * r.size.x, randf() * r.size.y)).round()
+		var tw := eyes.create_tween()
+		tw.tween_property(eyes, "modulate:a", 0.9, 0.4)
+		tw.tween_interval(randf_range(1.2, 2.4))
+		tw.tween_property(eyes, "scale:y", 0.0, 0.05)
+		tw.tween_property(eyes, "scale:y", 1.0, 0.06)
+		tw.tween_interval(randf_range(0.6, 1.4))
+		tw.tween_property(eyes, "modulate:a", 0.0, 0.25)
+		await tw.finished
+		await VillageArt.wait(self, randf_range(3.0, 8.0))
+
+
 ## Stakes every two tiles from a to b (pixels on a tile boundary), a sagging rope between their
 ## tips and a red rag on every other span.
 func _rope(a: Vector2, b: Vector2) -> void:
@@ -304,6 +443,10 @@ func _rope(a: Vector2, b: Vector2) -> void:
 		var post := VillageArt.sprite(_ropes, VillageArt.tex(VillageArt.TOWN, POST), at)
 		post.modulate = Color(0.85, 0.8, 0.85)
 		tips.append(at + Vector2(0, -11))
+		if i % 2 == 0:
+			# A small lantern hangs on every other post.
+			VillageArt.pool(post, Vector2(0, -13), Color(1.0, 0.68, 0.38, 0.75), 10, 0.3)
+			VillageArt.pool(post, Vector2(0, -4), Color(1.0, 0.65, 0.35, 0.18), 44, 0.2)
 	var line := Line2D.new()
 	line.width = 1.0
 	line.default_color = ROPE

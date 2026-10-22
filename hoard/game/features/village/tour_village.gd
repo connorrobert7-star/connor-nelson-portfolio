@@ -64,6 +64,7 @@ func run(kit: TourKit) -> void:
 		await kit.shot("village_at_%s" % name)
 	# Talking still works by tap: Wren stands by the fields now.
 	await _stand(kit, Vector2i(14, 29))
+	await kit.wait(0.8)  # let the camera settle on the leader before tapping the world
 	await kit.tap_world(v.feet_at(Vector2i(13, 26)) + Vector2(0, -8))
 	await kit.until(func() -> bool: return kit.dialogue_open(), 6.0)
 	kit.check(kit.dialogue_open(), "tapping Wren walks over and she talks")
@@ -145,6 +146,7 @@ func run(kit: TourKit) -> void:
 			c = candidate
 			break
 	await _stand(kit, Vector2i((c.position / Level.TILE).floor()) + Vector2i(2, 0))
+	await kit.wait(0.8)  # let the camera settle on the leader before tapping the world
 	var leader_at := v.leader.position
 	await kit.tap_world(c.position + Vector2(0, -7))
 	await kit.wait(0.1)

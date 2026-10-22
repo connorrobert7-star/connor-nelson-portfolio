@@ -62,30 +62,31 @@ func _ready() -> void:
 	# The sign post to the right, with the balance painted on it.
 	_sign.position = Vector2(W * 16 + 14, 0)
 	add_child(_sign)
-	VillageArt.sprite(_sign, VillageArt.tiles(T, 11, 6), Vector2.ZERO)
-	VillageArt.glow(_sign, Vector2(0, -20), Color(VillageArt.BONE, 0.35), 54, 0.3)
-	_balance_label = VillageArt.paint(_sign, "", Vector2(0, -26), VillageArt.BONE, 10)
+	# The House Fund is carved into a stone plinth by the plot, the stages as pips above it.
+	VillageArt.pool(_sign, Vector2(0, -10), Color(VillageArt.WARM, 0.3), 64, 0.12)
+	_balance_label = VillageArt.paint(_sign, "", Vector2(0, -9), VillageArt.BONE, 10)
+	VillageArt.carry(_balance_label, "stone")
 	for i in 7:
 		var pip := Sprite2D.new()
 		pip.texture = VillageArt.tex(VillageArt.SPECKS, Rect2(16, 0, 8, 8))
-		pip.position = Vector2(-15 + i * 5, -18)
+		pip.position = Vector2(-15 + i * 5, -20)
 		pip.scale = Vector2(0.5, 0.5)
 		_sign.add_child(pip)
 		_pips.append(pip)
 	_gap_label = VillageArt.paint(self, "", Vector2(W * 8, -ROWS_PX - 8), VillageArt.VIOLET, 10)
-	VillageArt.bob(_gap_label, 1.5, 2.2)
+	VillageArt.carry(_gap_label, "ghost")
 
 
 ## Draw the stage the backend says is built; returns true if a new stage needs its build beat.
 func apply(house: Dictionary) -> bool:
 	_state = house
-	_balance_label.text = VillageArt.dollars(int(house.balance_cents))
+	VillageArt.number(_balance_label, VillageArt.dollars(int(house.balance_cents)))
 	var index := int(house.index)
 	for i in _pips.size():
 		var on := i <= index
 		_pips[i].modulate = VillageArt.BONE if on else Color(VillageArt.VIOLET, 0.35)
 	var nxt: Variant = house.get("next")
-	_gap_label.text = "" if nxt == null else VillageArt.dollars(int(nxt.to_go_cents))
+	VillageArt.number(_gap_label, "" if nxt == null else VillageArt.dollars(int(nxt.to_go_cents)))
 	_pile_bricks(int(house.rows))
 	var building: bool = house.get("building", false)
 	var show := int(house.seen_index) if building else index
