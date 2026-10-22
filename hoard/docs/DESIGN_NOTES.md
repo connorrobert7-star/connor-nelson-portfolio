@@ -154,3 +154,14 @@ momentum signals. Nothing that says a stock is going up or might be worth buying
 this later, point me back to this line." The last ask above was pointed back to that line and a
 rule-keeping version (a target mix the owner sets, new money going to whatever is furthest below
 its target) was put to the owner. Build whatever they chose, recorded below.
+
+### The owner's calls (October 22)
+
+- **Target mix.** The owner sets a target mix once (for example 60% total US market, 20%
+  international, 10% gold and silver, 5% bonds, 5% bitcoin). Every pull, and the pot, buys
+  whatever slice is furthest below its target right now, from the owner's own funds for that
+  slice. When one slice runs up, new money flows to the others. This replaces "the pick" as the
+  thing that chooses what a pull buys. The game still never picks on momentum, never sells, and
+  never says anything is going up. The helper explains each slice.
+- **Gold, silver and bitcoin as ETFs** (for example IAU, SLV, IBIT): same broker, same order code,
+  same caps. No direct crypto for now.
