@@ -21,8 +21,8 @@ MAX_CHARS = 62
 # A debt at or above this APR is "high-rate": paying it beats an assumed market return.
 HIGH_APR = 8.0
 INDEX_KINDS = ("index", "bond")
-METAL_KINDS = ("metal", "gold", "silver", "commodity")
-CRYPTO_KINDS = ("crypto",)
+METAL_KINDS = ("metal", "metals", "gold", "silver", "commodity", "precious_metal")
+CRYPTO_KINDS = ("crypto", "bitcoin")
 WEEKS_PER_YEAR = 52
 # Words that would turn a line into a nudge or a momentum signal.
 BANNED = (

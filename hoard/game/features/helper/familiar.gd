@@ -112,6 +112,8 @@ func _target() -> Vector2:
 
 
 func _process(delta: float) -> void:
+	# Where a scene hides the wizard, Pip goes with him.
+	visible = leader.visible
 	_t += delta
 	_since += delta
 	var to := _target()

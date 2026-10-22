@@ -126,7 +126,9 @@ func _process(delta: float) -> void:
 				_shown += 1
 				if _shown % 2 == 0 and ch != " ":
 					Sfx.play_path(BLIP, voice * randf_range(0.94, 1.06), -19.0, "UI")
-				_char_t += PAUSE_SECONDS if ".,?-;:".contains(ch) and _shown < _total else CHAR_SECONDS
+				# A breath after a full stop or a comma, not inside "$1,800.00".
+				var next_ch := flat[_shown] if _shown < _total else ""
+				_char_t += PAUSE_SECONDS if ".,?-;:".contains(ch) and next_ch == " " else CHAR_SECONDS
 			if _shown >= _total:
 				_state = "hold"
 		"hold":
