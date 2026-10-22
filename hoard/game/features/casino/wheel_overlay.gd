@@ -11,6 +11,7 @@ const C := Vector2(240, 124)  # the hub
 const R_OUT := 86.0
 const R_IN := 18.0
 const STEP := TAU / 12.0
+const DUD_HALF := 0.07  # half a dud sliver's width at the rim, radians
 const T_WIND := 0.25
 const T_SPIN := 5.4
 const TURNS := 5
@@ -34,6 +35,7 @@ var angle := 0.0
 var landed_index := -1
 var near_miss := ""
 var spin_seconds := 0.0
+var landed_dud := -1
 var skipped := false
 ## How often an honest near miss is staged when a better wedge sits next door (a tuning knob).
 var near_chance := 0.65
@@ -92,6 +94,10 @@ func wheel_control() -> Control:
 	return _face
 
 
+func _pot_key() -> String:
+	return "wheel"
+
+
 func lever_control() -> Control:
 	return _lever
 
@@ -124,9 +130,19 @@ func play(data: Dictionary) -> void:
 	result = data
 	phase = Phase.BUSY
 	hush()
+	if not bool(data.get("hit", true)):
+		# A blank: the wheel stops dead on a dud sliver between two wedges, and the dollars
+		# drop into the jar.
+		var d := int(data.get("dud_index", 0))
+		await _spin_to(d, 0.0)
+		await _dud(d)
+		await pot_blank(Vector2(C.x, C.y - R_OUT + 28))
+		finish()
+		return
 	var k := int(data.get("wedge_index", 0))
 	await _spin_to(k)
 	await _pop(k)
+	await pot_hit()
 	await reveal(data.get("item", {}), Vector2(C.x, C.y - R_OUT + 28))
 	if bool(data.get("reset", false)):
 		await _relight(data.get("wedges", []))
@@ -160,9 +176,12 @@ func _landing(k: int) -> float:
 	return randf_range(0.3, 0.7)
 
 
-func _spin_to(k: int) -> void:
+func _spin_to(k: int, fixed := -1.0) -> void:
 	moment = "spin"
 	var f := _landing(k)
+	if fixed >= 0.0:
+		near_miss = ""  # a dud sliver sits exactly on the boundary at the start of wedge k
+		f = fixed
 	var a0 := angle
 	var target := -(k + f) * STEP
 	var travel := fposmod(target - a0, TAU) + TURNS * TAU
@@ -251,6 +270,17 @@ func _tick(v: float) -> void:
 	p.play()
 
 
+## The wheel stopped on dud sliver d: it goes dull, a low thud, nothing comes off.
+func _dud(d: int) -> void:
+	moment = "dud"
+	landed_dud = d
+	_face.dud_hot = d
+	Sfx.play_path(SND_SLIP, 0.8, -6.0)
+	shake(_room, 1.0, 0.12)
+	await get_tree().create_timer(0.6).timeout
+	_face.dud_hot = -1
+
+
 ## The won wedge flashes and comes off the wheel.
 func _pop(k: int) -> void:
 	moment = "pop"
@@ -332,6 +362,7 @@ class Face:
 	## The wheel itself; it turns as a whole (rotation is the wheel's angle).
 	var wedges: Array = []
 	var hot := -1
+	var dud_hot := -1
 	var speed := 0.0
 	var _t := 0.0
 
@@ -383,6 +414,19 @@ class Face:
 			draw_set_transform(c + Vector2(cos(mid), sin(mid)) * 60.0, mid + PI / 2.0, Vector2.ONE)
 			MachineOverlay.draw_symbol(self, Vector2.ZERO, tier, frame, 0.8, Color(0.12, 0.1, 0.15, 0.9) if taken else Color.WHITE)
 			draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+		# The dud slivers: a thin dead notch on every boundary, where a blank lands.
+		for i in wedges.size():
+			var b := -PI / 2.0 + i * WheelOverlay.STEP
+			var pts := PackedVector2Array()
+			for a: float in [b - WheelOverlay.DUD_HALF, b + WheelOverlay.DUD_HALF]:
+				pts.append(c + Vector2(cos(a), sin(a)) * R)
+			pts.append(c + Vector2(cos(b), sin(b)) * (WheelOverlay.R_IN + 22.0))
+			var dead := Color("0b080e")
+			if i == dud_hot:
+				dead = dead.lerp(Color("4a3a52"), 0.5 + 0.5 * sin(_t * 20.0))
+			draw_colored_polygon(pts, dead)
+			draw_line(pts[0], pts[2], Color(MachineOverlay.TRIM, 0.5), 1.0)
+			draw_line(pts[1], pts[2], Color(MachineOverlay.TRIM, 0.5), 1.0)
 		# Pegs at the wedge edges, and bulbs that chase around the rim.
 		for i in wedges.size():
 			var a0 := -PI / 2.0 + i * WheelOverlay.STEP

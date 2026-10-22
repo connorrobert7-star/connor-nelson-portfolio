@@ -5,6 +5,11 @@ extends Room
 ## close, and the hours of work it costs); Marlo works his stall by the door, last week's
 ## calendar pinned behind him with Sunday ringed, a big clock ticking on the back wall.
 ## Buys are quiet: the register clunks and Marlo nods. No panels, no prompts.
+##
+## The pick (docs/POT.md): a tap on a shelf pins that stock as what the casino's pot buys on
+## its next hit: a small brass plate drops onto its price tag with a clunk, and the pinned one
+## stays marked. A tap on the pinned shelf opens the buy at the counter as before. Pinning
+## moves no money; the game never pins anything on its own.
 
 const MARLO := Vector2i(13, 5)
 const MAP: Array[String] = [
@@ -51,6 +56,8 @@ var clock := Node2D.new()
 var _marlo_y := 0.0
 var _nod := 0.0
 var _drawer := 0.0
+## The stock just pinned, so the rebuilt tag plays the plate dropping on.
+var _just_pinned := ""
 
 
 func _init() -> void:
@@ -187,8 +194,12 @@ func dress() -> void:
 		tag.price = _price(int(s.price_cents))
 		tag.hours = "%.1fh" % float(s.price_hours)
 		tag.owned = float(s.get("owned_qty", 0)) > 0
+		tag.pinned = str(s.symbol) == pick_symbol()
 		tag.seed = i * 1.37
 		dynamic.add_child(tag)
+		if tag.pinned and str(s.symbol) == _just_pinned:
+			_just_pinned = ""
+			tag.drop_in()
 
 
 static func _price(cents: int) -> String:
@@ -211,14 +222,36 @@ func _process(delta: float) -> void:
 	clock.queue_redraw()
 
 
+## The owner's pick from /state ("" when nothing is pinned).
+static func pick_symbol() -> String:
+	var p: Variant = Game.state.get("shop", {}).get("pick")
+	return str((p as Dictionary).get("symbol", "")) if p is Dictionary else ""
+
+
 func _shelf(i: int) -> void:
 	var stocks: Array = Game.state.get("shop", {}).get("stocks", [])
 	if i >= stocks.size():
+		return
+	var symbol := str(stocks[i].symbol)
+	if symbol != pick_symbol():
+		await pin(symbol)
 		return
 	var d: Dialogue = main.dialogue
 	d.open("shopkeeper", Game.state.dialogue.shopkeeper.name)
 	await _buy(stocks[i].symbol)
 	d.close()
+
+
+## Pin `symbol` as the pick: the brass plate drops onto its tag with a clunk and Marlo nods.
+func pin(symbol: String) -> void:
+	var res: Array = await Game.call_api("POST", "/shop/pick", {"symbol": symbol})
+	if res[1] != "":
+		Kit.play(SND_CLUNK, 0.6, -16.0)
+		return
+	_just_pinned = symbol
+	_nod = 0.9
+	await Game.refresh()
+	Kit.play(SND_CLUNK, 1.1, -6.0)
 
 
 func talk(npc_id: String) -> void:
@@ -465,8 +498,16 @@ class PriceTag extends Node2D:
 	var price := ""
 	var hours := ""
 	var owned := false
+	var pinned := false
 	var seed := 0.0
+	var drop := 0.0  # 1 = the pick's plate still in the air above the tag
 	var _sway := 0
+
+	## The pick's brass plate drops onto the tag and settles.
+	func drop_in() -> void:
+		drop = 1.0
+		var tw := create_tween()
+		tw.tween_property(self, "drop", 0.0, 0.35).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
 
 	func _ready() -> void:
 		var paper := Node2D.new()
@@ -483,6 +524,8 @@ class PriceTag extends Node2D:
 		if s != _sway:
 			_sway = s
 			(get_node("paper") as Node2D).position.x = s
+		if pinned:
+			(get_node("paper") as Node2D).queue_redraw()
 
 	func _paper(n: Node2D) -> void:
 		var w := roundf(maxf(26.0, maxf(price.length(), symbol.length()) * 6.0))
@@ -499,6 +542,16 @@ class PriceTag extends Node2D:
 		if owned:
 			# A small teal corner: you hold some of this one.
 			n.draw_rect(Rect2(w / 2 - 4, top, 4, 4), ShopRoom.TEAL)
+		if pinned:
+			# The pick: a brass plate riveted across the tag's foot, catching the lamp light.
+			var y := top + h - 3 - roundf(drop * 14.0)
+			var glow := 0.18 + 0.08 * sin(Time.get_ticks_msec() / 400.0)
+			n.draw_rect(Rect2(-w / 2 - 3, y - 3, w + 6, 10), Color(1.0, 0.8, 0.4, glow))
+			n.draw_rect(Rect2(-w / 2 - 1, y, w + 2, 5), Color("6b4a22"))
+			n.draw_rect(Rect2(-w / 2, y, w, 4), Color("c99a4a"))
+			n.draw_rect(Rect2(-w / 2, y, w, 1), Color("f2d08a"))
+			n.draw_rect(Rect2(-w / 2 + 1, y + 2, 1, 1), Color("6b4a22"))
+			n.draw_rect(Rect2(w / 2 - 2, y + 2, 1, 1), Color("6b4a22"))
 
 
 ## The board behind Marlo: small wares on two shelves and last week's calendar.

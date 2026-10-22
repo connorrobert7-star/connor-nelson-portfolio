@@ -214,15 +214,18 @@ func _ask() -> void:
 	# Read on by tapping Pip, and keep a picture of the line with the owner's numbers.
 	var wall: Dictionary = Game.state.village.wall
 	var balance := Money.fmt(int(wall.balance_cents))
-	for i in 8:
+	var shot_taken := false
+	for i in 40:
 		if not pip.speaking:
 			break
-		if _last(pip).contains(balance):
+		if _last(pip).contains(balance) and not shot_taken:
+			shot_taken = true
 			await kit.wait(1.6)
 			await kit.shot("10_ask_emergency_fund")
-		await kit.wait(0.5)
-		await _tap_pip(pip)
-		await _tap_pip(pip)
+		# One tap at a time, and only on a line that's up: a spare tap would ask the next idea.
+		if pip.bubble.showing() and pip.bubble.shown_for > 0.4:
+			await _tap_pip(pip)
+		await kit.wait(0.2)
 	kit.check(_said(pip).any(func(t: String) -> bool: return t.contains(balance)), "the emergency fund idea uses the real fund (%s)" % balance)
 	await kit.until(func() -> bool: return not pip.speaking, 8.0)
 	var res: Array = await Game.call_api("GET", "/state")
@@ -230,11 +233,13 @@ func _ask() -> void:
 	kit.check(not left.has(str(first.id)), "the backend won't say %s again" % first.id)
 	# The next tap is the next idea, not the same one.
 	await kit.wait(0.5)
+	var before := pip.said.size()
 	await _tap_pip(pip)
 	await kit.until(func() -> bool: return pip.speaking, 3.0)
 	await kit.wait(1.8)
 	await kit.shot("11_ask_next")
-	kit.check(_last(pip) == str(queue[1].lines[0]), "the next tap is the next idea (%s)" % queue[1].id)
+	var next := str(pip.said[before].text) if pip.said.size() > before else ""
+	kit.check(next == str(queue[1].lines[0]), "the next tap is the next idea (%s)" % queue[1].id)
 
 
 func _skip() -> void:

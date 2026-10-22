@@ -11,6 +11,12 @@ extends Overlay
 ## particles, shake and a slow zoom, with a short cutscene for gold and red. A refusal turns
 ## the lamp off and Vex says "Not this week." Nothing here does money math: amounts come
 ## from the API and balances from Game.state.
+##
+## The three are pot machines (docs/POT.md): they pay into the Brokerage only (no House
+## Fund mouth), and the front carries the pot: the run's lamps, the jar with the pot's dollars
+## and the brass plate with the owner's pick. Without a pick the lamp stays off and Vex says
+## where to go. A blank drops a coin into the jar; a hit blazes the last lamp and the jar
+## pours into the pick's creature before the cosmetic comes out.
 
 enum Phase { CHOOSE, BUSY, REVEAL, DONE }
 
@@ -36,6 +42,7 @@ const SYMBOL := {
 	"epic": [A + "karsiori-gems/GEM 1/GEM 1 - PURPLE - Spritesheet.png", Rect2(0, 0, 18, 30), 10],
 	"legendary": [A + "karsiori-gems/GEM 3/GEM 3 - GOLD - Spritesheet.png", Rect2(0, 0, 28, 28), 11],
 	"mythic": [A + "karsiori-gems/GEM 6/GEM 6 - RED - Spritesheet.png", Rect2(0, 0, 24, 26), 10],
+	"dud": [KYRISE, Rect2(240, 208, 16, 16), 1],  # a blank ticket's dead stone (no tier)
 }
 
 ## The reveal by tier (docs/INFLUENCES.md, the CS:GO reveal table).
@@ -121,6 +128,10 @@ var _choir := AudioStreamPlayer.new()
 var _speech := 0
 var _t := 0.0
 var _tapped := false
+## The pot on the front (pot machines only).
+var lamps: CasinoPot.RunLamps
+var jar: CasinoPot.Jar
+var plate: CasinoPot.Plate
 
 
 # --- for machines to fill in ----------------------------------------------------------
@@ -155,10 +166,26 @@ func _lamp_x() -> float:
 	return 240.0
 
 
+## The run this machine steps ("scratch_100", "wheel", "claw"). Empty: not a pot machine.
+func _pot_key() -> String:
+	return ""
+
+
+func is_pot() -> bool:
+	return _pot_key() != ""
+
+
+## True when the owner has pinned a stock at Marlo's counter (the pot machines need one).
+static func has_pick() -> bool:
+	return not CasinoPot.pick().is_empty()
+
+
 # --- building ----------------------------------------------------------------------------
 
 func _ready() -> void:
 	dest = _last_dest if _last_dest in MOUTH_NAME else "sav_1"
+	if is_pot():
+		dest = "brk_1"  # the pot machines pay into the Brokerage, always
 	_build_frame()
 	_build_machine()
 	_build_front()
@@ -212,14 +239,16 @@ func _build_frame() -> void:
 
 func _build_front() -> void:
 	var casino: Dictionary = Game.state.get("casino", {})
-	for id: String in ["sav_1", "brk_1"]:
+	for id: String in (["brk_1"] if is_pot() else ["sav_1", "brk_1"]):
 		var m := Mouth.new()
 		m.dest = id
-		m.position = Vector2(110 if id == "sav_1" else 250, 236)
+		m.position = Vector2(110 if id == "sav_1" or is_pot() else 250, 236)
 		m.size = Vector2(120, 28)
 		_room.add_child(m)
 		m.setup(_account_name(casino, id), _balance(id), region(KYRISE, MOUTH_ICON[id]))
 		_mouths[id] = m
+	if is_pot():
+		_build_pot()
 	_book.texture = region(KYRISE, BOOK_ICON)
 	_book.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	_book.size = Vector2(32, 32)
@@ -261,6 +290,22 @@ func _build_crowd() -> void:
 	for i in spots.size():
 		var cell: Rect2 = cells[i % cells.size()]
 		_cultists.append(CasinoFx.cultist(_back, spots[i], CULTISTS[0], cell, spots[i].y > 30, i % 3 == 1))
+
+
+## The jar beside the Brokerage mouth, the run's lamps and the pick's plate beside it.
+func _build_pot() -> void:
+	jar = CasinoPot.Jar.new()
+	jar.position = Vector2(240, 230)
+	_room.add_child(jar)
+	jar.setup(int(CasinoPot.pot().get("total_cents", 0)))
+	lamps = CasinoPot.RunLamps.new()
+	lamps.position = Vector2(274, 231)
+	_room.add_child(lamps)
+	lamps.setup(CasinoPot.run(_pot_key()))
+	plate = CasinoPot.Plate.new()
+	plate.position = Vector2(274, 244)
+	_room.add_child(plate)
+	plate.setup(CasinoPot.pick())
 
 
 static func _account_name(casino: Dictionary, id: String) -> String:
@@ -367,7 +412,7 @@ func _select(id: String, speak: bool) -> void:
 ## The lamp is on while the week's room (from /state) covers the price.
 func update_lamp() -> void:
 	var can := int(Game.state.get("casino", {}).get("can_spend_cents", 0))
-	var on := can >= _price_cents()
+	var on := can >= _price_cents() and (not is_pot() or has_pick())
 	if on != _lamp.on:
 		_lamp.on = on
 		_cone.visible = on
@@ -404,13 +449,15 @@ func pay(path: String, body: Dictionary, slot: Vector2) -> Dictionary:
 	phase = Phase.BUSY
 	moment = "paying"
 	hush()
-	_last_dest = dest
+	if not is_pot():
+		_last_dest = dest
 	var wait_ms := MIN_GAP_MS - (Time.get_ticks_msec() - _last_start_ms)
 	if wait_ms > 0:
 		await get_tree().create_timer(wait_ms / 1000.0).timeout
 	_last_start_ms = Time.get_ticks_msec()
 	var full := body.duplicate()
-	full["to_account"] = dest
+	if not is_pot():
+		full["to_account"] = dest  # the pot machines pay into the Brokerage on their own
 	var res: Array = await Game.api.request("POST", path, {}, full)
 	if res[1] != "":
 		await refuse(str(res[1]))
@@ -474,6 +521,60 @@ func refuse(message: String) -> void:
 	await _bubble.say(message, 1.4)
 	moment = "closed"
 	close(null)
+
+
+## A blank (pot machines): the warm lamp clicks dark, a coin drops from `from` (room
+## coordinates) into the jar, which counts up to the pot, and Vex says the run and the pot.
+## The money landed all the same: the jar is the Brokerage.
+func pot_blank(from: Vector2) -> void:
+	moment = "blank"
+	var p: Dictionary = result.get("pot", {})
+	lamps.go_dark()
+	await jar.drop_coin(_room.get_global_transform() * from, int(p.get("total_cents", 0)))
+	moment = "pot"
+	_vex.speak()
+	var line := str(result.get("dealer", {}).get("line", ""))
+	if line != "":
+		said.append(line)
+		_bubble.say(line, 2.4)
+	await _beat(1.8, 0.5)
+
+
+## A hit (pot machines): the run's last lamp blazes, the jar tips and pours into the pick's
+## creature, which swells. It's the owner's own money going where they pinned it, not a
+## prize. Then the cosmetic reveal plays as before.
+func pot_hit() -> void:
+	moment = "hit"
+	var p: Dictionary = result.get("pot", {})
+	var bought: Dictionary = p.get("bought", {})
+	var bp: Variant = bought.get("pick")
+	if bp is Dictionary and not (bp as Dictionary).is_empty():
+		plate.setup(bp)
+	lamps.blaze_hit(result.get("run", {}))
+	CasinoFx.flash(self, CasinoPot.WARM, 0.12, 0.25)
+	await get_tree().create_timer(0.35).timeout
+	moment = "pour"
+	jar.cents = int(p.get("before_cents", 0)) + int(p.get("added_cents", 0))
+	jar.create_tween().tween_property(jar, "shown", float(jar.cents), 0.2)
+	await get_tree().create_timer(0.25).timeout
+	plate.swell_up()
+	await jar.pour_into(plate.creature_global(), int(p.get("total_cents", 0)))
+	await get_tree().create_timer(0.3).timeout
+	moment = "poured"
+	_vex.speak()
+	var line := bought_line(bought)
+	said.append(line)
+	_bubble.say(line, 1.6)
+	await get_tree().create_timer(0.7).timeout
+
+
+## "Twelve to VTI." from the result's dealer line (its first sentence), plain.
+func bought_line(bought: Dictionary) -> String:
+	var line := str(result.get("dealer", {}).get("line", ""))
+	var cut := line.find(". ")
+	if cut > 0:
+		return line.substr(0, cut + 1)
+	return "%s to %s." % [CasinoPot.dollars(int(bought.get("amount_cents", 0))), str(bought.get("symbol", ""))]
 
 
 ## Close with the pull's result once the machine has finished its last beat.

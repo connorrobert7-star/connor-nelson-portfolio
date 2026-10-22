@@ -262,6 +262,10 @@ class FixtureBrokerage:
             for symbol, q in qty.items()
         ]
 
+    def place_order(self, symbol: str, amount_cents: int) -> dict:
+        """The demo never reaches a broker: the buy is recorded as simulated."""
+        return {"status": "simulated"}
+
 
 class SimulatedTransfers:
     name = "simulated"

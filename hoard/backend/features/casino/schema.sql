@@ -71,3 +71,36 @@ CREATE TABLE IF NOT EXISTS casino_grants (
     transfer_id  INTEGER REFERENCES transfers(id),
     created      TEXT NOT NULL
 );
+
+-- The pot machines' runs (docs/POT.md): `size` lamps, exactly one of them the hit, at a
+-- position drawn when the run loads. Each pull uses the next lamp; a hit loads a fresh run.
+CREATE TABLE IF NOT EXISTS casino_runs (
+    machine   TEXT PRIMARY KEY,          -- scratch_100 | scratch_200 | scratch_500 | wheel | claw
+    size      INTEGER NOT NULL,
+    hit_at    INTEGER NOT NULL,          -- the lamp (from 0) that hits
+    pos       INTEGER NOT NULL,          -- lamps used so far
+    loads     INTEGER NOT NULL,
+    loaded_on TEXT NOT NULL
+);
+
+-- The pot: a tally of blank pulls' prices, cash that already landed in the Brokerage
+-- through move(). It never moves money itself.
+CREATE TABLE IF NOT EXISTS casino_pot (
+    id          INTEGER PRIMARY KEY CHECK (id = 1),
+    total_cents INTEGER NOT NULL
+);
+
+-- Every hit's buy: the whole pot plus the winning pull, spent on the owner's pick at the
+-- weekly price through the brokerage's place_order. Nothing here ever sells.
+CREATE TABLE IF NOT EXISTS casino_pot_buys (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    machine      TEXT NOT NULL,          -- the run that hit
+    symbol       TEXT NOT NULL,
+    amount_cents INTEGER NOT NULL,       -- pot before the hit + the winning pull's price
+    price_cents  INTEGER NOT NULL,       -- this week's price, never a live one
+    qty          REAL NOT NULL,
+    status       TEXT NOT NULL,          -- what place_order said (simulated in the demo)
+    order_id     INTEGER NOT NULL REFERENCES orders(id),
+    transfer_id  INTEGER NOT NULL REFERENCES transfers(id),
+    created      TEXT NOT NULL
+);

@@ -12,6 +12,7 @@ from backend.core.router import ROUTES, ApiError
 from backend.core.services import coin_balance, grant_item
 from backend.features.casino import catalog, dealer, draw, loads, machines
 from backend.features.casino.catalog import RANK, SLOTS, TARGET_PCT, TIERS
+from backend.features.shop import shop
 from backend.money.budget import balances
 
 GAME = Path(__file__).resolve().parents[3] / "game"
@@ -25,8 +26,20 @@ CASINO_TABLES = (
     "casino_draw",
     "casino_equipped",
     "casino_grants",
+    "casino_runs",
+    "casino_pot",
+    "casino_pot_buys",
 )
-WATCHED = (*CASINO_TABLES, "transfers", "events", "inventory", "coin_ledger", "notifications")
+WATCHED = (
+    *CASINO_TABLES,
+    "transfers",
+    "events",
+    "inventory",
+    "coin_ledger",
+    "notifications",
+    "orders",
+    "shop_pick",
+)
 
 # Every paid machine: route, body (without to_account), exact price.
 PAID = {
@@ -39,6 +52,19 @@ PAID = {
     "wheel": ("/casino/wheel", {}, 500),
     "claw": ("/casino/claw", {"drop_x": 0.5}, 500),
 }
+CASES = {k: v for k, v in PAID.items() if k.startswith("case")}
+POT = {k: v for k, v in PAID.items() if k not in CASES}  # docs/POT.md: Brokerage only
+
+
+def dest(machine: str, to_account: str = "sav_1") -> str:
+    """Cases go where the owner says; the pot machines always pay into the Brokerage."""
+    return to_account if machine in CASES else "brk_1"
+
+
+def pin(engine, symbol: str = "VTI") -> None:
+    """The owner's pick at Marlo's counter. Without one the pot machines refuse."""
+    status, out = engine.handle("POST", "/shop/pick", body={"symbol": symbol})
+    assert status == 200, out
 
 
 @pytest.fixture(autouse=True)
@@ -204,10 +230,13 @@ def test_production_uses_the_secure_source():
 # --- Money, every machine -------------------------------------------------------------
 
 
-@pytest.mark.parametrize("to_account", ["sav_1", "brk_1"])
-@pytest.mark.parametrize("machine", list(PAID))
+@pytest.mark.parametrize(
+    ("machine", "to_account"),
+    [(m, a) for m in CASES for a in ("sav_1", "brk_1")] + [(m, "brk_1") for m in POT],
+)
 def test_every_machine_moves_the_exact_price_into_an_own_account(engine, machine, to_account):
     path, body, price = PAID[machine]
+    pin(engine)
     engine.handle("GET", "/state")
     with engine.conn:
         ctx = engine.ctx()
@@ -220,10 +249,14 @@ def test_every_machine_moves_the_exact_price_into_an_own_account(engine, machine
     assert status == 200, out
     assert out["money"] == {"amount_cents": price, "to_account": to_account, "status": "simulated"}
     kinds = [e["kind"] for e in out["_events"]]
-    assert kinds == ["money_moved", "item"]
-    item_event = out["_events"][1]
-    assert item_event["item_id"] == out["item"]["id"]
-    assert item_event["name"] == out["item"]["name"] and item_event["tier"] == out["item"]["tier"]
+    granted = out["item"] is not None  # a pot machine's blank grants nothing
+    assert granted == (machine in CASES or out["hit"])
+    assert kinds == (["money_moved", "item"] if granted else ["money_moved"])
+    if granted:
+        item_event = out["_events"][1]
+        assert item_event["item_id"] == out["item"]["id"]
+        assert item_event["name"] == out["item"]["name"]
+        assert item_event["tier"] == out["item"]["tier"]
 
     rows = engine.conn.execute("SELECT * FROM transfers ORDER BY id").fetchall()
     assert len(rows) == n_transfers + 1
@@ -233,9 +266,11 @@ def test_every_machine_moves_the_exact_price_into_an_own_account(engine, machine
         "SELECT type FROM events WHERE id = ?", [t["event_id"]]
     ).fetchone()[0]
     assert event_type == f"casino_{path.rsplit('/', 1)[1]}"
-    grant = engine.conn.execute("SELECT * FROM casino_grants ORDER BY id DESC").fetchone()
-    assert grant["transfer_id"] == t["id"] and grant["item_id"] == out["item"]["id"]
-    assert engine.conn.execute("SELECT COUNT(*) FROM inventory").fetchone()[0] == n_inventory + 1
+    if granted:
+        grant = engine.conn.execute("SELECT * FROM casino_grants ORDER BY id DESC").fetchone()
+        assert grant["transfer_id"] == t["id"] and grant["item_id"] == out["item"]["id"]
+    n_after = engine.conn.execute("SELECT COUNT(*) FROM inventory").fetchone()[0]
+    assert n_after == n_inventory + int(granted)
 
     with engine.conn:
         ctx = engine.ctx()
@@ -253,11 +288,12 @@ def test_every_machine_moves_the_exact_price_into_an_own_account(engine, machine
 @pytest.mark.parametrize("machine", list(PAID))
 def test_not_this_week_when_extra_falls_short(engine, machine):
     path, body, _ = PAID[machine]
+    pin(engine)
     engine.handle("GET", "/state")
     with engine.conn:
         engine.conn.execute("UPDATE accounts SET balance_cents = 0 WHERE kind = 'checking'")
     before = snapshot(engine.conn)
-    status, out = engine.handle("POST", path, body={**body, "to_account": "sav_1"})
+    status, out = engine.handle("POST", path, body={**body, "to_account": dest(machine)})
     assert (status, out) == (409, {"detail": "Not this week."})
     assert snapshot(engine.conn) == before
     casino = engine.handle("GET", "/state")[1]["casino"]
@@ -276,6 +312,7 @@ def test_not_this_week_when_the_caps_fall_short(engine, machine):
         body={"symbol": "VTI", "amount_cents": transfer.PER_DAY_CAP_CENTS - 50},
     )
     assert status == 200
+    pin(engine)
     engine.handle("GET", "/state")
     before = snapshot(engine.conn)
     status, out = engine.handle("POST", path, body={**body, "to_account": "brk_1"})
@@ -284,15 +321,20 @@ def test_not_this_week_when_the_caps_fall_short(engine, machine):
 
 
 def test_bad_destination_or_machine_moves_nothing(engine):
+    pin(engine)
     engine.handle("GET", "/state")
     before = snapshot(engine.conn)
     for path, body in [
         ("/casino/case", {"case_id": "case_20", "to_account": "chk_1"}),
         ("/casino/case", {"case_id": "case_20", "to_account": "debt_card"}),
         ("/casino/case", {"case_id": "case_99", "to_account": "sav_1"}),
-        ("/casino/scratch", {"price_cents": 300, "to_account": "sav_1"}),
-        ("/casino/claw", {"drop_x": 1.5, "to_account": "sav_1"}),
-        ("/casino/wheel", {}),
+        ("/casino/case", {"case_id": "case_20"}),
+        ("/casino/scratch", {"price_cents": 300}),
+        ("/casino/claw", {"drop_x": 1.5}),
+        # The pot machines pay into the Brokerage only.
+        ("/casino/scratch", {"price_cents": 100, "to_account": "sav_1"}),
+        ("/casino/wheel", {"to_account": "sav_1"}),
+        ("/casino/claw", {"drop_x": 0.5, "to_account": "chk_1"}),
     ]:
         status, _ = engine.handle("POST", path, body=body)
         assert status == 422, (path, body)
@@ -300,6 +342,7 @@ def test_bad_destination_or_machine_moves_nothing(engine):
 
 
 def test_the_money_moves_before_anything_is_rolled(ctx, monkeypatch):
+    shop.set_pick(ctx, "VTI")
     machines.room_state(ctx)  # load every machine
     before = snapshot(ctx.conn)
 
@@ -309,9 +352,9 @@ def test_the_money_moves_before_anything_is_rolled(ctx, monkeypatch):
     monkeypatch.setattr(ctx.providers.transfers, "submit", refuse)
     for call in (
         lambda: machines.open_case(ctx, "case_10", "sav_1"),
-        lambda: machines.scratch(ctx, 100, "sav_1"),
-        lambda: machines.spin_wheel(ctx, "sav_1"),
-        lambda: machines.drop_claw(ctx, "sav_1", 0.3),
+        lambda: machines.scratch(ctx, 100),
+        lambda: machines.spin_wheel(ctx),
+        lambda: machines.drop_claw(ctx, 0.3),
     ):
         with pytest.raises(transfer.TransferRefused):
             call()
@@ -325,26 +368,28 @@ def _fail_transfers(monkeypatch, providers) -> None:
 @pytest.mark.parametrize("machine", list(PAID))
 def test_a_failed_transfer_grants_nothing_and_rolls_nothing(engine, machine, monkeypatch):
     path, body, _ = PAID[machine]
+    pin(engine)
     engine.handle("GET", "/state")  # load every machine
     before = snapshot(engine.conn)
     _fail_transfers(monkeypatch, engine.providers)
     for _ in range(3):  # failed pulls are never free pulls
-        status, out = engine.handle("POST", path, body={**body, "to_account": "sav_1"})
+        status, out = engine.handle("POST", path, body={**body, "to_account": dest(machine)})
         assert (status, out) == (409, {"detail": "Not this week."})
         assert snapshot(engine.conn) == before
 
 
 def test_a_failed_transfer_stops_before_any_load_is_touched(ctx, monkeypatch):
     """Even without the request rollback, nothing is fired, drawn, spun, grabbed or granted."""
+    shop.set_pick(ctx, "VTI")
     machines.room_state(ctx)  # load every machine
     loaded = ("inventory", *CASINO_TABLES)
     before = {t: v for t, v in snapshot(ctx.conn).items() if t in loaded}
     _fail_transfers(monkeypatch, ctx.providers)
     for call in (
         lambda: machines.open_case(ctx, "case_10", "sav_1"),
-        lambda: machines.scratch(ctx, 100, "sav_1"),
-        lambda: machines.spin_wheel(ctx, "sav_1"),
-        lambda: machines.drop_claw(ctx, "sav_1", 0.3),
+        lambda: machines.scratch(ctx, 100),
+        lambda: machines.spin_wheel(ctx),
+        lambda: machines.drop_claw(ctx, 0.3),
     ):
         with pytest.raises(ApiError) as refused:
             call()
@@ -367,10 +412,11 @@ def test_no_route_moves_money_without_a_logged_grant_or_lowers_a_balance(engine)
     assert casino_routes == paid_routes | FREE_ROUTES, "add new casino routes to this test"
 
     # Something to trade up and equip, granted the plain way (no money).
+    pin(engine)
     with engine.conn:
         ctx = engine.ctx()
         commons = [grant_item(ctx, "hollow_ash_cowl", via="test") for _ in range(11)]
-    calls = [(p, {**b, "to_account": "sav_1"}) for p, b, _ in PAID.values()]
+    calls = [(p, {**b, "to_account": dest(m)}) for m, (p, b, _) in PAID.items()]
     calls += [
         ("/casino/catalog", None),
         ("/casino/tradeup", {"inventory_ids": commons[:10]}),
@@ -394,6 +440,10 @@ def test_no_route_moves_money_without_a_logged_grant_or_lowers_a_balance(engine)
             linked = engine.conn.execute(
                 "SELECT inventory_id FROM casino_grants WHERE transfer_id = ?", [t["id"]]
             ).fetchall()
+            if out.get("pot") and not out["hit"]:
+                # A pot blank: nothing granted, the price waits in the pot.
+                assert not linked and out["pot"]["added_cents"] == t["amount_cents"], path
+                continue
             assert len(linked) == 1, path
             assert engine.conn.execute(
                 "SELECT 1 FROM inventory WHERE id = ?", [linked[0]["inventory_id"]]
@@ -469,13 +519,18 @@ def test_the_reel_never_teases_a_tier_that_is_gone():
 
 
 @pytest.mark.parametrize("price", [100, 200, 500])
-def test_a_scratch_book_pays_exactly_its_stated_contents(ctx, price):
+def test_a_scratch_book_pays_exactly_its_stated_contents(ctx, price, unlimited):
+    """Only hits take a ticket (docs/POT.md); blanks leave the book alone."""
+    shop.set_pick(ctx, "VTI")
     stated = catalog.book(price)["book"]
     got: Counter = Counter()
     for n in range(20):
         left = loads.book_left(ctx, price)
         assert sum(left.values()) == 20 - n
-        out = machines.scratch(ctx, price, "sav_1")
+        out = machines.scratch(ctx, price)
+        while not out["hit"]:
+            assert out["item"] is None and loads.book_left(ctx, price) == left
+            out = machines.scratch(ctx, price)
         tier, symbols = out["tier"], out["symbols"]
         got[tier] += 1
         assert out["item"]["tier"] == tier
@@ -489,12 +544,17 @@ def test_a_scratch_book_pays_exactly_its_stated_contents(ctx, price):
     assert loads.book_left(ctx, price) == stated  # a fresh book
 
 
-def test_the_wheel_takes_wedges_off_until_it_resets(ctx):
+def test_the_wheel_takes_wedges_off_until_it_resets(ctx, unlimited):
+    shop.set_pick(ctx, "VTI")
     wedges = catalog.machines()["wheel"]["wedges"]
     for _ in range(3):
         taken = set()
         while True:
-            out = machines.spin_wheel(ctx, "brk_1")
+            out = machines.spin_wheel(ctx)
+            if not out["hit"]:  # a dud sliver: no wedge comes off
+                assert out["wedge_index"] is None and out["item"] is None
+                assert {j for j, w in enumerate(out["wedges"]) if w["taken"]} == taken
+                continue
             i = out["wedge_index"]
             assert i not in taken and out["tier"] == wedges[i] == out["item"]["tier"]
             taken.add(i)
@@ -506,13 +566,19 @@ def test_the_wheel_takes_wedges_off_until_it_resets(ctx):
             assert {j for j, w in enumerate(out["wedges"]) if w["taken"]} == taken
 
 
-def test_the_claw_grabs_near_the_drop_and_empties_the_heap(ctx):
+def test_the_claw_grabs_near_the_drop_and_empties_the_heap(ctx, unlimited):
+    shop.set_pick(ctx, "VTI")
     got: Counter = Counter()
     for n in range(15):
         pile = loads.heap(ctx)
         assert len(pile) == 15 - n
         drop = pile[n % len(pile)]["x"]
-        out = machines.drop_claw(ctx, "sav_1", drop)
+        out = machines.drop_claw(ctx, drop)
+        while not out["hit"]:  # the claw slipped: the piece stays in the heap
+            assert out["grabbed"]["held"] is False and out["item"] is None
+            assert loads.heap(ctx) == pile
+            out = machines.drop_claw(ctx, drop)
+        assert out["grabbed"]["held"] is True
         grabbed = next(p for p in pile if p["slot_index"] == out["grabbed"]["slot_index"])
         assert grabbed["tier"] == out["grabbed"]["tier"] == out["item"]["tier"]
         assert abs(grabbed["x"] - drop) <= 2 * catalog.machines()["claw"]["wobble"] + 1e-9
@@ -654,10 +720,11 @@ def test_trophies_show_in_the_book_and_can_be_worn_but_never_pressed(client, eng
 
 def test_entries_count_every_five_dollars_that_landed(engine):
     this_week = date(2026, 10, 18)  # TODAY's week (Sunday start)
+    pin(engine)
     for path, body in [
         ("/casino/case", {"case_id": "case_10", "to_account": "sav_1"}),
         ("/casino/wheel", {"to_account": "brk_1"}),
-        ("/casino/scratch", {"price_cents": 100, "to_account": "sav_1"}),
+        ("/casino/scratch", {"price_cents": 100}),
         ("/casino/scratch", {"price_cents": 100, "to_account": "brk_1"}),
         ("/shop/stock", {"symbol": "VTI", "amount_cents": 2_500}),
     ]:
@@ -735,6 +802,8 @@ def test_state_section_is_the_contract(state):
         "scratch",
         "wheel",
         "claw",
+        "pot",
+        "runs",
         "draw",
         "owned",
         "inventory",
@@ -764,18 +833,16 @@ def test_the_dealer_states_the_exact_odds_before_every_pull(state):
     assert d["before"]["case"]["case_20"]["sav_1"] == (
         "Twenty to the House Fund. Twenty-five shells. Six blue. One purple."
     )
-    assert d["before"]["scratch"]["100"]["brk_1"] == (
-        "One to the Brokerage. Twenty in the book. Four blue."
-    )
-    assert d["before"]["wheel"]["sav_1"].endswith(
-        "Twelve wedges. Three blue. One purple. One gold."
-    )
-    assert d["before"]["claw"]["sav_1"].endswith("Fifteen in the heap. Four blue. One purple.")
+    # The pot machines: Brokerage only, and with no pick he says where to go.
+    assert d["before"]["scratch"]["100"] == {
+        "brk_1": "One to the Brokerage. Pick a stock at Marlo's counter first."
+    }
+    assert set(d["before"]["wheel"]) == set(d["before"]["claw"]) == {"brk_1"}
     lines = [d["line"]]
     for machine in d["before"].values():
         for v in machine.values():
             lines += list(v.values()) if isinstance(v, dict) else [v]
-    assert len(lines) == 1 + 6 + 6 + 2 + 2
+    assert len(lines) == 1 + 6 + 3 + 1 + 1
     assert not any("!" in line for line in lines)
     assert state["dialogue"]["croupier"]["name"] == "Vex"
     assert not any("!" in line for line in state["dialogue"]["croupier"]["lines"])

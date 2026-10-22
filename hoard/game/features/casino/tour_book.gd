@@ -16,16 +16,21 @@ func run(kit: TourKit) -> void:
 ## (Setup, not the thing under test.)
 func _stock_up(kit: TourKit) -> void:
 	var before := _balance("sav_1")
+	var brk := _balance("brk_1")
 	var spent := 0
-	for i in 16:
-		var res: Array = await Game.call_api("POST", "/casino/scratch", {"price_cents": 100, "to_account": "sav_1"})
+	var to_brk := 0
+	# The pot machines need a pick and pay into the Brokerage (docs/POT.md); blanks grant
+	# nothing, so the cases carry most of the pieces.
+	await Game.call_api("POST", "/shop/pick", {"symbol": "VTI"})
+	for i in 24:
+		var res: Array = await Game.call_api("POST", "/casino/scratch", {"price_cents": 100})
 		if res[1] == "":
-			spent += 100
+			to_brk += 100
 	for i in 10:
-		var res: Array = await Game.call_api("POST", "/casino/scratch", {"price_cents": 500, "to_account": "sav_1"})
+		var res: Array = await Game.call_api("POST", "/casino/scratch", {"price_cents": 500})
 		if res[1] == "":
-			spent += 500
-	for i in 4:
+			to_brk += 500
+	for i in 16:
 		var res: Array = await Game.call_api("POST", "/casino/case", {"case_id": "case_10", "to_account": "sav_1"})
 		if res[1] == "":
 			spent += 1000
@@ -33,8 +38,9 @@ func _stock_up(kit: TourKit) -> void:
 	if run[1] == "":
 		await Game.call_api("POST", "/minigames/finish", {"run_id": int(run[0].run_id), "result": {"rooms_cleared": 4, "doors_broken": 4}})
 	await Game.refresh()
-	kit.check(_balance("sav_1") == before + spent, "every ticket and case landed its exact price in the House Fund (+%d cents)" % spent)
-	kit.check(_owned_total() >= 25, "the inventory has pieces to show (%d)" % _owned_total())
+	kit.check(_balance("sav_1") == before + spent, "every case landed its exact price in the House Fund (+%d cents)" % spent)
+	kit.check(_balance("brk_1") == brk + to_brk, "every ticket landed its exact price in the Brokerage (+%d cents)" % to_brk)
+	kit.check(_owned_total() >= 20, "the inventory has pieces to show (%d)" % _owned_total())
 	kit.check((Game.state.casino.get("trophies", {}) as Dictionary).size() >= 1, "the dungeon's boss dropped a trophy")
 
 

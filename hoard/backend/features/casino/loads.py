@@ -241,13 +241,25 @@ def heap(ctx: Ctx) -> list[dict]:
     ]
 
 
-def grab(ctx: Ctx, drop_x: float) -> tuple[int, str]:
-    """The claw takes the piece nearest where it dropped (topmost on a tie), after a small
-    wobble. Every grab wins something. Returns (slot_index, tier)."""
-    pile = heap(ctx)
+def _nearest(pile: list[dict], drop_x: float) -> dict:
+    """The piece nearest where the claw dropped (topmost on a tie), after a small wobble."""
     wobble = machines()["claw"]["wobble"]
     target = min(1.0, max(0.0, drop_x + RNG.uniform(-wobble, wobble)))
-    got = min(pile, key=lambda p: (abs(p["x"] - target), p["y"]))
+    return min(pile, key=lambda p: (abs(p["x"] - target), p["y"]))
+
+
+def touch(ctx: Ctx, drop_x: float) -> tuple[int, str]:
+    """A blank grab: the claw closes on the nearest piece and slips. The piece stays in the
+    heap, so the load is untouched. Returns (slot_index, tier)."""
+    got = _nearest(heap(ctx), drop_x)
+    return got["slot_index"], got["tier"]
+
+
+def grab(ctx: Ctx, drop_x: float) -> tuple[int, str]:
+    """The claw takes the piece nearest where it dropped (topmost on a tie), after a small
+    wobble. A hit's grab always holds. Returns (slot_index, tier)."""
+    pile = heap(ctx)
+    got = _nearest(pile, drop_x)
     if len(pile) == 1:
         load_heap(ctx)
     else:

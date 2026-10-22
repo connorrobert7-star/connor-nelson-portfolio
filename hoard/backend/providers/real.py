@@ -48,6 +48,9 @@ class SnapTradeBrokerage:
     def holdings(self, anchor: date, today: date) -> list[dict]:
         raise NotConfigured("SnapTradeBrokerage.holdings is not written yet.")
 
+    def place_order(self, symbol: str, amount_cents: int) -> dict:
+        raise NotConfigured("SnapTradeBrokerage.place_order is not written yet (trading).")
+
 
 class AlpacaMarket:
     """Alpaca market data: weekly bars for the catalog symbols. Never live quotes in game.

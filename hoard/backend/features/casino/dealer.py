@@ -8,6 +8,7 @@ from backend.features.casino.catalog import RANK, WORDS
 
 NAME = "Vex"
 NOT_THIS_WEEK = "Not this week."
+NO_PICK = "Pick a stock at Marlo's counter first."
 
 _ONES = (
     "zero one two three four five six seven eight nine ten eleven twelve thirteen "
@@ -89,3 +90,37 @@ def now_line(can_spend_cents: int, cheapest_cents: int, belt_left: dict, box: di
     if box["used"] == 0:
         return box_line(box["specials"], fresh=True)
     return belt_line(belt_left)
+
+
+# --- The pot machines (docs/POT.md) -----------------------------------------------------
+
+
+def run_line(left: int) -> str:
+    """'Five lamps. One lights.' The chance on the next pull is one in `left`."""
+    if left == 1:
+        return "One lamp. It lights."
+    return f"{_plural(left, 'lamp', 'lamps')} One lights."
+
+
+def dollars_said(cents: int) -> str:
+    dollars, rest = divmod(cents, 100)
+    if rest or dollars >= 1000:
+        return f"${cents / 100:,.2f}" if rest else f"${dollars:,}"
+    return cap(words(dollars))
+
+
+def pot_line(total_cents: int) -> str:
+    """'Twelve in the pot.' Nothing when it's empty."""
+    return f"{dollars_said(total_cents)} in the pot." if total_cents > 0 else ""
+
+
+def bought_line(amount_cents: int, symbol: str) -> str:
+    """'Twelve to VTI.' Plain, the owner's own money going where they pinned it."""
+    return f"{dollars_said(amount_cents)} to {symbol}."
+
+
+def pot_before(money: str, left: int, total_cents: int, has_pick: bool) -> str:
+    """What he says when the owner looks at a pot machine."""
+    if not has_pick:
+        return f"{money} {NO_PICK}"
+    return " ".join(p for p in (money, run_line(left), pot_line(total_cents)) if p)

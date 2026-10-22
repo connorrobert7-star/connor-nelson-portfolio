@@ -7,6 +7,11 @@ Every paid pull goes the same way, in one request:
   3. only then take the next shell, ticket, wedge or heap piece and grant a cosmetic.
 If the transfer comes back 'failed', the pull is refused ("Not this week.") before step 3.
 Money is never random. The price lands in full every time; only the cosmetic varies.
+
+The scratch books, the wheel and the claw are pot machines (docs/POT.md): they pay into the
+Brokerage only, refuse without a pick at Marlo's counter, and step a run of lamps. A blank
+grants nothing and leaves the cosmetic loads alone; its price waits in the pot. A hit buys
+the pick with the pot plus its own price, then grants a cosmetic from the machine's load.
 """
 
 from collections import Counter
@@ -14,7 +19,7 @@ from collections import Counter
 from backend.core.context import Ctx
 from backend.core.router import ApiError
 from backend.core.services import grant_item
-from backend.features.casino import catalog, dealer, loads
+from backend.features.casino import catalog, dealer, loads, pot
 from backend.features.casino.catalog import RANK, TIERS, TRADE_UP, machines
 from backend.money.budget import balances, compute_extra
 from backend.money.transfer import caps_remaining, move
@@ -219,72 +224,153 @@ def scratch_symbols(tier: str, before: dict[str, int], book_tiers: list[str]) ->
     return cells
 
 
-def scratch(ctx: Ctx, price_cents: int, to_account: str) -> dict:
+DUD = "dud"
+
+
+def blank_symbols(left: dict[str, int]) -> list[str]:
+    """A blank ticket: nine symbols with no tier three times. Only tiers still in the book
+    show (once or twice each), so nothing teases a tier that's gone; duds fill the rest."""
+    cells: list[str] = []
+    for t in TIERS:
+        if left.get(t, 0) > 0:
+            cells += [t] * loads.RNG.randint(1, 2)
+    cells = cells[:9] + [DUD] * max(0, 9 - len(cells))
+    loads.RNG.shuffle(cells)
+    return cells
+
+
+def _pot_line(pot_out: dict, run: dict) -> str:
+    """What Vex says after a pot pull: the buy on a hit, the run and the pot on a blank."""
+    bought = pot_out.get("bought")
+    head = dealer.bought_line(bought["amount_cents"], bought["symbol"]) if bought else ""
+    tail = "" if bought else dealer.pot_line(pot_out["total_cents"])
+    return " ".join(p for p in (head, dealer.run_line(run["left"]), tail) if p)
+
+
+def _pot_pull(
+    ctx: Ctx,
+    key: str,
+    machine: str,
+    price_cents: int,
+    to_account: str | None,
+    what: str,
+    detail: dict,
+) -> tuple[dict, int, dict]:
+    """A pot machine's money, in order: the refusals (account, pick), then move() the exact
+    price into the Brokerage, then the next lamp. On a hit the pot buys the pick; on a blank
+    the price waits in the pot. Returns (money, transfer_id, pot)."""
+    symbol = pot.check(ctx, to_account)
+    money, transfer_id = pay(ctx, machine, price_cents, pot.account(), what, detail)
+    if pot.next_lamp(ctx, key):
+        return money, transfer_id, pot.buy(ctx, key, symbol, price_cents, transfer_id)
+    return money, transfer_id, pot.add_blank(ctx, price_cents)
+
+
+def scratch(ctx: Ctx, price_cents: int, to_account: str | None = None) -> dict:
     book = catalog.book(price_cents)
     if book is None:
         raise ApiError(422, "There's no book at that price.")
-    money, transfer_id = pay(
+    key = pot.scratch_key(price_cents)
+    money, transfer_id, pot_out = _pot_pull(
         ctx,
+        key,
         "scratch",
         price_cents,
         to_account,
         f"{dollars(price_cents)} scratch ticket",
         {"price_cents": price_cents},
     )
-    before = loads.book_left(ctx, price_cents)
-    tier = loads.draw_ticket(ctx, price_cents)
-    item_id = loads.pick_item(tier)
-    inventory_id = grant(ctx, item_id, "scratch", transfer_id)
+    hit = "bought" in pot_out
+    out: dict = {"money": money, "hit": hit, "item": None, "tier": None, "inventory_id": None}
+    if hit:
+        before = loads.book_left(ctx, price_cents)
+        tier = loads.draw_ticket(ctx, price_cents)
+        item_id = loads.pick_item(tier)
+        out.update(
+            item=catalog.item(item_id),
+            inventory_id=grant(ctx, item_id, "scratch", transfer_id),
+            tier=tier,
+            symbols=scratch_symbols(tier, before, [t for t, n in book["book"].items() if n]),
+        )
+    else:
+        out["symbols"] = blank_symbols(loads.book_left(ctx, price_cents))
     left = loads.book_left(ctx, price_cents)
+    run = pot.run_public(ctx, key)
     return {
-        "money": money,
-        "item": catalog.item(item_id),
-        "inventory_id": inventory_id,
-        "tier": tier,
-        "symbols": scratch_symbols(tier, before, [t for t, n in book["book"].items() if n]),
+        **out,
+        "run": run,
+        "pot": pot_out,
         "book": {"price_cents": price_cents, "size": sum(book["book"].values()), "left": left},
-        "dealer": {
-            "name": dealer.NAME,
-            "line": dealer.counted_line(left, "in the book", "in the book"),
-        },
+        "dealer": {"name": dealer.NAME, "line": _pot_line(pot_out, run)},
     }
 
 
-def spin_wheel(ctx: Ctx, to_account: str) -> dict:
-    price = machines()["wheel"]["price_cents"]
-    money, transfer_id = pay(ctx, "wheel", price, to_account, "the wheel", {})
-    wedge_index, tier, reset = loads.spin(ctx)
-    item_id = loads.pick_item(tier)
-    inventory_id = grant(ctx, item_id, "wheel", transfer_id)
-    wedges = wheel_state(ctx)["wedges"]
-    return {
+def spin_wheel(ctx: Ctx, to_account: str | None = None) -> dict:
+    cfg = machines()["wheel"]
+    money, transfer_id, pot_out = _pot_pull(
+        ctx, "wheel", "wheel", cfg["price_cents"], to_account, "the wheel", {}
+    )
+    hit = "bought" in pot_out
+    out: dict = {
         "money": money,
-        "wedge_index": wedge_index,
-        "tier": tier,
-        "item": catalog.item(item_id),
-        "inventory_id": inventory_id,
-        "reset": reset,
+        "hit": hit,
+        "wedge_index": None,
+        "dud_index": None,
+        "tier": None,
+        "item": None,
+        "inventory_id": None,
+        "reset": False,
+    }
+    if hit:
+        wedge_index, tier, reset = loads.spin(ctx)
+        item_id = loads.pick_item(tier)
+        out.update(
+            wedge_index=wedge_index,
+            tier=tier,
+            item=catalog.item(item_id),
+            inventory_id=grant(ctx, item_id, "wheel", transfer_id),
+            reset=reset,
+        )
+    else:
+        # A dud sliver between two wedges. Which one is cosmetic; the blank was the run's.
+        out["dud_index"] = loads.RNG.randrange(cfg["dud_slivers"])
+    wedges = wheel_state(ctx)["wedges"]
+    run = pot.run_public(ctx, "wheel")
+    return {
+        **out,
         "wedges": wedges,
-        "dealer": {"name": dealer.NAME, "line": _wheel_line(wedges)},
+        "run": run,
+        "pot": pot_out,
+        "dealer": {"name": dealer.NAME, "line": _pot_line(pot_out, run)},
     }
 
 
-def drop_claw(ctx: Ctx, to_account: str, drop_x: float) -> dict:
+def drop_claw(ctx: Ctx, drop_x: float, to_account: str | None = None) -> dict:
     if not 0.0 <= drop_x <= 1.0:
         raise ApiError(422, "drop_x must be 0 to 1.")
     price = machines()["claw"]["price_cents"]
-    money, transfer_id = pay(ctx, "claw", price, to_account, "the claw", {"drop_x": drop_x})
-    slot_index, tier = loads.grab(ctx, drop_x)
-    item_id = loads.pick_item(tier)
-    inventory_id = grant(ctx, item_id, "claw", transfer_id)
-    pile = loads.heap(ctx)
+    money, transfer_id, pot_out = _pot_pull(
+        ctx, "claw", "claw", price, to_account, "the claw", {"drop_x": drop_x}
+    )
+    hit = "bought" in pot_out
+    out: dict = {"money": money, "hit": hit, "item": None, "inventory_id": None}
+    if hit:
+        slot_index, tier = loads.grab(ctx, drop_x)
+        item_id = loads.pick_item(tier)
+        out.update(
+            item=catalog.item(item_id),
+            inventory_id=grant(ctx, item_id, "claw", transfer_id),
+        )
+    else:
+        slot_index, tier = loads.touch(ctx, drop_x)
+    run = pot.run_public(ctx, "claw")
     return {
-        "money": money,
-        "grabbed": {"slot_index": slot_index, "tier": tier},
-        "item": catalog.item(item_id),
-        "inventory_id": inventory_id,
-        "heap": pile,
-        "dealer": {"name": dealer.NAME, "line": _claw_line(pile)},
+        **out,
+        "grabbed": {"slot_index": slot_index, "tier": tier, "held": hit},
+        "heap": loads.heap(ctx),
+        "run": run,
+        "pot": pot_out,
+        "dealer": {"name": dealer.NAME, "line": _pot_line(pot_out, run)},
     }
 
 
@@ -401,15 +487,6 @@ def wheel_state(ctx: Ctx) -> dict:
     }
 
 
-def _wheel_line(wedges: list[dict]) -> str:
-    left = Counter(w["tier"] for w in wedges if not w["taken"])
-    return dealer.counted_line(dict(left), "wedge", "wedges")
-
-
-def _claw_line(pile: list[dict]) -> str:
-    return dealer.counted_line(dict(Counter(p["tier"] for p in pile)), "in the heap", "in the heap")
-
-
 def cheapest_cents() -> int:
     m = machines()
     prices = [c["price_cents"] for c in m["cases"]]
@@ -449,23 +526,28 @@ def room_state(ctx: Ctx) -> dict:
 
     case_odds = dealer.case_odds(belt, box)
     before: dict = {"case": {}, "scratch": {}, "wheel": {}, "claw": {}}
-    wheel_line, claw_line = _wheel_line(wheel["wedges"]), _claw_line(pile)
     for d in dests:
         for c in m["cases"]:
             before["case"].setdefault(c["id"], {})[d["id"]] = (
                 f"{dealer.money_line(c['price_cents'], d['name'])} {case_odds}"
             )
-        for b in books:
-            odds = dealer.counted_line(b["left"], "in the book", "in the book")
-            before["scratch"].setdefault(str(b["price_cents"]), {})[d["id"]] = (
-                f"{dealer.money_line(b['price_cents'], d['name'])} {odds}"
-            )
-        before["wheel"][d["id"]] = (
-            f"{dealer.money_line(wheel['price_cents'], d['name'])} {wheel_line}"
+    # The pot machines pay into the Brokerage only; he names the run and the pot.
+    pot_now = pot.pot_state(ctx)
+    runs = pot.runs_state(ctx)
+    brk = pot.account()
+    brk_name = account_name(ctx, brk)
+
+    def pot_said(key: str, price: int) -> str:
+        money = dealer.money_line(price, brk_name)
+        return dealer.pot_before(
+            money, runs[key]["left"], pot_now["total_cents"], pot_now["pick"] is not None
         )
-        before["claw"][d["id"]] = (
-            f"{dealer.money_line(m['claw']['price_cents'], d['name'])} {claw_line}"
-        )
+
+    for b in books:
+        key = pot.scratch_key(b["price_cents"])
+        before["scratch"][str(b["price_cents"])] = {brk: pot_said(key, b["price_cents"])}
+    before["wheel"] = {brk: pot_said("wheel", wheel["price_cents"])}
+    before["claw"] = {brk: pot_said("claw", m["claw"]["price_cents"])}
     line = dealer.now_line(can, cheapest_cents(), belt, box)
 
     return {
@@ -480,6 +562,8 @@ def room_state(ctx: Ctx) -> dict:
         "scratch": books,
         "wheel": wheel,
         "claw": {"price_cents": m["claw"]["price_cents"], "heap": pile},
+        "pot": pot_now,
+        "runs": runs,
         "owned": dict(sorted(have.items())),
         "trophies": dict(sorted(owned_trophies(ctx).items())),
         "inventory": inventory,

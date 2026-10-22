@@ -34,12 +34,20 @@ class BankProvider(Protocol):
 
 
 class BrokerageProvider(Protocol):
-    """Holdings, read only. Real: SnapTrade (Fidelity)."""
+    """Holdings, and the pot's buys. Real: SnapTrade (Fidelity).
+
+    Never sells. place_order spends cash that already landed in the brokerage."""
 
     name: str
 
     def holdings(self, anchor: date, today: date) -> list[dict]:
         """[{id, account_id, symbol, qty, value_cents, as_of}] priced at the weekly close."""
+        ...
+
+    def place_order(self, symbol: str, amount_cents: int) -> dict:
+        """Buy amount_cents of symbol from brokerage cash (the pot, docs/POT.md).
+        Returns {status: simulated|pending|filled, order_id?}. Raises NotConfigured when
+        trading isn't written yet, which refuses the whole pull."""
         ...
 
 

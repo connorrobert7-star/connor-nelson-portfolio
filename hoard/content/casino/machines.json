@@ -31,7 +31,8 @@
       "legendary", "common", "rare", "common", "common", "rare",
       "epic", "common", "rare", "common", "common", "common"
     ],
-    "resets_on": "legendary"
+    "resets_on": "legendary",
+    "dud_slivers": 12
   },
   "claw": {
     "price_cents": 500,
@@ -44,6 +45,11 @@
       [0.42, 0.4], [0.58, 0.4],
       [0.5, 0.24]
     ]
+  },
+  "pot": {
+    "_note": "The pot machines (scratch books, the wheel, the claw) pay into the Brokerage only. Each machine has a run of lamps, exactly one of which is the hit, drawn when the run loads. Each pull uses the next lamp. A blank pull's price waits in the pot as cash in the Brokerage; a hit spends the pot plus its own price on the owner's pick at Marlo's counter. See docs/POT.md.",
+    "to_account": "brk_1",
+    "runs": {"scratch_100": 8, "scratch_200": 6, "scratch_500": 5, "wheel": 6, "claw": 6}
   },
   "draw": {
     "cents_per_entry": 500,

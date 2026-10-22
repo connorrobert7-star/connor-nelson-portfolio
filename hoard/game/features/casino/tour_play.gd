@@ -6,8 +6,10 @@ extends RefCounted
 ## be left stuck after a machine closes (Game.busy, an overlay, the time scale).
 ##   1. The floor answers a tap; a touch on a case walks there and Vex says the price whole.
 ##   2. Cases $10, $20 (into the Brokerage) and $50 (skipped by a tap), each held on the slot.
-##   3. Scratch $1, $2 and $5, picked and bought by touch, scratched with a finger.
-##   4. The wheel and the claw (dragged by finger, the button pressed).
+##   3. Scratch $1, $2 and $5, picked and bought by touch, scratched with a finger (pot
+##      machines: into the Brokerage, a blank or a hit, docs/POT.md).
+##   4. The wheel and the claw (dragged by finger, the button pressed); a blank lands on a dud
+##      sliver or slips.
 ##   5. The book: a quick tap while it opens, ribbons flipped, a piece worn, a trade-up.
 ##   6. The week's room spent: "Not this week." in the room, twice, and nothing stuck.
 ##   7. The weekly draw: the dial lets the days pass to Sunday, the ticket plate shows, and
@@ -36,6 +38,9 @@ func run(k: TourKit) -> void:
 	await _case("case_10", "sav_1", false)
 	await _case("case_20", "brk_1", false)
 	await _case("case_50", "sav_1", true)
+	# The pot machines need the owner's pick (docs/POT.md); the counter's tap is in
+	# tour_machines, so here it's setup through the API.
+	await Game.act("/shop/pick", {"symbol": "VTI"})
 	for p: int in [100, 200, 500]:
 		await _scratch(p)
 	await _wheel()
@@ -108,14 +113,12 @@ func _case(id: String, dest: String, skip: bool) -> void:
 # --- 3 ---------------------------------------------------------------------------------
 
 func _scratch(p: int) -> void:
-	var bal := _balance("sav_1")
+	var bal := _balance("brk_1")
 	var ov := await _walk_up("scratch") as ScratchOverlay
 	if not kit.check(ov != null, "the booth opens"):
 		return
 	await kit.wait(0.6)
-	if ov.dest != "sav_1":
-		await touch(_ctl(ov.mouth_control("sav_1")))
-		await kit.wait(0.3)
+	kit.check(ov.dest == "brk_1" and ov.mouth_control("sav_1") == null, "the booth pays into the Brokerage only")
 	if ov.price != p:
 		await touch(_ctl(ov.book_control(p)))
 		await kit.wait(0.4)
@@ -137,14 +140,14 @@ func _scratch(p: int) -> void:
 	await kit.until(func() -> bool: return kit.overlay() == null, 20.0)
 	await _closed_clean("$%d ticket" % (p / 100))
 	kit.check(_moved() == p, "the ticket moved exactly %d cents" % p)
-	await kit.until(func() -> bool: return _balance("sav_1") == bal + p, 5.0)
-	kit.check(_balance("sav_1") == bal + p, "the House Fund is up exactly that")
+	await kit.until(func() -> bool: return _balance("brk_1") == bal + p, 5.0)
+	kit.check(_balance("brk_1") == bal + p, "the Brokerage is up exactly that (%s)" % ("hit" if last_result is Dictionary and bool(last_result.get("hit", false)) else "blank"))
 
 
 # --- 4 ---------------------------------------------------------------------------------
 
 func _wheel() -> void:
-	var bal := _balance("sav_1")
+	var bal := _balance("brk_1")
 	var ov := await _walk_up("wheel") as WheelOverlay
 	if not kit.check(ov != null, "the wheel opens"):
 		return
@@ -152,14 +155,16 @@ func _wheel() -> void:
 	await touch(_ctl(ov.wheel_control()))
 	kit.check(ov.moment != "choose", "a touch on the wheel pulls it")
 	await kit.until(func() -> bool: return ov.moment == "spin", 8.0)
-	await kit.until(func() -> bool: return ov.moment in ["pop", "land", "reveal", "book", "closed"], 15.0)
-	kit.check(ov.landed_index == int(ov.result.get("wedge_index", -2)), "the wheel stops on the wedge the house drew")
-	var dest := ov.dest
+	await kit.until(func() -> bool: return ov.moment in ["pop", "dud", "land", "reveal", "book", "blank", "pot", "closed"], 15.0)
+	if bool(ov.result.get("hit", false)):
+		kit.check(ov.landed_index == int(ov.result.get("wedge_index", -2)), "the wheel stops on the wedge the house drew")
+	else:
+		kit.check(ov.landed_dud == int(ov.result.get("dud_index", -2)), "a blank stops on the dud sliver")
 	await kit.until(func() -> bool: return kit.overlay() == null, 25.0)
 	await _closed_clean("the wheel")
 	kit.check(_moved() == 500, "the wheel moved exactly $5")
-	await kit.until(func() -> bool: return dest != "sav_1" or _balance("sav_1") == bal + 500, 5.0)
-	kit.check(dest != "sav_1" or _balance("sav_1") == bal + 500, "into the House Fund")
+	await kit.until(func() -> bool: return _balance("brk_1") == bal + 500, 5.0)
+	kit.check(_balance("brk_1") == bal + 500, "into the Brokerage")
 
 
 func _claw() -> void:
@@ -193,11 +198,11 @@ func _book() -> void:
 	# Enough commons for a trade-up: real $1 tickets bought straight through the API (setup).
 	await BookOverlay.load_catalog()
 	var commons := 0
-	for i in 40:
+	for i in 90:
 		commons = _owned_of("common")
 		if commons >= 10:
 			break
-		await Game.call_api("POST", "/casino/scratch", {"price_cents": 100, "to_account": "sav_1"})
+		await Game.call_api("POST", "/casino/scratch", {"price_cents": 100})
 		await Game.refresh()
 	kit.check(_owned_of("common") >= 10, "ten commons to trade (%d)" % _owned_of("common"))
 	var ov := await _walk_up("book", false) as BookOverlay
@@ -289,7 +294,7 @@ func _refused() -> void:
 				break
 	for p: int in [500, 200, 100]:
 		for i in 80:
-			var r: Array = await Game.api.request("POST", "/casino/scratch", {}, {"price_cents": p, "to_account": "sav_1"})
+			var r: Array = await Game.api.request("POST", "/casino/scratch", {}, {"price_cents": p})
 			if r[1] != "":
 				break
 	await Game.refresh()

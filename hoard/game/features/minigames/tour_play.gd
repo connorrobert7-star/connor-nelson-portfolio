@@ -220,7 +220,9 @@ func _dungeon_full(room: ArcadeRoom) -> void:
 		for f in 30:
 			_thunder(dun, seen)
 			await kit.frames(1)
-		kit.check(seen.size() >= 2, "two quick touches call two bolts (%d)" % seen.size())
+		# The party fires too: if their bolts finish the mark first, the queued strike is
+		# dropped by design (it never lands on a corpse), so one bolt and a dead mark also pass.
+		kit.check(seen.size() >= 2 or (seen.size() == 1 and e.hp <= 0.0), "two quick touches call two bolts (%d, mark hp %.0f)" % [seen.size(), e.hp])
 		kit.log_line("  enemy hp %.0f -> %.0f" % [hp0, e.hp])
 	var bombed := false
 	var rattled := false

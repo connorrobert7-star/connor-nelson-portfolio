@@ -137,6 +137,10 @@ func _dealer_line() -> String:
 	return str(before.get(dest, dealer.get("line", "")))
 
 
+func _pot_key() -> String:
+	return "scratch_%d" % price
+
+
 func _price_cents() -> int:
 	return price
 
@@ -179,6 +183,8 @@ func _pick(p: int) -> void:
 	price = p
 	_last_price = p
 	_mark_selected()
+	if lamps:
+		lamps.setup(CasinoPot.run(_pot_key()))
 	Sfx.play_path(SND_PICK, 1.0 + PRICES.find(p) * 0.08, -6.0)
 	update_lamp()
 	speak_line(_dealer_line())
@@ -224,7 +230,9 @@ func _tear(b: Book, data: Dictionary) -> void:
 	_ticket.price = price
 	_ticket.symbols = symbols
 	# The footer lights the marks that were in the book when this ticket came off it.
-	var marks: Dictionary = {str(data.get("tier", "common")): true}
+	var marks: Dictionary = {}
+	if data.get("tier") != null:
+		marks[str(data.tier)] = true
 	var left: Dictionary = data.get("book", {}).get("left", {})
 	for t: String in left:
 		if int(left[t]) > 0:
@@ -399,7 +407,7 @@ func _cell_seen(i: int) -> void:
 	_ticket.seen[i] = true
 	var tier := str(symbols[i]) if i < symbols.size() else "common"
 	Sfx.play_path(SND_GLINT, 0.8 + 0.18 * TIERS.find(tier), -10.0)
-	if tier != "common":
+	if tier in TIERS and tier != "common":
 		_ticket.lit[i] = 0.45
 		CasinoFx.burst(_fx, _cell_center_room(i), CasinoFx.rarity_color(tier), 6, 50.0, 0.5)
 	_check_tension()
@@ -467,6 +475,9 @@ func _finish_scratch() -> void:
 		_seen[j] = true
 		_ticket.seen[j] = true
 	await get_tree().create_timer(0.35).timeout
+	if not bool(result.get("hit", true)):
+		await _blank_ticket()
+		return
 	var tier := str(result.get("tier", result.get("item", {}).get("tier", "common")))
 	prize_cells.clear()
 	# Three of the prize mark light (a grey ticket can carry more than three skulls).
@@ -507,7 +518,29 @@ func _finish_scratch() -> void:
 	at = at / maxf(1.0, prize_cells.size()) if not prize_cells.is_empty() else FOIL_AT + Vector2(62, 62)
 	var dim := _ticket.create_tween()
 	dim.tween_property(_ticket, "modulate", Color(0.6, 0.6, 0.65), 0.4)
+	await pot_hit()
 	await reveal(result.get("item", {}), at)
+	finish()
+
+
+## A blank ticket: no mark shows three times. Any pair slips, every cell dims, and the
+## ticket's dollars drop into the jar as a coin (they landed in the Brokerage all the same).
+func _blank_ticket() -> void:
+	moment = "blank_ticket"
+	prize_cells.clear()
+	if _tense != "":
+		Sfx.play_path(SND_SLIP, 1.0, -6.0)
+		await get_tree().create_timer(0.4).timeout
+	_heart.stop()
+	_tense = ""
+	_ticket.tense = ""
+	for j in 9:
+		_ticket.lit[j] = 0.0
+		_ticket.create_tween().tween_method(func(v: float) -> void: _ticket.dim[j] = v, 0.0, 0.5, 0.3)
+	var dim := _ticket.create_tween()
+	dim.tween_property(_ticket, "modulate", Color(0.62, 0.6, 0.66), 0.4)
+	await get_tree().create_timer(0.4).timeout
+	await pot_blank(FOIL_AT + Vector2(FOIL_SIZE / 2.0, FOIL_SIZE / 2.0))
 	finish()
 
 

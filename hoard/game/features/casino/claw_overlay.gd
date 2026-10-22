@@ -280,6 +280,10 @@ func _process(delta: float) -> void:
 
 # --- the drop ------------------------------------------------------------------------------
 
+func _pot_key() -> String:
+	return "claw"
+
+
 func _drop() -> void:
 	moment = "pressed"
 	_button.press()
@@ -306,13 +310,23 @@ func play(data: Dictionary) -> void:
 		toy.position = spot(0.5, 0.24) - toy.size / 2.0
 		toy.set_meta("home", toy.position)
 		_pile.add_child(toy)
-	plushes.erase(slot)
+	var held := bool(grabbed.get("held", true))
 	await _descend(toy)
 	await _grip(toy)
+	if not held:
+		# A blank: the claw slips, the piece drops back onto the heap, and the dollars drop
+		# into the jar instead.
+		plushes[slot] = toy
+		await _slip(toy)
+		await pot_blank(Vector2(claw_x, head_y + 10.0))
+		finish()
+		return
+	plushes.erase(slot)
 	await _lift(toy)
 	await _carry()
 	await _chute(toy)
 	await _burst_open(slot, str(grabbed.get("tier", "common")))
+	await pot_hit()
 	await reveal(data.get("item", {}), OUTLET + Vector2(0, -8))
 	_settle(data.get("heap", []))
 	finish()
@@ -363,8 +377,8 @@ func _grip(toy: Control) -> void:
 	await get_tree().create_timer(0.25).timeout
 
 
-## Up it comes, and partway up the claw shudders like it might let go. It never does: every
-## grab wins something.
+## Up it comes, and partway up the claw shudders like it might let go. On a hit it holds (a
+## blank slips in _slip instead).
 func _lift(_toy: Control) -> void:
 	moment = "lift"
 	_motor.pitch_scale = 0.9
@@ -392,6 +406,44 @@ func _lift(_toy: Control) -> void:
 	var rest := create_tween()
 	rest.tween_property(self, "head_y", REST_Y, 0.6).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	await rest.finished
+
+
+## A blank: partway up the claw shudders, the prongs spring open and the piece slips back
+## onto the heap, where it stays. The claw goes home empty.
+func _slip(toy: Control) -> void:
+	moment = "lift"
+	_motor.pitch_scale = 0.9
+	_motor.play(randf_range(0.0, 8.0))
+	var from := head_y
+	var mid := lerpf(from, REST_Y, 0.3)
+	var up := create_tween()
+	up.tween_property(self, "head_y", mid, 0.45).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	await up.finished
+	moment = "shudder"
+	_motor.stop()
+	Sfx.play_path(SND_CREAK, 1.0, -4.0)
+	var shudder := create_tween()
+	for i in 5:
+		shudder.tween_property(self, "open", 0.2 if i % 2 == 0 else 0.0, 0.06)
+	await shudder.finished
+	moment = "slip"
+	Sfx.play_path(SND_OPEN, 0.8, -4.0)
+	var o := create_tween()
+	o.tween_property(self, "open", 1.0, 0.1)
+	_held = null
+	var home: Vector2 = toy.get_meta("home", toy.position)
+	var fall := toy.create_tween().set_parallel(true)
+	fall.tween_property(toy, "position", home, 0.4).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
+	fall.tween_property(toy, "rotation", 0.0, 0.3)
+	await fall.finished
+	Sfx.play_path(SND_DROP, 1.2, -10.0)
+	shake(_room, 1.0, 0.1)
+	_motor.play(randf_range(0.0, 8.0))
+	var rest := create_tween()
+	rest.tween_property(self, "head_y", REST_Y, 0.5).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	rest.parallel().tween_property(self, "open", 0.0, 0.4)
+	await rest.finished
+	_motor.stop()
 
 
 func _carry() -> void:
