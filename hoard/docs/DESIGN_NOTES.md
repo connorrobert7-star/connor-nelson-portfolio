@@ -165,3 +165,10 @@ its target) was put to the owner. Build whatever they chose, recorded below.
   never says anything is going up. The helper explains each slice.
 - **Gold, silver and bitcoin as ETFs** (for example IAU, SLV, IBIT): same broker, same order code,
   same caps. No direct crypto for now.
+
+### Pantry, its own app (October 22)
+
+The owner asked why Pantry couldn't be built in or beside Hoard. Decided: Pantry is built now as
+its own app in its own private repo (`pantry`), from the Pantry prompt's description (the five-step
+loop, canonical units shown in purchase units, Supabase), exposing the three `hoard_*` views Hoard
+reads. Hoard stays read-only toward it.
