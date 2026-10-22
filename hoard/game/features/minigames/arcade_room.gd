@@ -43,7 +43,7 @@ func build() -> void:
 	# so a tap on any cabinet is a straight walk with nothing in the way.
 	block(Rect2i(1, 2, 14, 2))
 	_build_stand()
-	_ambience = ArcadeFx.music(self, AMBIENCE, -26.0)
+	_ambience = ArcadeFx.music(self, AMBIENCE, -26.0, "Ambience")
 
 
 func _exit_tree() -> void:

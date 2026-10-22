@@ -51,6 +51,24 @@ func run(kit: TourKit) -> void:
 			live += 1
 	kit.check(live <= 3, "at most three toasts at once (%d)" % live)
 
+	# The calendar plate is the week control: tap its left half for last week, its right
+	# half to come back. Nothing here is keyboard-only.
+	var purse: HudPurse = main._purse
+	var cal: Rect2 = purse._cal_rect
+	kit.check(cal.has_area(), "the calendar plate is drawn")
+	var screen := kit.get_viewport().get_screen_transform()
+	var weeks: int = int(Game.state.get("history_weeks", 1))
+	if weeks > 1:
+		await kit.tap_screen(screen * (purse.global_position + cal.position + Vector2(cal.size.x * 0.2, cal.size.y / 2.0)))
+		await kit.until(func() -> bool: return Game.weeks_ago == 1 and not Game.busy, 5.0)
+		kit.check(Game.weeks_ago == 1, "a tap on the calendar's left half turns back a week")
+		await kit.wait(0.6)
+		await kit.shot("p06b_last_week")
+		await kit.tap_screen(screen * (purse.global_position + cal.position + Vector2(cal.size.x * 0.85, cal.size.y / 2.0)))
+		await kit.until(func() -> bool: return Game.weeks_ago == 0, 5.0)
+		kit.check(Game.weeks_ago == 0, "a tap on its right half comes back to this week")
+		await kit.wait(0.5)
+
 	# Purse count-up.
 	var before: int = main._purse._target_coins
 	main._purse.show_purse(before + 40, main._purse._target_cents + 12345, main._purse.week)

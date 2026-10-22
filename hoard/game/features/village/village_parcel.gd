@@ -103,11 +103,11 @@ func _process(delta: float) -> void:
 		return
 	_fog_t += delta
 	for i in _fogs.size():
-		# A slow drift back and forth inside the sheet, so its edges never show.
+		# The sheet tiles, so the fog just scrolls on, a whole texel at a time.
 		var f := _fogs[i]
-		var reach := (320.0 - f.region_rect.size.x) / 2.0
-		var speed := 4.0 if i == 0 else -7.0
-		f.region_rect.position.x = reach + sin(_fog_t * speed / maxf(reach, 1.0)) * reach
+		var o: Vector2 = f.get_meta("origin")
+		var speed := 2.0 if i == 0 else -1.4
+		f.region_rect.position = Vector2(fposmod(o.x + floorf(_fog_t * speed), 320.0), o.y + floorf(sin(_fog_t * 0.05 + i) * 3.0))
 
 
 ## The parcel in pixels.
@@ -170,6 +170,7 @@ func set_ropes(segments: Array) -> void:
 ## first; `ground` is a Callable(cell: Vector2i, open: bool) that repaints one ground tile.
 func play_open(ground: Callable) -> void:
 	is_open = true
+	Sfx.duck(-8.0, 1.6)
 	var c := center()
 	# The survey stake comes out of the ground.
 	VillageArt.sfx("ninja-adventure/Audio/Sounds/Whoosh & Slash/Slash.ogg", 1.3, -10)
@@ -354,20 +355,22 @@ func _build_haze() -> void:
 	veil.polygon = PackedVector2Array([r.position, Vector2(r.end.x, r.position.y), r.end, Vector2(r.position.x, r.end.y)])
 	veil.color = Color(0.04, 0.02, 0.09, 0.5)
 	_haze.add_child(veil)
-	# Two layers of the pack's fog, scrolling against each other.
+	# Two layers of the pack's fog at whole-number scales (2x and 3x, never stretched to fit),
+	# tiling and scrolling against each other. Faint: the silhouettes, the eyes and the
+	# stake's lantern do the work.
 	for i in 2:
+		var k := 2.0 if i == 0 else 3.0
 		var f := Sprite2D.new()
 		f.texture = VillageArt.sheet(VillageArt.FOG)
 		f.centered = false
 		f.region_enabled = true
 		f.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
-		f.region_rect = Rect2(0, 0, minf(r.size.x / 2.0, 300.0), minf(r.size.y / 2.0, 176.0))
-		f.scale = r.size / f.region_rect.size
-		f.flip_h = i == 1
-		f.flip_v = i == 1
+		f.region_rect = Rect2(Vector2(0, 0) if i == 0 else Vector2(137, 61), (r.size / k).ceil())
+		f.scale = Vector2(k, k)
 		f.position = r.position
 		f.material = VillageArt.additive()
-		f.modulate = Color(FOG_TINT, 0.1 if i == 0 else 0.07)
+		f.modulate = Color(FOG_TINT, 0.06 if i == 0 else 0.05)
+		f.set_meta("origin", f.region_rect.position)
 		_haze.add_child(f)
 		_fogs.append(f)
 	var n := maxi(3, int(r.size.x * r.size.y / 9000.0))

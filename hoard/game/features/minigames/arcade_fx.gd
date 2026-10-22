@@ -325,8 +325,9 @@ static func rarity_color(tier: String) -> Color:
 
 
 ## Loop a music bed on its own player under `parent`.
-static func music(parent: Node, path: String, volume_db := -14.0) -> AudioStreamPlayer:
+static func music(parent: Node, path: String, volume_db := -14.0, bus := "Music") -> AudioStreamPlayer:
 	var p := AudioStreamPlayer.new()
+	p.bus = bus
 	if ResourceLoader.exists(path):
 		var stream: AudioStream = load(path)
 		if stream is AudioStreamOggVorbis:

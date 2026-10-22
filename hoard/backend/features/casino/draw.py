@@ -94,7 +94,7 @@ def run_draw(ctx: Ctx, start: date) -> dict:
             if came_up
             else f"The weekly draw: none of your {mine} tickets came up this time."
         )
-        notify(ctx, "casino_draw", text, week=start.isoformat(), won=won)
+        notify(ctx, "casino_draw", text, week=start.isoformat(), won=won, mine=mine)
     return {"week": start.isoformat(), "won": won}
 
 

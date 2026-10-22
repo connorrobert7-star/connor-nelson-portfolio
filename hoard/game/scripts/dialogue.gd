@@ -13,6 +13,8 @@ const GUI := "res://art/packs/tiopalada-dark-dwellers-gui/"
 const BLIP := "res://art/packs/ignisforge-sfx-sampler/blip_15.ogg"
 ## Blip pitch by speaker; anyone else talks at 1.0.
 const VOICES := {"shopkeeper": 1.0, "tavern_keeper": 1.15, "vex": 0.7}
+## Where the box's bottom edge rests (main.tscn's offset_bottom).
+const BOTTOM := -6.0
 
 var _portrait := TextureRect.new()
 var _frame := TextureRect.new()
@@ -57,7 +59,7 @@ func _ready() -> void:
 	box.content_margin_right = 10
 	box.content_margin_top = 7
 	box.content_margin_bottom = 7
-	box.modulate_color = Color(0.62, 0.58, 0.75, 0.97)
+	box.modulate_color = Color(0.62, 0.58, 0.75, 1.0)
 	add_theme_stylebox_override("panel", box)
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 8)
@@ -122,14 +124,13 @@ func open(npc_id: String, speaker: String) -> void:
 	visible = true
 	if not was_open:
 		Sfx.ui("open")
+		# Rise from 6px down in whole pixels (never scaled: m5x7 and the frame stay crisp).
 		modulate.a = 0.0
-		pivot_offset = Vector2(size.x / 2.0, size.y)
-		scale = Vector2(0.97, 0.9)
 		if _open_tween:
 			_open_tween.kill()
 		_open_tween = create_tween().set_parallel()
-		_open_tween.tween_property(self, "modulate:a", 1.0, 0.12)
-		_open_tween.tween_property(self, "scale", Vector2.ONE, 0.18).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		_open_tween.tween_property(self, "modulate:a", 1.0, 0.08)
+		_open_tween.tween_method(func(v: float) -> void: offset_bottom = BOTTOM + roundf(v), 6.0, 0.0, 0.24).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 
 func close() -> void:
@@ -168,7 +169,8 @@ func ask(prompt: String, options: Array[String], disabled: Array[bool] = []) -> 
 	return pick
 
 
-## Hover lights it and blips; pressing squashes it and springs back.
+## Hover lights it and blips; pressing flashes it warm and lets it settle (no scaling:
+## the words stay on the pixel grid).
 func _juice_button(b: Button) -> void:
 	b.mouse_entered.connect(func() -> void:
 		if not b.disabled:
@@ -176,12 +178,11 @@ func _juice_button(b: Button) -> void:
 			Sfx.ui("hover")
 	)
 	b.button_down.connect(func() -> void:
-		b.pivot_offset = b.size / 2.0
-		b.scale = Vector2(0.92, 0.92)
+		b.modulate = Color(1.45, 1.3, 1.0)
 	)
 	b.pressed.connect(func() -> void:
 		Sfx.ui("press")
-		Juice.pop(b, Vector2(0.92, 0.92), 0.35)
+		b.create_tween().tween_property(b, "modulate", Color.WHITE, 0.3).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	)
 
 

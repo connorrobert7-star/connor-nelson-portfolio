@@ -233,6 +233,14 @@ func build() -> void:
 func _ready() -> void:
 	super._ready()
 	ground.modulate = NIGHT_GROUND
+	# One more row of dead wood above the map: at the top of the island the camera rises
+	# two tiles further, so the north facades and their signs clear the HUD's corners.
+	camera.limit_top = -2 * TILE
+	for y in [-2, -1]:
+		for x in W:
+			set_tile(Vector2i(x, y), legend["T"])
+	_cam_pos = _cam_target(Vector2.ZERO)
+	camera.position = _cam_pos.round()
 	# Coming back through a door in the wall (the gate) would land outside it: step inside.
 	var tile := Vector2i((leader.position / TILE).floor())
 	while tile.y > BANK_ROW and (_blocked.has(tile) or _open.has(tile) or tile.y > ROAD_ROW):
@@ -587,9 +595,6 @@ func _on_tap(point: Vector2) -> void:
 
 func _process(delta: float) -> void:
 	super._process(delta)
-	# Everything in the village is tapped, not read: no key prompts here at all.
-	if main:
-		main.show_prompt("")
 	_hud_fade()
 	_duck_music()
 
@@ -639,10 +644,12 @@ func _on_event(e: Dictionary) -> void:
 
 func _border_trees() -> void:
 	var dead := [Vector2i(4, 0), Vector2i(6, 0)]
-	for x in range(0, W, 2):
-		var t := VillageArt.sprite(props, VillageArt.tiles(VillageArt.NATURE, dead[(x / 2) % 2].x, 0, 2, 2), Vector2(x * TILE + 16, 2 * TILE - 2), x % 4 == 0)
-		t.modulate = Color(0.8, 0.75, 0.9)
-		_sway(t, 0.035)
+	for row in 2:
+		for x in range(-row, W, 2):
+			var t := VillageArt.sprite(props, VillageArt.tiles(VillageArt.NATURE, dead[((x + row) / 2) % 2].x, 0, 2, 2), Vector2(x * TILE + 16, (2 - row * 2) * TILE - 2 - row * 3), (x + row) % 4 == 0)
+			# The back row sits deeper in the dark.
+			t.modulate = Color(0.8, 0.75, 0.9) if row == 0 else Color(0.55, 0.5, 0.66)
+			_sway(t, 0.035)
 	var leaves := CPUParticles2D.new()
 	leaves.texture = VillageArt.tex(VillageArt.LEAF, Rect2(0, 0, 8, 7))
 	leaves.amount = 16
@@ -1090,6 +1097,7 @@ func _bleed(at: Vector2, path: String, db: float) -> void:
 	p.volume_db = db
 	p.max_distance = 160.0
 	p.attenuation = 1.6
+	p.bus = "Ambience"
 	if db >= -16:
 		_loud.append(at)
 	p.position = at
@@ -1105,6 +1113,7 @@ func _ambience() -> void:
 		s.loop = true
 		music.stream = s
 		music.volume_db = -18.0
+		music.bus = "Music"
 		music.autoplay = true
 		add_child(music)
 		_music = music
@@ -1116,6 +1125,7 @@ func _ambience() -> void:
 		var bed := AudioStreamPlayer.new()
 		bed.stream = w
 		bed.volume_db = -30.0
+		bed.bus = "Ambience"
 		bed.autoplay = true
 		add_child(bed)
 	# The flock murmurs around the square.
@@ -1134,6 +1144,7 @@ func _loop(at: Vector2, path: String, db: float, reach: float) -> void:
 	p.volume_db = db
 	p.max_distance = reach
 	p.attenuation = 1.4
+	p.bus = "Ambience"
 	p.position = at
 	p.autoplay = true
 	add_child(p)
@@ -1304,6 +1315,7 @@ func _chatter(at: Vector2, pattern: Array, db: float, pitch: Vector2, picks: Arr
 	c.volume_db = db
 	c.max_distance = 160.0
 	c.attenuation = 1.6
+	c.bus = "Ambience"
 	c.pitch = pitch
 	if pattern.size() > 1 and picks.is_empty():
 		picks = range(1, int(pattern[1]) + 1)
@@ -1753,15 +1765,24 @@ func _dress_tavern() -> void:
 		tw.tween_property(coin, "position:y", coin.position.y - 4, 0.6)
 		tw.tween_property(coin, "position:y", coin.position.y, 0.6)
 	else:
-		# Packed: the overflow sleeps it off outside.
+		# Packed: the overflow sleeps it off outside, hooded cultists curled on the ground
+		# with a slow z drifting up off each.
 		for i in 3:
+			var look: Vector2i = VillageCultist.LOOKS[(i * 5 + 1) % VillageCultist.LOOKS.size()]
 			var s := Sprite2D.new()
-			s.texture = preload("res://art/villager.png")
-			s.hframes = 2
-			s.frame = 1
-			s.offset = Vector2(0, -8)
-			s.position = Vector2((TAVERN.end.x) * TILE + 8 + i * 10, (TAVERN.end.y + 1) * TILE)
+			s.texture = VillageArt.tex(VillageArt.HOODED_A, Rect2(look.x * 16, look.y * 16, 16, 16))
+			s.rotation = PI / 2.0 if i % 2 == 0 else -PI / 2.0
+			s.position = Vector2((TAVERN.end.x) * TILE + 10 + i * 14, (TAVERN.end.y + 1) * TILE - 5)
+			s.modulate = Color(0.85, 0.8, 0.9)
 			dynamic.add_child(s)
+			var z := VillageArt.paint(dynamic, "z", s.position + Vector2(2, -12), VillageArt.BONE, 10)
+			z.modulate.a = 0.0
+			var tw := z.create_tween().set_loops()
+			tw.tween_interval(0.6 + i * 0.7)
+			tw.tween_property(z, "modulate:a", 0.8, 0.3)
+			tw.parallel().tween_property(z, "position:y", z.position.y - 8.0, 1.6)
+			tw.tween_property(z, "modulate:a", 0.0, 0.4)
+			tw.tween_callback(func() -> void: z.position.y += 8.0)
 
 
 ## Drains on the river bank: each shows what it takes a month, in whole dollars on its grate.

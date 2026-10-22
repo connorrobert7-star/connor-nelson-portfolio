@@ -73,6 +73,7 @@ func _ready() -> void:
 	add_child(_scene)
 	_music.stream = load(str(FollowerArt.AUDIO.away_bed)) as AudioStream
 	_music.volume_db = -18.0
+	_music.bus = "Music"
 	add_child(_music)
 	_music.play()
 	_run()

@@ -38,6 +38,8 @@ func build() -> void:
 
 func _ready() -> void:
 	if origin != Vector2i.ZERO:
+		# A drawn room closes its own dark in (room_vignette): no second vignette over it.
+		post_vignette = 0.0
 		for layer: Node2D in [room_under, room_pools, room_shade, room_walls]:
 			add_child(layer)
 	super._ready()

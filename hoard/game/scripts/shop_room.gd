@@ -30,7 +30,7 @@ const MAP: Array[String] = [
 ## walkway through the middle).
 const SHELF_X: Array[int] = [-72, -24, 24, 72, 120]
 const AISLE_X: Array[int] = [-80, -34, 50, 96, 142]
-const ROW_A := -30  # the wall shelves' feet
+const ROW_A := -14  # the wall shelves' feet: a step out from the wall, clear of the HUD
 const ROW_B := 64  # the aisle shelves' feet
 const SHELF_H := 52
 const WOOD := Color("4a2c22")
@@ -60,7 +60,7 @@ func _init() -> void:
 
 func build() -> void:
 	super.build()
-	block(Rect2i(-6, -2, 15, 1))  # the wall shelves
+	block(Rect2i(-6, -2, 15, 2))  # the wall shelves (and the gap behind them)
 	block(Rect2i(10, 2, 7, 5))  # the stall and its counter
 	block(Rect2i(-6, 7, 3, 3))  # crates by the left wall
 	block(Rect2i(18, 7, 4, 3))  # barrels by the right wall

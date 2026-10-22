@@ -35,7 +35,10 @@ func run(k: TourKit) -> void:
 	var pile := int(f.devotion.amount)
 	await kit.tap_world(_center(vti))
 	await kit.until(func() -> bool: return _follower("hold_VTI").get("petted_today", false), 5.0)
-	kit.check(int(Game.state.followers.devotion.amount) == pile + 20, "petting piles devotion on the altar")
+	# The day's first loyalty puts the day's share of devotion on the altar (capped).
+	var cap := int(Game.state.followers.devotion.get("daily_cap", 60))
+	var piled := int(Game.state.followers.devotion.amount)
+	kit.check(piled > pile and piled - pile <= cap, "petting piles the day's devotion on the altar (%d -> %d)" % [pile, piled])
 	await kit.wait(0.15)
 	await kit.shot("followers_02_pet")
 
@@ -43,7 +46,7 @@ func run(k: TourKit) -> void:
 	var coins := int(Game.state.coins)
 	await kit.tap_world(ShrineLevel.ALTAR + Vector2(0, -30))
 	await kit.until(func() -> bool: return int(Game.state.coins) > coins, 5.0)
-	kit.check(int(Game.state.coins) == coins + pile + 20, "tapping the altar collects the devotion as coins")
+	kit.check(int(Game.state.coins) == coins + piled, "tapping the altar collects the devotion as coins")
 	kit.check(int(Game.state.followers.devotion.amount) == 0, "the altar is bare after collecting")
 
 	# Drag the favorite from the cauldron onto VTI.

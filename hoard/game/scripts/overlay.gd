@@ -4,10 +4,11 @@ extends Control
 ## the collection book. Open with `var result = await main.open_overlay(MyOverlay.new())`.
 ## The player can't move while one is open. Call close(result) when done.
 ##
-## Every overlay pops in (fade, 0.94 -> 1.02 -> 1.0, an open sound) unless it sets
-## `custom_intro = true` before it enters the tree because it stages its own entrance.
-## Every overlay plays a short outro on close: `closed` fires at once so game flow never
-## waits, and the overlay shrinks a touch and fades on a layer of its own.
+## Every overlay rises in (a quick fade and a 6px rise in whole pixels with a little
+## overshoot, an open sound) unless it sets `custom_intro = true` before it enters the tree
+## because it stages its own entrance. Nothing is ever scaled: a scaled pixel screen drops
+## and doubles pixels. Every overlay plays a short outro on close: `closed` fires at once
+## so game flow never waits, and the overlay sinks a few pixels and fades on a layer of its own.
 
 signal closed(result: Variant)
 
@@ -51,13 +52,16 @@ func _intro() -> void:
 	if custom_intro:
 		return
 	Sfx.ui("open")
-	pivot_offset = get_viewport_rect().size / 2.0
 	modulate.a = 0.0
-	scale = Vector2(0.94, 0.94)
+	position.y = 6.0
 	var tw := create_tween().set_parallel()
-	tw.tween_property(self, "modulate:a", 1.0, 0.15)
-	tw.tween_property(self, "scale", Vector2(1.02, 1.02), 0.14).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	tw.chain().tween_property(self, "scale", Vector2.ONE, 0.1).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.tween_property(self, "modulate:a", 1.0, 0.1)
+	tw.tween_method(_slide_to, 6.0, 0.0, 0.26).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+
+## Overlays move in whole pixels only.
+func _slide_to(y: float) -> void:
+	position.y = roundf(y)
 
 
 func close(result: Variant = null) -> void:
@@ -73,9 +77,8 @@ func close(result: Variant = null) -> void:
 		return
 	Sfx.ui("close")
 	_ignore_input(self)
-	pivot_offset = get_viewport_rect().size / 2.0
 	var tw := create_tween().set_parallel()
-	tw.tween_property(self, "scale", Vector2(0.96, 0.96), 0.12).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tw.tween_method(_slide_to, position.y, position.y + 4.0, 0.12).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	tw.tween_property(self, "modulate:a", 0.0, 0.12)
 	tw.chain().tween_callback(queue_free)
 

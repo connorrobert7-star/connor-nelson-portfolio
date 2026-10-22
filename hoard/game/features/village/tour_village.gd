@@ -60,7 +60,7 @@ func run(kit: TourKit) -> void:
 		await _stand(kit, tile)
 		await kit.wait(0.6)
 		kit.check(not kit.main.panel.visible, "no panel at %s" % name)
-		kit.check(kit.main.prompt_label.text == "", "no key prompt at %s (%s)" % [name, kit.main.prompt_label.text])
+		kit.check(kit.main.get_node_or_null("Hud/Prompt") == null, "no key prompt at %s" % name)
 		await kit.shot("village_at_%s" % name)
 	# Talking still works by tap: Wren stands by the fields now.
 	await _stand(kit, Vector2i(14, 29))
@@ -126,14 +126,26 @@ func run(kit: TourKit) -> void:
 	await kit.until(func() -> bool: return kit.overlay() is StatsOverlay, 6.0)
 	kit.check(kit.overlay() is StatsOverlay, "tapping the ledger stone opens the stats screen")
 	await kit.wait(0.8)
-	var texts: Array[String] = []
-	if kit.overlay():
-		for c in kit.overlay().get_children():
-			if c is Label:
-				texts.append((c as Label).text)
+	var stats := kit.overlay() as StatsOverlay
+	kit.check(stats != null and stats.page == 0, "the slab rises on its money page")
+	var texts := _page_texts(stats)
 	kit.check(texts.has("$8,450.00") and texts.has("$1,800.00"), "the stats screen has the real balances")
-	kit.check(texts.any(func(t: String) -> bool: return t.contains("Green Basket")), "the stats screen has this week's ledger")
 	await kit.shot("village_stats")
+	# The week's ledger is behind its own stone tab.
+	if stats:
+		await kit.tap_control(stats._tabs[2])
+		await kit.wait(0.5)
+		kit.check(stats.page == 2, "tapping the book tab brings up the week")
+		texts = _page_texts(stats)
+		kit.check(texts.any(func(t: String) -> bool: return t.contains("Green Basket")), "the stats screen has this week's ledger")
+		await kit.shot("village_stats_week")
+		# A tap on the slab itself turns to the next page (round to the money page).
+		await kit.tap_screen(kit.get_viewport().get_screen_transform() * StatsOverlay.SLAB_RECT.get_center())
+		await kit.wait(0.4)
+		kit.check(stats.page == 0, "a tap on the slab turns the page")
+		await kit.tap_control(stats._tabs[1])
+		await kit.wait(0.5)
+		await kit.shot("village_stats_bills")
 	if kit.overlay():
 		await kit.tap_control((kit.overlay() as StatsOverlay).close_button)
 	await kit.until(func() -> bool: return kit.overlay() == null, 3.0)
@@ -301,3 +313,14 @@ func _replay(kit: TourKit, change: Callable) -> void:
 	Game.state = s
 	Game.state_changed.emit()
 	await kit.frames(2)
+
+
+## The words on the stats slab's visible page.
+func _page_texts(stats: StatsOverlay) -> Array[String]:
+	var out: Array[String] = []
+	if stats == null:
+		return out
+	for c in stats._pages[stats.page].get_children():
+		if c is Label:
+			out.append((c as Label).text)
+	return out

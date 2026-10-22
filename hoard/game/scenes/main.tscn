@@ -37,19 +37,7 @@ script = ExtResource("1")
 [node name="World" type="Node2D" parent="."]
 
 [node name="Hud" type="CanvasLayer" parent="."]
-
-[node name="Prompt" type="Label" parent="Hud"]
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -200.0
-offset_top = 22.0
-offset_right = 200.0
-offset_bottom = 36.0
-grow_horizontal = 2
-mouse_filter = 2
-theme_override_colors/font_color = Color(1, 0.819608, 0.4, 1)
-horizontal_alignment = 1
+layer = 2
 
 [node name="Panel" type="PanelContainer" parent="Hud"]
 anchors_preset = 12
@@ -80,7 +68,7 @@ grow_vertical = 0
 script = ExtResource("2")
 
 [node name="Top" type="CanvasLayer" parent="."]
-layer = 10
+layer = 11
 
 [node name="Iris" type="CanvasLayer" parent="."]
 layer = 50
@@ -94,7 +82,6 @@ mouse_filter = 2
 color = Color(0.0705882, 0.0470588, 0.0941176, 1)
 
 [node name="Post" type="CanvasLayer" parent="."]
-layer = 100
 
 [node name="Grade" type="ColorRect" parent="Post"]
 material = SubResource("post_mat")

@@ -27,17 +27,20 @@ const MAP: Array[String] = [
 ]
 const BAR_Y := 0  # the bar's front edge
 const HEARTH_X := 232.0
-const TABLES: Array[Vector2] = [Vector2(-52, 100), Vector2(28, 128), Vector2(232, 104), Vector2(304, 140)]
-## Seats in the order they fill: the bar stools (patrons from behind, facing Bess), then
-## the tables (facing the room). [feet, facing]
+## Two tables out on the middle of the floor, two by the walls.
+const TABLES: Array[Vector2] = [Vector2(48, 76), Vector2(200, 84), Vector2(-52, 116), Vector2(300, 134)]
+## Seats in the order they fill, spread between the bar stools (patrons from behind, facing
+## Bess) and the tables (facing each other), so even a quiet week fills the room. [feet, facing]
 const SEATS: Array = [
-	[Vector2(-72, 14), 1], [Vector2(-48, 14), 1], [Vector2(-24, 14), 1], [Vector2(72, 14), 1],
-	[Vector2(96, 14), 1], [Vector2(120, 14), 1], [Vector2(-68, 96), 3], [Vector2(-36, 96), 2],
-	[Vector2(12, 124), 3], [Vector2(44, 124), 2], [Vector2(216, 100), 3], [Vector2(248, 100), 2],
-	[Vector2(288, 136), 3], [Vector2(320, 136), 2],
+	[Vector2(-48, 14), 1], [Vector2(32, 72), 3], [Vector2(216, 80), 2], [Vector2(96, 14), 1],
+	[Vector2(64, 72), 2], [Vector2(-72, 14), 1], [Vector2(184, 80), 3], [Vector2(-68, 112), 3],
+	[Vector2(120, 14), 1], [Vector2(316, 130), 2], [Vector2(-24, 14), 1], [Vector2(-36, 112), 2],
+	[Vector2(72, 14), 1], [Vector2(284, 130), 3],
 ]
 const FOLK: Array[String] = ["Villager", "Woman", "OldMan", "Villager2", "Boy", "Monk", "Hunter", "Princess", "Villager3", "OldWoman"]
 const STONE := Color("3a3040")
+## The back wall's stone, warm and dark so the hearth and the string lights pool on it.
+const WALL_TINT := Color(0.32, 0.26, 0.28)
 const WOOD := Color("4a2a20")
 const BULBS: Array[Color] = [Color("ffb26b"), Color("ff7fa0"), Color("7fe8c8"), Color("ffe08a")]
 const SND_CLINK := "kenney-impact-sounds/Audio/impactGlass_light_00%d.ogg"
@@ -156,9 +159,13 @@ func _build_tables() -> void:
 
 func _build_light() -> void:
 	room_vignette(Vector2(140, 40), 0.95)
-	room_lantern(Vector2(-40, 84), 48, Kit.WARM, 64)
-	room_lantern(Vector2(100, 92), 50, Kit.WARM, 60)
-	room_lantern(Vector2(300, 90), 46, Kit.WARM, 54)
+	room_lantern(Vector2(-52, 112), 48, Kit.WARM, 60)
+	room_lantern(Vector2(124, 100), 52, Kit.WARM, 64)
+	room_lantern(Vector2(300, 128), 46, Kit.WARM, 54)
+	# The hearth throws its light up the back wall; the string lights dab color under them.
+	var wall_glow := Kit.glow(room_walls, Vector2(HEARTH_X, -58), Color("ff8a3a"), 74, 0.26, 0.8)
+	room_flicker(wall_glow, 0.2, 6.0)
+	room_flicker(Kit.glow(room_walls, Vector2(48, -60), Kit.WARM, 46, 0.12, 0.8), 0.1, 4.0)
 	room_motes(Rect2(-90, -30, 420, 170), Kit.WARM, 14)
 	# String lights sagging across the room under the beams.
 	var r := room_rect()
@@ -169,6 +176,8 @@ func _build_light() -> void:
 		var y := -86.0 + sin(u * PI * 3.0) * -6.0 + 10.0 * sin(u * PI)
 		var b := Kit.glow(room_air, Vector2(x, y), BULBS[i % BULBS.size()], 6, 0.9)
 		_bulbs.append(b)
+		if i % 2 == 0:
+			Kit.glow(room_walls, Vector2(x, y + 10), BULBS[i % BULBS.size()], 16, 0.1, 0.7)
 		x += 14.0
 		i += 1
 	var wire := Line2D.new()
@@ -292,7 +301,10 @@ func _draw_walls() -> void:
 	var r := room_rect()
 	var x0 := r.position.x
 	var x1 := r.end.x
-	Kit.bricks(room_walls, Rect2(x0, -96, r.size.x, 64), Color(0.62, 0.5, 0.52))
+	Kit.bricks(room_walls, Rect2(x0, -96, r.size.x, 64), WALL_TINT)
+	# The stone darkens up toward the ceiling beam, out of reach of the lamps.
+	for i in 26:
+		room_walls.draw_rect(Rect2(x0, -89 + i, r.size.x, 1), Color(0.03, 0.01, 0.03, 0.5 * (1.0 - i / 26.0)))
 	# Timber: a top beam, posts every few tiles, a skirting board.
 	Kit.beam(room_walls, x0, x1, -96, Color("2e1a14"))
 	for px: float in [x0 + 16, -8.0, 168.0, 296.0, x1 - 20]:
@@ -313,6 +325,48 @@ func _draw_walls() -> void:
 	room_walls.draw_rect(Rect2(112, 160, 32, 16), Color("1c1418"))
 	room_walls.draw_rect(Rect2(110, 156, 2, 20), WOOD)
 	room_walls.draw_rect(Rect2(144, 156, 2, 20), WOOD)
+	_draw_dressing()
+
+
+## What hangs on the back wall: two cult banners by the hearth, a mug rack, and a horned
+## skull on a plaque.
+func _draw_dressing() -> void:
+	var w := room_walls
+	# Banners on the posts either side of the hearth: plum cloth, a brass coin, a fringe.
+	for bx: float in [180.0, 284.0]:
+		w.draw_rect(Rect2(bx - 7, -86, 14, 2), WOOD.lightened(0.2))
+		w.draw_rect(Rect2(bx - 6, -84, 12, 22), Color("4a1f3a"))
+		w.draw_rect(Rect2(bx - 6, -84, 1, 22), Color("6a2f52"))
+		w.draw_rect(Rect2(bx + 5, -84, 1, 22), Color("2e1024"))
+		for k in 6:
+			w.draw_rect(Rect2(bx - 6 + k * 2, -62, 1, 2 + (k % 2)), Color("c9a24a").darkened(0.2))
+		w.draw_circle(Vector2(bx, -74), 3.5, Color("c9a24a"))
+		w.draw_circle(Vector2(bx, -74), 2.0, Color("8a6a2a"))
+		w.draw_rect(Rect2(bx - 1, -76, 1, 1), Color("fff0b0"))
+	# A mug rack: a plank on pegs, mugs hanging by their handles.
+	var mx := 302.0
+	w.draw_rect(Rect2(mx, -70, 40, 3), WOOD.lightened(0.15))
+	w.draw_rect(Rect2(mx, -70, 40, 1), WOOD.lightened(0.4))
+	for k in 4:
+		var x := mx + 4 + k * 9
+		w.draw_rect(Rect2(x + 2, -67, 1, 2), Color("2a1a14"))
+		w.draw_rect(Rect2(x, -65, 5, 6), Color("c8a060").darkened(0.1 * (k % 2)))
+		w.draw_rect(Rect2(x, -65, 5, 1), Color("fff0c0"))
+		w.draw_rect(Rect2(x + 5, -64, 1, 3), Color("8a6a40"))
+	# The horned skull on its plaque, over the keg rack.
+	var sx := -52.0
+	w.draw_rect(Rect2(sx - 9, -86, 18, 16), WOOD.darkened(0.1))
+	w.draw_rect(Rect2(sx - 9, -86, 18, 1), WOOD.lightened(0.3))
+	w.draw_rect(Rect2(sx - 8, -71, 16, 1), Color(0, 0, 0, 0.4))
+	var bone := Color("e8dcc0")
+	for p: Vector2 in [Vector2(-8, -88), Vector2(-9, -90), Vector2(-10, -92), Vector2(7, -88), Vector2(8, -90), Vector2(9, -92)]:
+		w.draw_rect(Rect2(Vector2(sx, 0) + p, Vector2(1, 2)), bone.darkened(0.15))
+	w.draw_rect(Rect2(sx - 5, -84, 10, 7), bone)
+	w.draw_rect(Rect2(sx - 4, -77, 8, 3), bone.darkened(0.1))
+	w.draw_rect(Rect2(sx - 3, -82, 2, 2), Color("1a0c10"))
+	w.draw_rect(Rect2(sx + 1, -82, 2, 2), Color("1a0c10"))
+	w.draw_rect(Rect2(sx - 1, -79, 2, 1), Color("1a0c10"))
+	w.draw_rect(Rect2(sx - 5, -84, 10, 1), Color.WHITE.lerp(bone, 0.4))
 
 
 # --- pieces -----------------------------------------------------------------------------
@@ -327,9 +381,9 @@ class BackBar extends Node2D:
 	func _draw() -> void:
 		var w := TavernRoom.WOOD
 		# Keg rack.
-		draw_rect(Rect2(-108, -14, 92, 4), w.lightened(0.1))
+		draw_rect(Rect2(-108, -10, 92, 4), w.lightened(0.1))
 		for k in 4:
-			var c := Vector2(-96 + k * 22, -24)
+			var c := Vector2(-96 + k * 22, -20)
 			draw_circle(c, 10.0, Color("5a3422"))
 			draw_circle(c, 8.0, Color("6e4228"))
 			draw_arc(c, 9.0, 0, TAU, 18, Color("2a2224"), 1.0)

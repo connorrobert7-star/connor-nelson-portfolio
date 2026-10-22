@@ -3,7 +3,11 @@ extends Control
 ## Top-right purse: a dark plate holding a spinning brass coin with the coin count
 ## and a bone jar with extra (real money in BONE, play coins in BRASS). Both numbers
 ## roll to their new value with rising ticks, and the icon squashes when they land.
-## Under it, a small calendar with the week being viewed.
+## Under it, the calendar plate with the week being viewed. It is a control: a tap on its
+## left half turns back a week, on its right half forward (dim on the current week); the
+## page flips with a squash and a paper sound. [ and ] are keyboard shortcuts for the same.
+
+signal week_tapped(delta: int)
 
 const PLATE := preload("res://art/packs/tiopalada-dark-dwellers-gui/20251029darkDwellers9SlicesA.png")
 const COIN := preload("res://art/packs/evercrazy-coin-gem-8x8/SpinningCoin.png")
@@ -16,6 +20,12 @@ const H := 18.0
 var coins := 0.0
 var cents := 0.0
 var week := ""
+var weeks_ago := 0
+var history_weeks := 1
+var _cal_rect := Rect2()  # the calendar plate, the only part of the purse that takes taps
+var _cal_scale := Vector2.ONE
+var _cal_lean := 0.0  # -1 leaning back a week, +1 forward, eased to 0
+var _cal_hover := 0  # -1 left half, 1 right half, 0 none
 var _target_coins := -1
 var _target_cents := -1
 var _coin_scale := Vector2.ONE
@@ -29,11 +39,62 @@ var _tween_cents: Tween
 
 
 func _ready() -> void:
-	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# Taps land only on the calendar plate (see _has_point); the rest of the purse lets
+	# them through to the world.
+	mouse_filter = Control.MOUSE_FILTER_STOP
+	mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	mouse_exited.connect(func() -> void: _cal_hover = 0)
 
 
-func show_purse(new_coins: int, new_cents: int, week_text: String) -> void:
+func _has_point(point: Vector2) -> bool:
+	return _cal_rect.has_area() and _cal_rect.grow(2).has_point(point)
+
+
+func _gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseMotion:
+		var h := -1 if (event as InputEventMouseMotion).position.x < _cal_rect.get_center().x else 1
+		if h != _cal_hover:
+			_cal_hover = h
+			Sfx.ui("hover")
+		return
+	var pos := Vector2.INF
+	if event is InputEventMouseButton and (event as InputEventMouseButton).pressed and (event as InputEventMouseButton).button_index == MOUSE_BUTTON_LEFT:
+		pos = (event as InputEventMouseButton).position
+	elif event is InputEventScreenTouch and (event as InputEventScreenTouch).pressed:
+		pos = (event as InputEventScreenTouch).position
+	if pos == Vector2.INF:
+		return
+	accept_event()
+	flip_week(1 if pos.x < _cal_rect.get_center().x else -1)
+
+
+## Turn the calendar a week back (1) or forward (-1): the page squashes and leans that
+## way with a paper flip, or bumps and says no at either end.
+func flip_week(delta: int) -> void:
+	if Game.busy:
+		return
+	var next := weeks_ago + delta
+	if next < 0 or next > history_weeks - 1:
+		Sfx.ui("nope")
+		_cal_scale = Vector2(0.94, 1.06)
+		_cal_lean = -0.4 * delta
+		var bump := create_tween().set_parallel()
+		bump.tween_property(self, "_cal_scale", Vector2.ONE, 0.3).set_trans(Tween.TRANS_ELASTIC).set_ease(Tween.EASE_OUT)
+		bump.tween_property(self, "_cal_lean", 0.0, 0.3).set_trans(Tween.TRANS_ELASTIC).set_ease(Tween.EASE_OUT)
+		return
+	Sfx.play_path("res://art/packs/kenney-rpg-audio/Audio/bookFlip%d.ogg" % (1 if delta > 0 else 2), 1.1, -10.0, "UI")
+	_cal_scale = Vector2(1.18, 0.82)
+	_cal_lean = float(delta)
+	var tw := create_tween().set_parallel()
+	tw.tween_property(self, "_cal_scale", Vector2.ONE, 0.4).set_trans(Tween.TRANS_ELASTIC).set_ease(Tween.EASE_OUT)
+	tw.tween_property(self, "_cal_lean", 0.0, 0.35).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	week_tapped.emit(delta)
+
+
+func show_purse(new_coins: int, new_cents: int, week_text: String, p_weeks_ago := 0, p_history := 1) -> void:
 	week = week_text
+	weeks_ago = p_weeks_ago
+	history_weeks = maxi(1, p_history)
 	if _target_coins < 0:
 		coins = new_coins
 		cents = new_cents
@@ -139,28 +200,65 @@ func _draw() -> void:
 	_icon_at(Vector2(x + 3, 10), _jar_scale, func() -> void: _jar(Vector2(-3, -5), _jar_flash))
 	x += 10.0
 	_num(cash_text, Vector2(x, 14), Palette.BONE.lerp(Color.WHITE, _jar_flash * 0.6))
-	# The week, small and quiet under the plate.
-	var wk_w := SMALL.get_string_size(week, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x
-	var wx := size.x - wk_w - 22.0
-	_calendar(Vector2(wx - 10, H + 4))
-	draw_string_outline(SMALL, Vector2(wx, H + 11), week, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, 2, Color(Palette.NIGHT, 0.6))
-	draw_string(SMALL, Vector2(wx, H + 11), week, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color(Palette.MUTED, 0.75))
+	_draw_calendar()
 
 
-## Corners of the 9-slice over the stretched fill, so the ornaments stay crisp.
+## The week on its own small plate: a back chevron, the calendar page, the dates, and a
+## forward chevron that dims on the current week. Leans and squashes as the page turns.
+func _draw_calendar() -> void:
+	const CH := 13.0
+	var wk_w := ceilf(SMALL.get_string_size(week, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x)
+	var w := 6.0 + 4.0 + 3.0 + 8.0 + 3.0 + wk_w + 3.0 + 4.0 + 6.0
+	var right := size.x - 20.0
+	_cal_rect = Rect2(right - w, H + 3, w, CH)
+	var center := _cal_rect.get_center().round()
+	draw_set_transform(center + Vector2(roundf(_cal_lean * 2.0), 0), 0.0, _cal_scale)
+	var r := Rect2(-(_cal_rect.size / 2.0).round(), _cal_rect.size)
+	var past := weeks_ago > 0
+	plate(self, r, Color(0.55, 0.5, 0.68, 0.92) if not past else Color(0.7, 0.55, 0.62, 0.95))
+	var x := r.position.x + 6.0
+	var y := r.position.y
+	var back_on := weeks_ago < history_weeks - 1
+	_chevron(Vector2(x, y + 4), -1, Palette.CREAM if _cal_hover == -1 else Palette.MUTED, back_on)
+	x += 4.0 + 3.0
+	_calendar(Vector2(x, y + 3))
+	x += 8.0 + 3.0
+	var ink := Palette.CREAM if past else Palette.MUTED
+	draw_string_outline(SMALL, Vector2(x, y + 10), week, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, 2, Palette.NIGHT)
+	draw_string(SMALL, Vector2(x, y + 10), week, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, ink)
+	x += wk_w + 3.0
+	_chevron(Vector2(x, y + 4), 1, Palette.CREAM if _cal_hover == 1 else Palette.MUTED, past)
+	draw_set_transform(Vector2.ZERO)
+
+
+## A 3x5 pixel chevron pointing left (-1) or right (1); dim when that way is shut.
+func _chevron(o: Vector2, dir: int, color: Color, on: bool) -> void:
+	var c := color if on else Color(Palette.MUTED, 0.25)
+	for i in 3:
+		var dx := i if dir > 0 else 2 - i
+		draw_rect(Rect2(o + Vector2(dx, i), Vector2.ONE), c)
+		draw_rect(Rect2(o + Vector2(dx, 4 - i), Vector2.ONE), c)
+
+
+## The 9-slice over the stretched fill, so the ornaments stay crisp.
 func _nine(r: Rect2) -> void:
+	plate(self, r)
+
+
+## The Dark Dwellers 9-slice as a dark plate on any canvas item, darkened to sit back.
+## The HUD's corner plates and the toasts share it.
+static func plate(ci: CanvasItem, r: Rect2, mod := Color(0.55, 0.5, 0.68, 0.96)) -> void:
 	const M := 5.0
-	var mod := Color(0.55, 0.5, 0.68, 0.96)
 	# Edges.
-	draw_texture_rect_region(PLATE, Rect2(r.position + Vector2(M, 0), Vector2(r.size.x - M * 2, M)), Rect2(M, 0, 96 - M * 2, M), mod)
-	draw_texture_rect_region(PLATE, Rect2(r.position + Vector2(M, r.size.y - M), Vector2(r.size.x - M * 2, M)), Rect2(M, 96 - M, 96 - M * 2, M), mod)
-	draw_texture_rect_region(PLATE, Rect2(r.position + Vector2(0, M), Vector2(M, r.size.y - M * 2)), Rect2(0, M, M, 96 - M * 2), mod)
-	draw_texture_rect_region(PLATE, Rect2(r.position + Vector2(r.size.x - M, M), Vector2(M, r.size.y - M * 2)), Rect2(96 - M, M, M, 96 - M * 2), mod)
+	ci.draw_texture_rect_region(PLATE, Rect2(r.position + Vector2(M, 0), Vector2(r.size.x - M * 2, M)), Rect2(M, 0, 96 - M * 2, M), mod)
+	ci.draw_texture_rect_region(PLATE, Rect2(r.position + Vector2(M, r.size.y - M), Vector2(r.size.x - M * 2, M)), Rect2(M, 96 - M, 96 - M * 2, M), mod)
+	ci.draw_texture_rect_region(PLATE, Rect2(r.position + Vector2(0, M), Vector2(M, r.size.y - M * 2)), Rect2(0, M, M, 96 - M * 2), mod)
+	ci.draw_texture_rect_region(PLATE, Rect2(r.position + Vector2(r.size.x - M, M), Vector2(M, r.size.y - M * 2)), Rect2(96 - M, M, M, 96 - M * 2), mod)
 	# Inner fill, then the four corners.
-	draw_texture_rect_region(PLATE, r.grow(-M), Rect2(M + 8, M + 8, 96 - (M + 8) * 2, 96 - (M + 8) * 2), mod)
+	ci.draw_texture_rect_region(PLATE, r.grow(-M), Rect2(M + 8, M + 8, 96 - (M + 8) * 2, 96 - (M + 8) * 2), mod)
 	for c: Vector2 in [Vector2.ZERO, Vector2(1, 0), Vector2(0, 1), Vector2(1, 1)]:
 		var dst := Rect2(r.position + Vector2(c.x * (r.size.x - M), c.y * (r.size.y - M)), Vector2(M, M))
-		draw_texture_rect_region(PLATE, dst, Rect2(c.x * (96 - M), c.y * (96 - M), M, M), mod)
+		ci.draw_texture_rect_region(PLATE, dst, Rect2(c.x * (96 - M), c.y * (96 - M), M, M), mod)
 
 
 func _icon_at(center: Vector2, s: Vector2, body: Callable) -> void:
@@ -195,7 +293,7 @@ func _jar(o: Vector2, flash: float) -> void:
 
 ## A 7x7 calendar page.
 func _calendar(o: Vector2) -> void:
-	var a := 0.7
+	var a := 1.0
 	draw_rect(Rect2(o + Vector2(0, 1), Vector2(7, 7)), Color(Palette.NIGHT, a))
 	draw_rect(Rect2(o + Vector2(1, 2), Vector2(5, 2)), Color(Palette.BLOOD, a))
 	draw_rect(Rect2(o + Vector2(1, 4), Vector2(5, 3)), Color(Palette.CREAM, a))

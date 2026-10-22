@@ -86,14 +86,16 @@ func _draw() -> void:
 	draw_set_transform(Vector2(104, 9), 0.0, Vector2(_pop, _pop))
 	_text(BIG, 20, str(_level), Vector2(-7, 7), Palette.CREAM if _level < 75 else Palette.BLOOD.lightened(0.3), 2)
 	draw_set_transform(Vector2.ZERO)
-	# Candle with the age, skull with the death year.
+	# Candle with the age, skull with the death year, on their own small plate.
 	var y := 18.0
+	var x2 := 11.0 + ceilf(SMALL.get_string_size(_age, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x) + 4.0
+	var end := x2 + 13.0 + ceilf(SMALL.get_string_size(_death, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x) + 5.0
+	HudPurse.plate(self, Rect2(2, y + 2, end - 2, 13), Color(0.55, 0.5, 0.68, 0.92))
 	var flick := 0.85 + 0.15 * sin(_t * 9.0) * sin(_t * 3.7)
 	draw_texture(CANDLE, Vector2(-3, y), Color(1, 1, 1, 1).lerp(Color(1.15, 1.0, 0.8), flick - 0.85))
-	_text(SMALL, 16, _age, Vector2(11, y + 11), Palette.MUTED, 2)
-	var x2 := 11.0 + SMALL.get_string_size(_age, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x + 4.0
+	_text(SMALL, 16, _age, Vector2(11, y + 11), Palette.CREAM.lerp(Palette.MUTED, 0.35), 2)
 	draw_texture(SKULL, Vector2(x2 - 2, y), Color(1, 1, 1, 0.9))
-	_text(SMALL, 16, _death, Vector2(x2 + 13, y + 11), Palette.MUTED, 2)
+	_text(SMALL, 16, _death, Vector2(x2 + 13, y + 11), Palette.CREAM.lerp(Palette.MUTED, 0.35), 2)
 
 
 func _text(font: Font, px: int, text: String, baseline: Vector2, color: Color, outline := 2) -> void:

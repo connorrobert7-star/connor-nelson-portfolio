@@ -24,7 +24,8 @@ const HOLD_SECONDS := 0.45
 
 const X72 := "res://art/packs/0x72-dungeontileset-ii/0x72_DungeonTilesetII_v1.7/0x72_DungeonTilesetII_v1.7.png"
 const HALLS := "res://art/packs/shattered-pixel-dungeon/environment/tiles_halls.png"
-const CULTIST := "res://art/villager.png"
+## The village's hooded cultists (DawnLike), two idle frames each, at 1x like everyone else.
+const HOODED := ["res://art/packs/dawnlike/Characters/Humanoid0.png", "res://art/packs/dawnlike/Characters/Humanoid1.png"]
 const CANDLES := "res://art/packs/vk-candles-with-eyes/candles_with_eyes.png"
 const MUSIC_GATE := "res://art/packs/ninja-adventure/Audio/Music/14 - Curse.ogg"
 const MUSIC_FIGHT := "res://art/packs/shattered-pixel-dungeon/music/city_boss.ogg"
@@ -72,6 +73,8 @@ static var _met: Dictionary = {}
 func setup(main_node: Node, _spawn_tile: Vector2i) -> void:
 	# Every way in (the village door, the tour) arrives at the bottom, by the road home.
 	super.setup(main_node, SPAWN)
+	# The boss's balance and the floating amount show every payment here.
+	money_toasts = false
 
 
 func build() -> void:
@@ -104,6 +107,7 @@ func build() -> void:
 	_build_darkness()
 	_fx.z_index = 50
 	add_child(_fx)
+	_music.bus = "Music"
 	add_child(_music)
 	_beat.stream = load(HEARTBEAT)
 	_beat.volume_db = -4.0
@@ -297,29 +301,50 @@ func _build_floor() -> void:
 	add_child(spot)
 
 
-## The cult lines the battlements and chants when a payment goes through. Decoration
-## until the flock (Step 3) can stand here instead.
+## The cult lines the battlements and the lit path and chants when a payment goes through:
+## the village's hooded cultists at 1x, each with a torch that pools light at its feet and
+## rims its hood, standing in loose knots rather than ranks.
 func _build_flock() -> void:
 	_flock.z_index = 11
 	_flock.y_sort_enabled = true
 	add_child(_flock)
-	var tex: Texture2D = load(CULTIST)
+	# Feet positions: along the foot of the battlements, and a few down the lit path.
 	var spots: Array[Vector2] = [
-		Vector2(56, 222), Vector2(92, 236), Vector2(128, 222), Vector2(40, 256), Vector2(76, 266), Vector2(116, 258),
+		Vector2(38, 204), Vector2(64, 211), Vector2(102, 203), Vector2(132, 212), Vector2(70, 243), Vector2(206, 238),
+		Vector2(444, 206), Vector2(414, 201), Vector2(381, 211), Vector2(349, 204), Vector2(418, 246), Vector2(276, 232),
 	]
-	for side in 2:
-		for spot: Vector2 in spots:
-			var s := Sprite2D.new()
-			s.texture = tex
-			s.hframes = 2
-			s.scale = Vector2(2, 2)
-			s.offset = Vector2(0, -8)
-			s.position = spot if side == 0 else Vector2(480 - spot.x, spot.y)
-			s.flip_h = side == 1
-			s.modulate = Color(0.82, 0.76, 0.88)
-			s.set_meta("base_y", s.position.y)
-			_flock.add_child(s)
-			_cultists.append(s)
+	for i in spots.size():
+		var spot := spots[i]
+		var look: Vector2i = VillageCultist.LOOKS[(i * 3) % VillageCultist.LOOKS.size()]
+		var rect := Rect2(look.x * 16, look.y * 16, 16, 16)
+		var frames: Array[Texture2D] = []
+		for sheet: String in HOODED:
+			var at := AtlasTexture.new()
+			at.atlas = load(sheet)
+			at.region = rect
+			frames.append(at)
+		var s := Sprite2D.new()
+		s.texture = frames[0]
+		s.set_meta("frames", frames)
+		s.offset = Vector2(0, -8)
+		s.position = spot
+		# Everyone faces the gate and the path between them.
+		s.flip_h = spot.x > 240
+		s.modulate = Color(0.9, 0.86, 0.95)
+		s.set_meta("base_y", s.position.y)
+		_flock.add_child(s)
+		_cultists.append(s)
+		# The torch: a warm pool on the floor and a rim of light on the hood's torch side.
+		var pool := GateFx.glow(Color(1.0, 0.6, 0.3, 0.26), 15, -8)
+		pool.position = spot + Vector2(-4 if s.flip_h else 4, -2)
+		pool.scale.y *= 0.5
+		add_child(pool)
+		var rim := GateFx.glow(Color(1.0, 0.65, 0.35, 0.4), 6, 1)
+		rim.position = Vector2(-5 if s.flip_h else 5, -13)
+		s.add_child(rim)
+		var flick := pool.create_tween().set_loops()
+		flick.tween_property(pool, "modulate:a", 0.2, 0.18 + (i % 4) * 0.05)
+		flick.tween_property(pool, "modulate:a", 0.28, 0.14 + (i % 3) * 0.05)
 	# Candles with eyes along the road home, and the eye on its stand by the gate.
 	for spot: Vector2 in [Vector2(196, 214), Vector2(284, 214), Vector2(16, 214), Vector2(464, 214)]:
 		var col := 1 if spot.x < 240 else 2
@@ -547,7 +572,8 @@ func _process(delta: float) -> void:
 	for i in _cultists.size():
 		var c := _cultists[i]
 		c.position.y = float(c.get_meta("base_y")) - absf(roundf(sin(_t * TAU / 0.65 + i * 0.7) * 1.0))
-		c.frame = 1 if fmod(_t + i * 1.37, 4.1) < 0.14 else 0
+		var frames: Array = c.get_meta("frames")
+		c.texture = frames[int(_t * 2.5 + i * 0.5) % 2]
 	_leaf.region_rect = Rect2(32, 240 + _gate_lift, 32, 32 - _gate_lift)
 	if (_mode == Mode.SCENE or _mode == Mode.STRIKE) and not Game.busy:
 		Game.busy = true  # going through a door clears it; a beat is still playing
@@ -921,6 +947,7 @@ func _hop(c: Sprite2D) -> void:
 
 func _death(boss: GateBoss, drop: Variant) -> void:
 	_play_music(MUSIC_FINALE, -10.0)
+	Sfx.duck(-9.0, 1.4)
 	if boss == _target:
 		_fold_stacks()
 	beat = "death"

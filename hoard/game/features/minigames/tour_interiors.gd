@@ -18,7 +18,7 @@ func run(kit: TourKit) -> void:
 	kit.check(first.symbol == str(s0.symbol) and first.hours == "%.1fh" % float(s0.price_hours), "the tag reads the symbol and the hours of work")
 	kit.check(first.price == ShopRoom._price(int(s0.price_cents)), "the tag reads last Sunday's close (%s)" % first.price)
 	await kit.wait(0.3)
-	kit.check(not kit.main.panel.visible and kit.main.prompt_label.text == "", "no text panel or prompt in the shop")
+	kit.check(not kit.main.panel.visible and kit.main.get_node_or_null("Hud/Prompt") == null, "no text panel or prompt in the shop")
 
 	# Tap a shelf: the leader walks to it and Marlo asks how much.
 	await kit.tap_world(Vector2(ShopRoom.SHELF_X[2], ShopRoom.ROW_A - 30))

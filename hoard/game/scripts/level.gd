@@ -19,6 +19,12 @@ var legend: Dictionary = {}  # char -> atlas index
 var solid := ""  # chars you can't walk through
 var follow_camera := true
 var main: Node  # scripts/main.gd
+## How deep the shared post-process vignette goes here. Rooms that draw their own dark
+## set 0 so the corners aren't darkened twice.
+var post_vignette := 0.3
+## False where the scene shows money moving on a thing itself (the gate boss's balance),
+## so no plate covers the number the owner wants to see drop.
+var money_toasts := true
 
 var ground := TileMapLayer.new()
 var props := Node2D.new()
@@ -111,8 +117,6 @@ func _process(delta: float) -> void:
 				main.village_return = door.tile + Vector2i.DOWN
 			travel.emit(door.level, door.spawn)
 			return
-	var it := nearest_interactable()
-	main.show_prompt(str((it.label as Callable).call()) if not it.is_empty() else "")
 	for zone: Dictionary in _zones:
 		if (zone.rect as Rect2).has_point(leader.position):
 			main.show_panel((zone.text as Callable).call())

@@ -1,9 +1,9 @@
 class_name Toast
 extends Control
-## One small framed plate at the top of the screen with an icon by kind:
-## coins (brass coin), money (bone jar, "simulated" chip), item (rarity gem that
-## glows), day (sun), error (red plate; a tap retries), or plain (a spark).
-## Main stacks at most three and moves the older ones down.
+## One small framed plate in the toast lane (right-aligned under the purse) with an icon
+## by kind: coins (brass coin), money (bone jar, "simulated" chip), item (rarity gem that
+## glows), day (sun), ticket (a draw ticket, its number on it), error (red plate; a tap
+## retries), or plain (a spark). Main stacks at most three and moves the older ones down.
 
 signal tapped
 
@@ -68,6 +68,8 @@ func _draw() -> void:
 			_gem(ic, color)
 		"day":
 			_sun(ic)
+		"ticket":
+			_ticket(ic, color)
 		"error":
 			_bang(ic)
 		_:
@@ -105,6 +107,14 @@ func _gem(c: Vector2, col: Color) -> void:
 func _sun(c: Vector2) -> void:
 	var rows := ["...g...", ".g...g.", "..yyy..", "gyyyyyg", "..yyy..", ".g...g.", "...g..."]
 	_px(c - Vector2(3, 3), rows, {"g": Color(Palette.GLOW, 0.7), "y": Palette.GLOW})
+
+
+## A 9x7 ticket stub with a notch and a glint, lit in its color.
+func _ticket(c: Vector2, col: Color) -> void:
+	var glow := 0.25 + 0.2 * sin(_t * 6.0)
+	draw_rect(Rect2(c - Vector2(5, 4), Vector2(11, 9)), Color(col, glow * 0.4))
+	var rows := ["nnnnnnnnn", "nccccdccn", "ncccc.ccn", ".hcccdcc.", "ncccc.ccn", "nccccdccn", "nnnnnnnnn"]
+	_px(c - Vector2(4, 3), rows, {"n": Palette.NIGHT, "c": col, "d": col.darkened(0.4), "h": col.lightened(0.5)})
 
 
 func _bang(c: Vector2) -> void:

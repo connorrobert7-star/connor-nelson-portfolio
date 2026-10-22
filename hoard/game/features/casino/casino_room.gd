@@ -40,7 +40,7 @@ const NOT_THIS_WEEK := "Not this week."
 const VEX_AT := Vector2(240, 124)
 const TABLE_AT := Vector2(240, 160)
 const BOX_AT := Vector2(240, 30)
-const SHELF_AT := Vector2(424, 112)
+const SHELF_AT := Vector2(424, 128)  # its crest clears the purse and calendar plates
 const WHEEL_AT := Vector2(48, 138)
 const BOOTH_AT := Vector2(48, 214)
 const CLAW_AT := Vector2(432, 222)
@@ -56,7 +56,7 @@ const CANDLES := [
 # Blocked floor (tiles): Vex's corner, risers, table, cabinet, wheel, booth, claw, drum, counter.
 const SOLID: Array[Rect2i] = [
 	Rect2i(13, 4, 4, 3), Rect2i(6, 4, 7, 3), Rect2i(17, 4, 7, 3), Rect2i(10, 6, 10, 4),
-	Rect2i(24, 4, 5, 3), Rect2i(1, 4, 4, 5), Rect2i(1, 10, 4, 4), Rect2i(25, 9, 4, 5),
+	Rect2i(24, 4, 5, 4), Rect2i(1, 4, 4, 5), Rect2i(1, 10, 4, 4), Rect2i(25, 9, 4, 5),
 	Rect2i(22, 13, 2, 2), Rect2i(7, 13, 2, 1),
 ]
 const FLOOR_TILES: Array[Vector2i] = [
@@ -108,6 +108,7 @@ var _seen := {}  # last belt total, box holes used and specials, to read what a 
 
 func _init() -> void:
 	map = MAP
+	post_vignette = 0.12  # the room's own dark edges do most of it
 
 
 func setup(main_node: Node, spawn: Vector2i) -> void:
@@ -274,6 +275,7 @@ func _start_audio() -> void:
 func _loop(path: String, db: float) -> AudioStreamPlayer:
 	var p := AudioStreamPlayer.new()
 	p.stream = load(Art.PACKS + path)
+	p.bus = "Ambience"
 	p.volume_db = -50.0
 	p.finished.connect(p.play)
 	add_child(p)
@@ -490,8 +492,6 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _process(delta: float) -> void:
 	super._process(delta)
-	if main:
-		main.show_prompt("")  # no text prompts in here; the machine in reach glows instead
 	_quiet += delta
 	if not _route.is_empty() and Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down") != Vector2.ZERO:
 		_route.clear()

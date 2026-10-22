@@ -4,6 +4,10 @@ extends Node
 
 const TOAST_SECONDS := 2.6
 const MAX_TOASTS := 3
+## The toast lane: right-aligned under the purse, newest on top, older ones stepping down.
+## Top centre stays clear for whatever the scene puts there (the gate boss's balance, Vex).
+const TOAST_RIGHT := 476.0
+const TOAST_TOP := 44.0
 ## Where a new session opens: the casino once it exists, else the village.
 const START_LEVEL := "casino"
 ## The iris radius that clears the whole 480x270 screen from anywhere on it.
@@ -12,7 +16,6 @@ const CANDLE := preload("res://art/packs/kyrise-rpg-icons-16/icons/16x16/candle_
 
 @onready var world: Node2D = $World
 @onready var hud: CanvasLayer = $Hud
-@onready var prompt_label: Label = $Hud/Prompt
 @onready var panel: PanelContainer = $Hud/Panel
 @onready var panel_text: Label = $Hud/Panel/Text
 @onready var dialogue: Dialogue = $Hud/Dialogue
@@ -36,7 +39,7 @@ var _toasts := Control.new()
 var _overlays := Control.new()
 var _closing := Control.new()  # overlays playing their outro, out of the way of game flow
 var _shown_notifications: Dictionary = {}
-var _held_money: Array[Dictionary] = []  # money toasts waiting for an overlay to close
+var _held: Array[Array] = []  # toasts waiting for the overlays to close: [text, color, sound, kind, chip]
 var _day_button: Button
 var _waking: TextureRect
 var _hud_tween: Tween
@@ -55,7 +58,8 @@ func _ready() -> void:
 	_purse.offset_top = 4
 	_purse.offset_bottom = 44
 	_hud_root.add_child(_purse)
-	prompt_label.reparent(_hud_root)
+	_purse.week_tapped.connect(_on_week_tapped)
+	_add_hud_shade()
 	_toasts.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_toasts.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	top.add_child(_toasts)
@@ -98,7 +102,8 @@ func go_to(level_id: String, spawn: Vector2i) -> void:
 	level.setup(self, spawn)
 	level.travel.connect(func(id: String, at: Vector2i) -> void: go_to.call_deferred(id, at))
 	world.add_child(level)
-	show_prompt("")
+	# Each place sets how much of the shared vignette it wants (rooms draw their own dark).
+	post_vignette = level.post_vignette
 	hide_panel()
 	await get_tree().create_timer(0.06).timeout
 	await _until_ready()
@@ -182,12 +187,16 @@ func open_overlay(overlay: Overlay) -> Variant:
 	overlay.main = self
 	_overlays.add_child(overlay)
 	_hide_hud(true)
+	# Live toasts slide out of the way; new ones wait until the overlays are gone.
+	for c in _toasts.get_children():
+		if c is Toast and (c as Toast).kind != "error":
+			_toast_leave(c, 0.12)
 	var result: Variant = await overlay.closed
 	Game.busy = false
 	var others := _overlays.get_children().filter(func(c: Node) -> bool: return c != overlay and not c.is_queued_for_deletion())
 	if others.is_empty():
 		_hide_hud(false)
-		_flush_money.call_deferred()
+		_flush_held.call_deferred()
 	return result
 
 
@@ -212,7 +221,12 @@ func _hide_hud(hidden: bool) -> void:
 		_hud_tween.tween_property(_hud_root, "modulate:a", 1.0, 0.2)
 
 
+## A framed plate with an icon in the toast lane. While an overlay is open it waits
+## (errors excepted) and plays when the last overlay closes. Returns null when held.
 func toast(text: String, color := Palette.CREAM, sound := "", kind := "plain", chip := "") -> Toast:
+	if kind != "error" and _overlays.get_child_count() > 0:
+		_held.append([text, color, sound, kind, chip])
+		return null
 	if sound != "":
 		Sfx.play(sound)
 	var t := Toast.new().setup(kind, text, color, chip)
@@ -226,21 +240,23 @@ func toast(text: String, color := Palette.CREAM, sound := "", kind := "plain", c
 		_toast_leave(live.pop_front(), 0.12)
 	for i in live.size():
 		var tt := live[live.size() - 1 - i]
-		var y := 6.0 + i * 16.0
-		var x := roundf((480.0 - tt.size.x) / 2.0)
+		var y := TOAST_TOP + i * 16.0
+		var x := TOAST_RIGHT - tt.size.x
 		if tt.has_meta("move"):
 			var old: Tween = tt.get_meta("move")
 			if old and old.is_valid():
 				old.kill()
 		var tw := tt.create_tween().set_parallel()
 		if tt == t:
-			tt.position = Vector2(x, y - 12.0)
+			# In from the right edge with a little overshoot, whole pixels all the way.
+			tt.position = Vector2(x + 24.0, y)
 			tt.modulate.a = 0.0
-			tw.tween_property(tt, "position:y", y, 0.25).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-			tw.tween_property(tt, "modulate:a", 1.0, 0.12)
+			tw.tween_method(func(v: float) -> void: tt.position.x = roundf(v), x + 24.0, x, 0.28).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+			tw.tween_property(tt, "modulate:a", 1.0, 0.1)
 		else:
 			tt.modulate.a = 1.0
-			tw.tween_property(tt, "position:y", y, 0.2).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+			tt.position.x = x
+			tw.tween_method(func(v: float) -> void: tt.position.y = roundf(v), tt.position.y, y, 0.2).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 		tt.set_meta("move", tw)
 	var hold := t.create_tween()
 	hold.tween_interval(TOAST_SECONDS if kind != "error" else 6.0)
@@ -252,8 +268,13 @@ func _toast_leave(t: Toast, seconds: float) -> void:
 	if not is_instance_valid(t) or t.has_meta("leaving"):
 		return
 	t.set_meta("leaving", true)
+	if t.has_meta("move"):
+		var old: Tween = t.get_meta("move")
+		if old and old.is_valid():
+			old.kill()
+	var from := t.position.x
 	var tw := t.create_tween().set_parallel()
-	tw.tween_property(t, "position:y", t.position.y - 6.0, seconds).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tw.tween_method(func(v: float) -> void: t.position.x = roundf(v), from, from + 28.0, seconds).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	tw.tween_property(t, "modulate:a", 0.0, seconds)
 	tw.chain().tween_callback(t.queue_free)
 
@@ -269,15 +290,14 @@ func _on_event(e: Dictionary) -> void:
 			var d := int(e.delta)
 			toast(("+%d coins" if d > 0 else "%d coins") % d, Palette.BRASS, "coin" if d > 0 else "", "coins")
 		"money_moved":
-			if _overlays.get_child_count() > 0:
-				_held_money.append(e)
-			else:
-				_money_toast(e)
+			# Where the scene already shows the money move on a thing (the gate boss's
+			# balance and the floating amount), the plate would only cover it.
+			if level and is_instance_valid(level) and not level.money_toasts:
+				return
+			_money_toast(e)
 		"item":
 			toast(str(e.get("name", e.item_id)), Palette.RARITY.get(str(e.get("tier", "")), Palette.CREAM), "pop", "item")
-		_:
-			if e.has("text"):
-				toast(str(e.text), Palette.CREAM, str(e.get("sound", "pop")))
+		# Anything else carrying a sentence is left to the scene that shows it.
 
 
 func _money_toast(e: Dictionary) -> void:
@@ -285,15 +305,20 @@ func _money_toast(e: Dictionary) -> void:
 	toast("%s  %s" % [Money.fmt(int(e.amount_cents)), str(e.reason)], Palette.BONE, "cash", "money", chip)
 
 
-func _flush_money() -> void:
+func _flush_held() -> void:
 	if _overlays.get_child_count() > 0:
 		return
-	var held := _held_money.duplicate()
-	_held_money.clear()
+	var held := _held.duplicate()
+	_held.clear()
 	for i in held.size():
 		if i > 0:
 			await get_tree().create_timer(0.25).timeout
-		_money_toast(held[i])
+		if _overlays.get_child_count() > 0:
+			# Another overlay opened mid-flush: the rest wait for it too.
+			_held.append_array(held.slice(i))
+			return
+		var h: Array = held[i]
+		toast(h[0], h[1], h[2], h[3], h[4])
 
 
 # --- HUD -----------------------------------------------------------------------
@@ -304,17 +329,17 @@ func _process(_delta: float) -> void:
 		_day_button.visible = Game.state.get("demo", false) and not Game.busy and _overlays.get_child_count() == 0
 	if dialogue.visible:
 		panel.visible = false
-		prompt_label.text = ""
 
 
 func _unhandled_input(event: InputEvent) -> void:
 	if Game.busy or not (event is InputEventKey and event.pressed and not event.echo):
 		return
+	# Keyboard shortcuts for the calendar plate's two halves.
 	match (event as InputEventKey).keycode:
 		KEY_BRACKETLEFT:
-			Game.change_week(1)
+			_purse.flip_week(1)
 		KEY_BRACKETRIGHT:
-			Game.change_week(-1)
+			_purse.flip_week(-1)
 		KEY_N:
 			if Game.state.get("demo", false):
 				_next_day()
@@ -348,7 +373,7 @@ func _on_state() -> void:
 	_error = ""
 	var s := Game.state
 	var week := "%s-%s" % [_day(s.window.start), _day(s.window.end).split(" ")[-1]] if _day(s.window.start).split(" ")[0] == _day(s.window.end).split(" ")[0] else "%s-%s" % [_day(s.window.start), _day(s.window.end)]
-	_purse.show_purse(int(s.coins), maxi(0, int(s.extra.extra_cents)), week)
+	_purse.show_purse(int(s.coins), maxi(0, int(s.extra.extra_cents)), week, Game.weeks_ago, int(s.get("history_weeks", 1)))
 	_life.show_life(s.life)
 	_show_notifications(s.get("notifications", []))
 
@@ -360,9 +385,53 @@ func _show_notifications(items: Array) -> void:
 			continue
 		_shown_notifications[n.id] = true
 		ids.append(n.id)
-		toast(str(n.text), Palette.GLOW, str(n.get("data", {}).get("sound", "pop")))
+		_notification_toast(n)
 	if not ids.is_empty():
 		Game.call_api("POST", "/notifications/seen", {"ids": ids})
+
+
+## A notification shows as an icon with its number on it, never as a sentence.
+## The weekly draw: a ticket reading "won/held", lit by how it went.
+func _notification_toast(n: Dictionary) -> void:
+	var data: Dictionary = n.get("data", {})
+	match str(n.get("kind", "")):
+		"casino_draw":
+			var won := (data.get("won", []) as Array).size()
+			var mine := int(data.get("mine", 0))
+			var text := "%d/%d" % [won, mine] if mine > 0 else str(won)
+			toast(text, Palette.GLOW if won > 0 else Palette.MUTED, "pop" if won > 0 else "", "ticket")
+
+
+## Tapping a half of the calendar plate: the left goes back a week, the right forward.
+func _on_week_tapped(delta: int) -> void:
+	if Game.busy:
+		return
+	Game.change_week(delta)
+
+
+## Soft dark pools behind the two HUD corners, so the plates read on any wall.
+func _add_hud_shade() -> void:
+	for right in [false, true]:
+		var g := Gradient.new()
+		g.offsets = PackedFloat32Array([0.0, 0.45, 1.0])
+		g.colors = PackedColorArray([Color(Palette.NIGHT, 0.6), Color(Palette.NIGHT, 0.32), Color(Palette.NIGHT, 0.0)])
+		var gt := GradientTexture2D.new()
+		gt.gradient = g
+		gt.fill = GradientTexture2D.FILL_RADIAL
+		gt.fill_from = Vector2(1.0 if right else 0.0, 0.0)
+		gt.fill_to = gt.fill_from + Vector2(-1.0 if right else 1.0, 0.0)
+		gt.width = 64
+		gt.height = 32
+		var r := TextureRect.new()
+		r.texture = gt
+		r.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+		r.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		r.stretch_mode = TextureRect.STRETCH_SCALE
+		r.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		r.size = Vector2(200, 52)
+		r.position = Vector2(480 - 200 if right else 0, 0)
+		_hud_root.add_child(r)
+		_hud_root.move_child(r, 0)
 
 
 ## A connection error shows as a red toast (its last line only); a tap retries.
@@ -396,10 +465,6 @@ func show_panel(text: String) -> void:
 
 func hide_panel() -> void:
 	panel.visible = false
-
-
-func show_prompt(text: String) -> void:
-	prompt_label.text = text
 
 
 static func _day(iso: String) -> String:

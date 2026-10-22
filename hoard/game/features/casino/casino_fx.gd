@@ -419,6 +419,9 @@ static func reveal(parent: Control, center: Vector2, tier: String, shake_node: C
 	parent.add_child(stage)
 	var col := rarity_color(tier)
 	var rank := ["common", "rare", "epic"].find(tier)
+	if rank >= 1:
+		# Rare and up: the room's music and air dip under the reveal.
+		Sfx.duck(-8.0 if rank == 1 else -11.0, 0.6 if rank == 1 else 1.0)
 	if rank >= 2:
 		var slow := Rays.new()
 		slow.color = col

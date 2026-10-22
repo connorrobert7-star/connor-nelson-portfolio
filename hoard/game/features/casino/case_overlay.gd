@@ -1053,6 +1053,7 @@ func _crowd_react(tier: String) -> void:
 ## comes in, and the item spins down the beam into the light. Taps hurry it after 1 s.
 func _cutscene(tier: String, item: Dictionary, hero: HeroCard, halo: TextureRect, name_label: Label) -> void:
 	moment = "cutscene"
+	Sfx.duck(-14.0, 2.6)  # the room's music and air fall away under the choir
 	var color := CasinoFx.rarity_color(tier)
 	var center := Vector2(240, 104)
 	_tapped = false

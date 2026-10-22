@@ -61,6 +61,7 @@ var _entered := false
 
 
 func _init() -> void:
+	post_vignette = 0.0  # the shrine draws its own vignette
 	var rows: Array[String] = []
 	for y in H:
 		if y < 3:
@@ -101,6 +102,7 @@ func build() -> void:
 	props.add_child(flock)
 	Game.event_fired.connect(_on_money_event)
 	music.volume_db = -14.0
+	music.bus = "Music"
 	add_child(music)
 
 

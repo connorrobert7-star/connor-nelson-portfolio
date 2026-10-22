@@ -9,10 +9,17 @@ uniform float vignette = 0.3;
 uniform float grain = 0.012;
 uniform vec3 ink : source_color = vec3(0.1137, 0.0784, 0.1412);
 
-float hash(vec2 p) {
-	p = fract(p * vec2(123.34, 456.21));
-	p += dot(p, p + 45.32);
-	return fract(p.x * p.y);
+// An integer hash (PCG), exact at any TIME: float hashes of growing inputs lose their
+// fractional bits in float32 after a minute and turn into flickering stripes.
+uint pcg(uint v) {
+	uint state = v * 747796405u + 2891336453u;
+	uint word = ((state >> ((state >> 28u) + 4u)) ^ state) * 277803737u;
+	return (word >> 22u) ^ word;
+}
+
+float hash(vec2 px, float frame) {
+	uint h = pcg(uint(px.x) + pcg(uint(px.y) + pcg(uint(frame))));
+	return float(h & 65535u) / 65535.0;
 }
 
 void fragment() {
@@ -28,7 +35,9 @@ void fragment() {
 	c = mix(c, ink, clamp(v * vignette * 2.2, 0.0, 0.85));
 	// Grain on game pixels, 12 changes a second.
 	vec2 px = floor(SCREEN_UV * vec2(480.0, 270.0));
-	float g = hash(px + floor(TIME * 12.0) * vec2(17.0, 31.0)) - 0.5;
+	// The frame counter wraps, so its inputs stay small whatever TIME is.
+	float frame = mod(floor(TIME * 12.0), 64.0);
+	float g = hash(px, frame) - 0.5;
 	c += g * grain * 2.0;
 	COLOR = vec4(clamp(c, 0.0, 1.0), 1.0);
 }
