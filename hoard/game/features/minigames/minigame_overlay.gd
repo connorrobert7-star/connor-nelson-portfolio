@@ -444,36 +444,65 @@ func _tally() -> void:
 
 
 func _end_shelf() -> void:
+	# The tally lands on a framed plate (the HUD's own Dark Dwellers frame), dropped in over a
+	# dimmed game: the coins on top, the haul in a row beneath, brass light spilling behind.
+	var items: Array = haul()
+	var pw := maxf(140.0, float(items.size()) * 30.0 + 48.0)
+	var dim := ColorRect.new()
+	dim.color = Color(Palette.NIGHT, 0.0)
+	dim.size = Vector2(W, H)
+	dim.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	dim.z_index = 79
+	hud.add_child(dim)
+	dim.create_tween().tween_property(dim, "color:a", 0.55, 0.25)
 	var shelf := Node2D.new()
 	shelf.position = Vector2(W / 2.0, H / 2.0 + 6)
 	shelf.z_index = 80
 	hud.add_child(shelf)
-	var dim := ColorRect.new()
-	dim.color = Color(Palette.NIGHT, 0.0)
-	dim.size = Vector2(W, 64)
-	dim.position = Vector2(-W / 2.0, -36)
-	dim.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	shelf.add_child(dim)
-	dim.create_tween().tween_property(dim, "color:a", 0.75, 0.25)
+	var spill := ArcadeFx.glow(shelf, Vector2(0, -6), ArcadeFx.BRASS, pw * 0.75, 0.22)
+	ArcadeFx.breathe(spill, 0.6, 1.0, 1.6)
+	ArcadeFx.plate(shelf, Rect2(-pw / 2.0, -44, pw, 80), Color(0.62, 0.56, 0.74, 1.0))
+	# A brass rule between the coins and the haul, and a rivet in each corner.
+	var rule := ColorRect.new()
+	rule.color = Color(ArcadeFx.BRASS, 0.55)
+	rule.size = Vector2(pw - 28, 1)
+	rule.position = Vector2(-pw / 2.0 + 14, 3)
+	shelf.add_child(rule)
+	for corner in 4:
+		var rivet := ColorRect.new()
+		rivet.color = ArcadeFx.BRASS
+		rivet.size = Vector2(2, 2)
+		rivet.position = Vector2(-pw / 2.0 + (5.0 if corner % 2 == 0 else pw - 7.0), -39.0 if corner < 2 else 29.0)
+		shelf.add_child(rivet)
+	# The plate drops in from above and settles with a bounce.
+	shelf.position.y -= 18.0
+	shelf.modulate.a = 0.0
+	var drop := shelf.create_tween().set_parallel()
+	drop.tween_property(shelf, "position:y", H / 2.0 + 6, 0.32).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	drop.tween_property(shelf, "modulate:a", 1.0, 0.15)
+	drop.chain().tween_callback(func() -> void:
+		ArcadeFx.sfx(ArcadeFx.SND_COIN_DOUBLE, 0.8, -8.0)
+		ArcadeFx.burst(shelf, Vector2(0, -44), ArcadeFx.BRASS, 10, 60.0, 0.4))
 	var coin := Sprite2D.new()
 	coin.texture = ArcadeFx.tex(ArcadeFx.COIN_STRIP, [0, 0, 8, 8])
 	coin.scale = Vector2(3, 3)
-	coin.position = Vector2(-26, -14)
+	coin.position = Vector2(-30, -16)
 	shelf.add_child(coin)
 	ArcadeFx.glow(shelf, coin.position, ArcadeFx.BRASS, 26.0, 0.5)
 	var total := ArcadeFx.label(str(coins_shown), 40, ArcadeFx.BRASS, true, 8)
-	total.position = Vector2(-12, -36)
+	total.position = Vector2(-16, -38)
 	shelf.add_child(total)
 	ArcadeFx.pop(total, 0.4)
-	var items: Array = haul()
 	var x := -float(items.size()) * 15.0
 	for h: Dictionary in items:
 		var s := Sprite2D.new()
 		s.texture = h.texture
-		s.position = Vector2(x + 8, 16)
+		s.position = Vector2(x + 8, 18)
+		if h.texture.get_height() > 20:
+			s.scale = Vector2(0.5, 0.5)  # a 32px tile sits at the row's 16px
 		shelf.add_child(s)
 		var n := ArcadeFx.label(str(h.count), 16, Palette.CREAM)
-		n.position = Vector2(x + 14, 14)
+		n.position = Vector2(x + 14, 16)
 		shelf.add_child(n)
 		ArcadeFx.bob(s, 1.0, 1.0 + randf() * 0.4)
 		x += 30.0
@@ -481,7 +510,7 @@ func _end_shelf() -> void:
 	if int(result_body.get("score", 0)) > 0 and int(result_body.get("score", 0)) >= int(best.get(game_id(), 0)):
 		var crown := Sprite2D.new()
 		crown.texture = ArcadeFx.tex(ArcadeFx.PACKS + "shattered-pixel-dungeon/sprites/items.png", [192, 48, 16, 16])
-		crown.position = Vector2(-26, -34)
+		crown.position = Vector2(0, -50)
 		shelf.add_child(crown)
 		ArcadeFx.breathe(ArcadeFx.glow(shelf, crown.position, Palette.GLOW, 16.0, 0.6))
 		ArcadeFx.bob(crown, 2.0, 0.8)
