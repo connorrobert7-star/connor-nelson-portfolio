@@ -15,9 +15,9 @@ const AMBIENCE := ArcadeFx.PACKS + "freesound-cc0-picks/79088_AkasakaPachinkoPar
 const NEON := ArcadeFx.PACKS + "karsiori-neon-signs/Sign 10/Sign 10 Glow - %s.png"
 const TRIM := [Color("ff9a3c"), Color("2ec4b6"), Color("ff6fb5")]
 const GAMES := ["mine", "fishing", "dungeon"]
-## Each cabinet's footprint: 2 tiles wide and 3 tall, standing on the floor's first row
-## against the back wall.
-const SPOTS := [Vector2i(-2, -4), Vector2i(7, -4), Vector2i(16, -4)]
+## Each cabinet's footprint: 2 tiles wide and 3 tall, standing a step out from the back
+## wall so the marquees clear the HUD's corners.
+const SPOTS := [Vector2i(-2, -3), Vector2i(7, -3), Vector2i(16, -3)]
 const STAND := Vector2i(7, 3)
 const MAP: Array[String] = [
 	"WWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
@@ -66,7 +66,7 @@ func build() -> void:
 		_build_cabinet(i)
 	# The strip along the back wall is the cabinets' alone: the leader plays from the aisle
 	# in front, so a tap on any cabinet is a straight walk with nothing in the way.
-	block(Rect2i(-6, -2, 28, 1))
+	block(Rect2i(-6, -2, 28, 2))
 	for d: Vector2 in DEAD:
 		block(Rect2i(floori((d.x - 16.0) / TILE), floori((d.y - 8.0) / TILE), 2, 1))
 	_build_stand()
@@ -78,6 +78,11 @@ func build() -> void:
 func _exit_tree() -> void:
 	if _ambience:
 		_ambience.stop()
+
+
+## Footsteps go soft on the carpet and ring on the stone around it.
+func surface_at(feet: Vector2) -> String:
+	return "carpet" if CARPET.has_point(feet) else "concrete"
 
 
 # --- the room ---------------------------------------------------------------------------

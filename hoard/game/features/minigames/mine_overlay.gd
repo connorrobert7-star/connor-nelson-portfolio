@@ -185,7 +185,7 @@ func _build_haul() -> void:
 	_chain_label.position = Vector2(GX + CELL * 8 + 14, GY + 8)
 	hud.add_child(_chain_label)
 	_fever_label = ArcadeFx.label("x2", 40, ArcadeFx.BRASS, true, 8)
-	_fever_label.position = Vector2(64, H - 46)
+	_fever_label.position = Vector2(16, H - 84)  # above the pouch's plate
 	_fever_label.visible = false
 	hud.add_child(_fever_label)
 	_fever_rain = CPUParticles2D.new()

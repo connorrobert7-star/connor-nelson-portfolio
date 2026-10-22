@@ -300,9 +300,11 @@ func _on_event(e: Dictionary) -> void:
 		# Anything else carrying a sentence is left to the scene that shows it.
 
 
+## The jar and the amount (and its "simulated" chip); where it went is plain from the
+## scene it happened in, so no sentence rides along.
 func _money_toast(e: Dictionary) -> void:
 	var chip := "simulated" if str(e.get("status", "")) == "simulated" else ""
-	toast("%s  %s" % [Money.fmt(int(e.amount_cents)), str(e.reason)], Palette.BONE, "cash", "money", chip)
+	toast(Money.fmt(int(e.amount_cents)), Palette.BONE, "cash", "money", chip)
 
 
 func _flush_held() -> void:

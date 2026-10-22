@@ -122,6 +122,7 @@ func run(kit: TourKit) -> void:
 
 	# Tap the ledger stone from across the square: the leader walks over and it opens.
 	await _stand(kit, Vector2i(17, 18))
+	await kit.wait(0.8)  # let the camera settle on the leader before tapping the world
 	await kit.tap_world(v.ledger_stone.position + Vector2(0, -12))
 	await kit.until(func() -> bool: return kit.overlay() is StatsOverlay, 6.0)
 	kit.check(kit.overlay() is StatsOverlay, "tapping the ledger stone opens the stats screen")

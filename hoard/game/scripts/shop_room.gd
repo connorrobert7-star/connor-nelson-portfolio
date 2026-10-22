@@ -30,7 +30,7 @@ const MAP: Array[String] = [
 ## walkway through the middle).
 const SHELF_X: Array[int] = [-72, -24, 24, 72, 120]
 const AISLE_X: Array[int] = [-80, -34, 50, 96, 142]
-const ROW_A := -14  # the wall shelves' feet: a step out from the wall, clear of the HUD
+const ROW_A := -6  # the wall shelves' feet: a step out from the wall, their tops clear of the HUD
 const ROW_B := 64  # the aisle shelves' feet
 const SHELF_H := 52
 const WOOD := Color("4a2c22")

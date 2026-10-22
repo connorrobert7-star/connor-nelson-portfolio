@@ -80,7 +80,8 @@ class Tab extends Control:
 
 
 func _ready() -> void:
-	add_backdrop(0.82)
+	# The backdrop lets taps through to the overlay: off the slab closes, on it turns the page.
+	add_backdrop(0.82).mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_ls = _settings(VillageArt.FONT_TABLE, 16, VillageArt.BONE)
 	_ls_dim = _settings(VillageArt.FONT_TABLE, 16, Palette.MUTED)
 	_ls_out = _settings(VillageArt.FONT_TABLE, 16, Color("ff9a8a"))
@@ -256,7 +257,7 @@ func _fill_money(p: Control) -> void:
 	y = _head(p, 0, y, "Money now")
 	for a: Dictionary in s.get("accounts", []):
 		y = _row(p, 0, y, str(a.name), _m(bal.get(a.id, a.balance_cents)))
-	y = _head(p, 0, y + 4, "Debts")
+	y = _head(p, 0, y + 8, "Debts")
 	for d: Dictionary in s.get("debts", []):
 		y = _row(p, 0, y, str(d.name), _m(bal.get(d.id, d.balance_cents)))
 		y = _row(p, 0, y, "  %s%% apr, min %s" % [str(d.apr), _m(d.min_payment_cents)], "", _ls_dim)
@@ -292,7 +293,7 @@ func _fill_bills(p: Control) -> void:
 	var v: Dictionary = s.get("village", {})
 	if not v.is_empty():
 		var h: Dictionary = v.house
-		y = _head(p, 1, y + 4, "House and wall")
+		y = _head(p, 1, y + 8, "House and wall")
 		y = _row(p, 1, y, "House Fund", _m(h.balance_cents))
 		var stage := "%s, done" % str(h.stage.name) if h.next == null else "%s to %s" % [_m(h.next.to_go_cents), str(h.next.name).to_lower()]
 		y = _row(p, 1, y, "  " + stage, "", _ls_dim)
@@ -307,32 +308,32 @@ func _fill_bills(p: Control) -> void:
 		y = _row(p, 1, y, "Since money landed", "-" if days == null else "%s d" % str(days), _ls_dim)
 
 
-## The week's ledger: in and out, then every line, newest last, over both columns.
+## The week's ledger: every line, newest last, down the left column and on into the right,
+## under the week's in and out.
 func _fill_week(p: Control) -> void:
 	var s := Game.state
 	var win: Dictionary = s.get("window", {})
 	var wk: Dictionary = s.get("week", {})
-	var y := _top()
-	y = _head(p, 0, y, "Week of %s" % Main._day(str(win.get("start", s.get("today", "")))))
-	y = _row(p, 0, y, "In", _m(wk.get("in_cents", 0)))
-	y = _row(p, 0, y, "Out", "-" + _m(wk.get("out_cents", 0)), _ls_out)
-	y = _rule(p, 0, y)
+	var y := _head(p, 0, _top(), "Week of %s" % Main._day(str(win.get("start", s.get("today", "")))))
+	var ry := _head(p, 1, _top(), "In and out")
+	ry = _row(p, 1, ry, "In", _m(wk.get("in_cents", 0)))
+	ry = _row(p, 1, ry, "Out", "-" + _m(wk.get("out_cents", 0)), _ls_out)
+	ry = _rule(p, 1, ry)
 	var txns: Array = wk.get("transactions", [])
-	var first_col := MAX_ROWS - 3
-	var room := first_col + MAX_ROWS
+	var first_col := MAX_ROWS - 2
+	var room := first_col + MAX_ROWS - 5
 	var shown := txns.slice(maxi(0, txns.size() - room))
 	var col := 0
-	var col_y := y
 	for i in shown.size():
 		if col == 0 and i == first_col:
 			col = 1
-			col_y = _top()
+			y = ry
 		var t: Dictionary = shown[i]
 		var amt := int(t.amount_cents)
 		var label := "%s %s" % [Main._day(str(t.date)).split(" ")[1], str(t.merchant)]
-		col_y = _row(p, col, col_y, label, ("+" if amt < 0 else "-") + _m(absi(amt)), _ls if amt < 0 else _ls_out)
+		y = _row(p, col, y, label, ("+" if amt < 0 else "-") + _m(absi(amt)), _ls if amt < 0 else _ls_out)
 	if txns.size() > shown.size():
-		_row(p, col, col_y, "and %d earlier" % (txns.size() - shown.size()), "", _ls_dim)
+		_row(p, col, y, "and %d earlier" % (txns.size() - shown.size()), "", _ls_dim)
 
 
 func _head(p: Control, c: int, y: float, text: String) -> float:
@@ -344,20 +345,20 @@ func _head(p: Control, c: int, y: float, text: String) -> float:
 	l.size = Vector2(COL_W, 12)
 	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	p.add_child(l)
-	_rule(p, c, y + 9)
-	return y + 14.0
+	_rule(p, c, y + 7)
+	return y + 15.0
 
 
-## A carved line across a column.
+## A carved line across a column, clear of the row above it.
 func _rule(p: Control, c: int, y: float) -> float:
 	var rule := TextureRect.new()
 	rule.texture = VillageArt.tex(HEADER, Rect2(30, 14, 36, 2))
 	rule.stretch_mode = TextureRect.STRETCH_SCALE
-	rule.position = Vector2(_col(c), y)
+	rule.position = Vector2(_col(c), y + 2)
 	rule.size = Vector2(COL_W, 2)
 	rule.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	p.add_child(rule)
-	return y + 3.0
+	return y + 6.0
 
 
 ## One line: the name cut with an ellipsis at its width, the amount right-aligned in its own.

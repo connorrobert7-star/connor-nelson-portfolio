@@ -369,7 +369,7 @@ func _build_haze() -> void:
 		f.scale = Vector2(k, k)
 		f.position = r.position
 		f.material = VillageArt.additive()
-		f.modulate = Color(FOG_TINT, 0.06 if i == 0 else 0.05)
+		f.modulate = Color(FOG_TINT, 0.045 if i == 0 else 0.035)
 		f.set_meta("origin", f.region_rect.position)
 		_haze.add_child(f)
 		_fogs.append(f)
