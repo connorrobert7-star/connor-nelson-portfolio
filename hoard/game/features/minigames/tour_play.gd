@@ -119,11 +119,13 @@ func _mine_fuse(room: ArcadeRoom) -> void:
 	while kit.overlay() == mine and Time.get_ticks_msec() - t0 < 14000:
 		await touch(_screen(_mine_target(mine)))
 		await kit.wait(0.04)
+		if not is_instance_valid(mine):
+			break  # a tap closed it before we looked: the check below says so
 		if mine._end_ready and ready_at < 0:
-			ready_at = Time.get_ticks_msec()
+			ready_at = mine._end_at  # when the tally settled, not when this loop noticed
 		if ready_at >= 0 and Time.get_ticks_msec() - ready_at > 800:
 			break
-	var up := ready_at >= 0 and kit.overlay() == mine
+	var up := ready_at >= 0 and is_instance_valid(mine) and kit.overlay() == mine
 	kit.check(up, "a thumb still hammering for most of a second after the fuse ends still sees the tally")
 	if not up:
 		return
@@ -208,7 +210,7 @@ func _dungeon_full(room: ArcadeRoom) -> void:
 	await kit.until(func() -> bool: return dun.phase == DungeonOverlay.Phase.FIGHT, 15.0)
 	# Two touches on one enemy inside the bolt's cooldown: both bolts land.
 	await kit.wait(0.6)
-	var e := _enemy(dun)
+	var e := _toughest(dun)  # one that lives through the first bolt, so the second has a mark
 	if e:
 		var seen := {}
 		var hp0 := e.hp
@@ -447,6 +449,15 @@ func _enemy(dun: DungeonOverlay) -> DungeonOverlay.Unit:
 		if e.hp > 0.0 and e.at().x < 470.0:
 			return e
 	return null
+
+
+## The living enemy on screen with the most hp left.
+func _toughest(dun: DungeonOverlay) -> DungeonOverlay.Unit:
+	var best: DungeonOverlay.Unit = null
+	for e in dun.enemies:
+		if e.hp > 0.0 and e.at().x < 470.0 and (best == null or e.hp > best.hp):
+			best = e
+	return best
 
 
 ## Note every lightning strike on the field by its node.
