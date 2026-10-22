@@ -10,6 +10,8 @@ const DOCK_Y := 152.0
 const DOCK_END := 124.0
 const ROD_TIP := Vector2(150, 104)
 const WATER := ArcadeFx.PACKS + "ninja-adventure/Backgrounds/Tilesets/TilesetWater.png"
+const RIVER := preload("res://features/village/river.gdshader")
+const DOCK_WOOD := Color("5a3a2a")
 const OMG := ArcadeFx.PACKS + "tiopalada-emoji-pack-1/20250405emoticons-SheetOMG.png"
 const CURSORS := ArcadeFx.PACKS + "kenney-cursor-pixel-pack/Tilemap/tilemap_packed.png"
 const SND_SPLASH := ArcadeFx.PACKS + "fisheefects/splash.ogg"
@@ -139,16 +141,40 @@ func _build_night() -> void:
 
 
 func _build_water() -> void:
-	for y in range(int(WATER_Y), int(H) + 16, 16):
-		for x in range(0, int(W), 16):
-			var t := Sprite2D.new()
-			var v := (x / 16 * 5 + y / 16 * 3) % 9
-			t.texture = ArcadeFx.tex(WATER, [176, 32 if v == 0 else 0, 16, 16])
-			t.centered = false
-			t.position = Vector2(x, y)
-			var depth := clampf((y - WATER_Y) / (H - WATER_Y), 0.0, 1.0)
-			t.modulate = Color(0.32 - depth * 0.12, 0.42 - depth * 0.15, 0.62 - depth * 0.2)
-			world.add_child(t)
+	# Deep night water in whole-pixel bands, lightest at the far shore, then the village's
+	# river glass over it: crisp ripples drifting, two slow highlight bands, and a mirror
+	# under the moon and the dock lamp.
+	var deep := Node2D.new()
+	deep.draw.connect(func() -> void:
+		var top := Color("1e2a52")
+		var low := Color("0a0e22")
+		var y := WATER_Y
+		var band := 0
+		while y < H:
+			var hgt := 3.0 + band
+			deep.draw_rect(Rect2(0, y, W, hgt), top.lerp(low, clampf((y - WATER_Y) / (H - WATER_Y), 0.0, 1.0)))
+			y += hgt
+			band += 1
+		deep.draw_rect(Rect2(0, WATER_Y, W, 1), Color("5a6aa8"))
+	)
+	world.add_child(deep)
+	var glass := ColorRect.new()
+	glass.position = Vector2(0, WATER_Y)
+	glass.size = Vector2(W, H - WATER_Y)
+	glass.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var mat := ShaderMaterial.new()
+	mat.shader = RIVER
+	mat.set_shader_parameter("size", glass.size)
+	mat.set_shader_parameter("tint", Color(0.5, 0.66, 1.0))
+	var xs := PackedFloat32Array([372.0, 14.0])
+	var cols := PackedColorArray([Color(Palette.CREAM, 1.0), Color("ffb05a")])
+	for i in range(xs.size(), 12):
+		xs.append(-999.0)
+		cols.append(Color(0, 0, 0, 0))
+	mat.set_shader_parameter("refl_x", xs)
+	mat.set_shader_parameter("refl_col", cols)
+	glass.material = mat
+	world.add_child(glass)
 	# The moon on the water: a column of shimmering strokes.
 	for i in 14:
 		var stroke := ColorRect.new()
@@ -196,20 +222,36 @@ func _swim(s: Sprite2D) -> void:
 
 
 func _build_dock() -> void:
-	for x in range(0, int(DOCK_END) + 8, 32):
-		var plank := Sprite2D.new()
-		plank.texture = ArcadeFx.tex(WATER, [16 + (x / 32 % 3) * 16, 192, 16, 16])
-		plank.centered = false
-		plank.scale = Vector2(2, 2)
-		plank.position = Vector2(x, DOCK_Y)
-		plank.modulate = Color(0.62, 0.5, 0.52)
-		world.add_child(plank)
-		var post := ColorRect.new()
-		post.color = Color("2a1a1a")
-		post.size = Vector2(4, 30)
-		post.position = Vector2(x + 14, DOCK_Y + 30)
-		post.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		world.add_child(post)
+	# The dock, drawn board by board: weathered planks with lit ends and dark seams, a front
+	# beam in shadow, posts going down into the water with rings where they meet it.
+	var dock := Node2D.new()
+	dock.draw.connect(func() -> void:
+		var end := DOCK_END + 8.0
+		var x := 0.0
+		var k := 0
+		while x < end:
+			var w := minf(8.0, end - x)
+			var h := absi(k * 73856093) % 7
+			var c := DOCK_WOOD.lerp(DOCK_WOOD.darkened(0.3), float(h % 4) / 5.0)
+			dock.draw_rect(Rect2(x, DOCK_Y, w - 1, 20), c)
+			dock.draw_rect(Rect2(x, DOCK_Y, w - 1, 1), c.lightened(0.3))
+			dock.draw_rect(Rect2(x + w - 1, DOCK_Y, 1, 20), Color("1a100c"))
+			if h % 3 == 0:
+				dock.draw_rect(Rect2(x + 3, DOCK_Y + 3, 1, 1), Color("1a100c"))
+				dock.draw_rect(Rect2(x + 3, DOCK_Y + 16, 1, 1), Color("1a100c"))
+			if h == 5:
+				dock.draw_rect(Rect2(x + 1, DOCK_Y + 9, w - 3, 1), c.darkened(0.25))
+			x += w
+			k += 1
+		dock.draw_rect(Rect2(0, DOCK_Y + 20, end, 8), DOCK_WOOD.darkened(0.55))
+		dock.draw_rect(Rect2(0, DOCK_Y + 20, end, 1), DOCK_WOOD.darkened(0.2))
+		dock.draw_rect(Rect2(0, DOCK_Y + 28, end, 2), Color(0, 0, 0, 0.45))
+		for px in range(10, int(end), 32):
+			dock.draw_rect(Rect2(px, DOCK_Y + 28, 5, 34), Color("24160f"))
+			dock.draw_rect(Rect2(px, DOCK_Y + 28, 1, 34), Color("3e281c"))
+			dock.draw_rect(Rect2(px - 3, DOCK_Y + 62, 11, 1), Color(0.6, 0.75, 1.0, 0.35))
+	)
+	world.add_child(dock)
 	var lamp := Sprite2D.new()
 	lamp.texture = ArcadeFx.tex(ArcadeFx.PACKS + "kenney-roguelike-caves-dungeons/Spritesheet/roguelikeDungeon_transparent.png", [221, 289, 16, 16])
 	lamp.position = Vector2(14, DOCK_Y - 8)

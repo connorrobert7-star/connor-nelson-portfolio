@@ -148,6 +148,9 @@ func _build_hud() -> void:
 	_fuse_label.position = Vector2(FUSE_X1 + 6, FUSE_Y - 8)
 	hud.add_child(_fuse_label)
 
+	# The pouch and the lantern's flames sit on plates in the bottom corners.
+	ArcadeFx.plate(hud, Rect2(POUCH.x - 18, POUCH.y - 16, 74, 30))
+	ArcadeFx.plate(hud, Rect2(W - 66, H - 30, 58, 26))
 	# The pouch.
 	_pouch = Sprite2D.new()
 	_pouch.texture = ArcadeFx.tex(ArcadeFx.PACKS + "shattered-pixel-dungeon/sprites/items.png", [32, 16, 16, 16])

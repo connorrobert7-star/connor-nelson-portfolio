@@ -30,6 +30,8 @@ const STINGERS := {
 	"mythic": PACKS + "kenney-music-jingles/Audio/Hit jingles/jingles_HIT00.ogg",
 }
 
+const PLATE := PACKS + "tiopalada-dark-dwellers-gui/20251029darkDwellers9SlicesA.png"
+
 ## Brass is the color of play coins (never cream, which is real money).
 const BRASS := Color("e9b949")
 
@@ -148,6 +150,22 @@ static func glow(parent: Node, pos: Vector2, color: Color, radius := 32.0, energ
 
 
 ## Make a glow breathe forever (pools of light are never still).
+## A dark Dark Dwellers plate behind a tally (the HUD's own frame), so no number floats bare.
+static func plate(parent: Node, rect: Rect2, tint := Color(0.5, 0.46, 0.6, 0.95)) -> NinePatchRect:
+	var p := NinePatchRect.new()
+	p.texture = load(PLATE)
+	p.patch_margin_left = 6
+	p.patch_margin_right = 6
+	p.patch_margin_top = 6
+	p.patch_margin_bottom = 6
+	p.position = rect.position.round()
+	p.size = rect.size.round()
+	p.modulate = tint
+	p.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	parent.add_child(p)
+	return p
+
+
 static func breathe(node: CanvasItem, low := 0.55, high := 1.0, seconds := 1.4) -> void:
 	var base := node.modulate
 	var tw := node.create_tween().set_loops()

@@ -37,6 +37,7 @@ const SND_GOOD := ArcadeFx.PACKS + "ninja-adventure/Audio/Sounds/Bonus/Bonus.ogg
 const SND_BAD := ArcadeFx.PACKS + "wobbleboxx-levelup-coin/Downer01.ogg"
 const SND_CHEST := ArcadeFx.PACKS + "shattered-pixel-dungeon/sounds/unlock.mp3"
 
+const ICONS := ArcadeFx.PACKS + "kyrise-rpg-icons-16/icons/16x16/"
 const DOOR := Vector2(240, 40)
 const CHIPS_AT := Vector2(160, 30)
 const MULT_AT := Vector2(320, 30)
@@ -409,18 +410,15 @@ func _box(at: Vector2, color: Color) -> Node2D:
 	fire.color_ramp = ramp
 	n.add_child(fire)
 	_fire.append(fire)
-	var frame := ColorRect.new()
-	frame.color = color
-	frame.size = BOX + Vector2(2, 2)
-	frame.position = -BOX / 2.0 - Vector2(1, 1)
-	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	n.add_child(frame)
-	var inner := ColorRect.new()
-	inner.color = Color("120c18")
-	inner.size = BOX
-	inner.position = -BOX / 2.0
-	inner.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	n.add_child(inner)
+	# A dark plate lit from behind in the tally's own color, its icon poking out on the left.
+	var halo := ArcadeFx.glow(n, Vector2.ZERO, color, 30.0, 0.22)
+	ArcadeFx.breathe(halo, 0.6, 1.0, 1.6)
+	var plate := ArcadeFx.plate(n, Rect2(-BOX.x / 2.0 - 10, -BOX.y / 2.0 - 4, BOX.x + 16, BOX.y + 8))
+	plate.self_modulate = Color(0.6, 0.55, 0.7).lerp(color, 0.15)
+	var icon := Sprite2D.new()
+	icon.texture = load(ICONS + ("sword_01a.png" if color == Palette.CREAM else "crystal_01a.png"))
+	icon.position = Vector2(-BOX.x / 2.0 - 8, 0)
+	n.add_child(icon)
 	var l := ArcadeFx.label("0", 24, color, true, 4)
 	l.size = Vector2(BOX.x, 18)
 	l.position = Vector2(-BOX.x / 2.0, -BOX.y / 2.0 - 4)

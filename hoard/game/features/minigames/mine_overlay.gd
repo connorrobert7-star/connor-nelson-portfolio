@@ -104,7 +104,9 @@ func _build_cave() -> void:
 	dust.gravity = Vector2(0, 8)
 	dust.color = Color(Palette.MUTED, 0.35)
 	world.add_child(dust)
-	# Depth on the wall.
+	_timber()
+	# Depth on the wall, on a plate.
+	ArcadeFx.plate(hud, Rect2(8, 34, 34, 54))
 	_depth_label = ArcadeFx.label("0", 32, Palette.CREAM, true, 6)
 	_depth_label.position = Vector2(16, 52)
 	hud.add_child(_depth_label)
@@ -133,8 +135,41 @@ func _build_leader() -> void:
 	ArcadeFx.glow(_leader, Vector2(0, -12), Color("ffb05a"), 22.0, 0.22)
 
 
+## Mine timbering down both sides of the shaft: posts, braces into the rock and lanterns
+## hung from them, and a cap beam across the top.
+func _timber() -> void:
+	var wood := Color("5a3a24")
+	var t := Node2D.new()
+	t.draw.connect(func() -> void:
+		for side in 2:
+			var x := GX - 10.0 if side == 0 else GX + CELL * 8 + 4.0
+			t.draw_rect(Rect2(x, 0, 6, H), wood.darkened(0.2))
+			t.draw_rect(Rect2(x, 0, 1, H), wood.lightened(0.2))
+			t.draw_rect(Rect2(x + 5, 0, 1, H), wood.darkened(0.6))
+			var out := -1.0 if side == 0 else 1.0
+			for y in range(40, int(H), 56):
+				for k in 10:
+					var px := x + (0.0 if side == 0 else 6.0) + out * (k + 1)
+					t.draw_rect(Rect2(px - (1.0 if side == 0 else 0.0), y + k, 2, 2), wood.darkened(0.1))
+				t.draw_rect(Rect2(x - 1, y - 2, 8, 3), wood)
+				t.draw_rect(Rect2(x - 1, y - 2, 8, 1), wood.lightened(0.3))
+		t.draw_rect(Rect2(GX - 12, 0, CELL * 8 + 24, 7), wood)
+		t.draw_rect(Rect2(GX - 12, 6, CELL * 8 + 24, 1), wood.darkened(0.6))
+		t.draw_rect(Rect2(GX - 12, 7, CELL * 8 + 24, 2), Color(0, 0, 0, 0.4))
+	)
+	world.add_child(t)
+	for side in 2:
+		var at := Vector2(GX - 18.0 if side == 0 else GX + CELL * 8 + 18.0, 30)
+		var lamp := Sprite2D.new()
+		lamp.texture = ArcadeFx.tex(ArcadeFx.PACKS + "kenney-roguelike-caves-dungeons/Spritesheet/roguelikeDungeon_transparent.png", [221, 289, 16, 16])
+		lamp.position = at
+		world.add_child(lamp)
+		ArcadeFx.breathe(ArcadeFx.glow(world, at + Vector2(0, -3), Color("ffb05a"), 40.0, 0.35), 0.6, 1.0, 0.8 + side * 0.3)
+
+
 func _build_haul() -> void:
 	var x := 176.0
+	ArcadeFx.plate(hud, Rect2(x - 14, H - 26, _ores().ores.size() * 40.0 + 10.0, 24))
 	for o: Dictionary in _ores().ores:
 		var s := Sprite2D.new()
 		s.texture = ArcadeFx.icon(o.icon)
