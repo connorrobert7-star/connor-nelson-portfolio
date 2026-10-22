@@ -266,6 +266,7 @@ class Bust:
 	var tell := Color.TRANSPARENT
 	var hands := Fingers.new()
 	var _frames: Array[Texture2D] = []
+	var _light: Texture2D
 	var _glows: Array[TextureRect] = []
 	var _t := 0.0
 	var _blink := 2.5
@@ -344,8 +345,9 @@ class Bust:
 		var b := breath()
 		var o := lean_px()
 		# The lamp catching the edge of his hood, so the silhouette reads off the dark.
-		var light := load(LIGHT) as Texture2D
-		draw_texture_rect(light, Rect2(o + Vector2(-16, -8), Vector2(128, 104)), false, Color(0.42, 0.32, 0.55, 0.22))
+		if _light == null:
+			_light = load(LIGHT) as Texture2D  # held: a texture only a draw call uses is freed
+		draw_texture_rect(_light, Rect2(o + Vector2(-16, -8), Vector2(128, 104)), false, Color(0.42, 0.32, 0.55, 0.22))
 		draw_texture_rect_region(_frames[b], Rect2(o, size), Rect2(0, 0, CasinoRoomVex.W, ROWS))
 		if _blink <= 0.0:
 			return

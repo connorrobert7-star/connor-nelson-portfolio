@@ -373,21 +373,33 @@ class Kit:
 				i += 1
 
 
-	## Bricks of the dark dungeon sheet across `rect`, tinted.
+	## Textures drawn straight onto a canvas item (draw_texture_rect_region) are held here: a
+	## texture only a draw call refers to is freed when the function returns, and the canvas
+	## then draws flat white where it was.
+	static var _keep: Dictionary = {}
+
+	static func tex(path: String) -> Texture2D:
+		if not _keep.has(path):
+			_keep[path] = load(PACKS + path)
+		return _keep[path]
+
+
+	## Courses of brick from the dark dungeon sheet's wall across `rect`, tinted. The sheet's
+	## brick band (64x10 from x 44, y 28) tiles seamlessly both ways.
 	static func bricks(ci: CanvasItem, rect: Rect2, tint: Color) -> void:
-		var tex: Texture2D = load(PACKS + DARK)
+		var t := tex(DARK)
 		var y := rect.position.y
 		var j := 0
 		while y < rect.end.y:
-			var x := rect.position.x
-			var i := 0
+			var h := minf(10.0, rect.end.y - y)
+			var x := rect.position.x - float((j * 23) % 64)
 			while x < rect.end.x:
-				var h := absi((i * 73856093) ^ (j * 19349663)) % 97
-				var src := Rect2(64 + (h % 3) * 16, 16 + (1 if j % 2 == 0 else 0) * 16, 16, 16)
-				ci.draw_texture_rect_region(tex, Rect2(x, y, 16, 16), src, tint)
-				x += 16
-				i += 1
-			y += 16
+				var a := maxf(x, rect.position.x)
+				var b := minf(x + 64.0, rect.end.x)
+				if b > a:
+					ci.draw_texture_rect_region(t, Rect2(a, y, b - a, h), Rect2(44.0 + (a - x), 28.0, b - a, h), tint)
+				x += 64.0
+			y += 10.0
 			j += 1
 
 

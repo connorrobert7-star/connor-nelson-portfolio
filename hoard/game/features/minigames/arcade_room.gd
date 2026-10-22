@@ -85,12 +85,12 @@ func _exit_tree() -> void:
 ## Near-black stone under a cosmic carpet: deep violet with neon squiggles, stars and rings
 ## in the cabinets' colors, the kind every arcade floor has.
 func _draw_floor() -> void:
-	var tex: Texture2D = load(DARK)
+	var tex := Kit.tex(Kit.DARK)
 	var r := room_rect()
 	for y in range(int(r.position.y) + 64, int(r.end.y) - 16, 16):
 		for x in range(int(r.position.x) + 16, int(r.end.x) - 16, 16):
 			var v := absi((x / 16) * 7 + (y / 16) * 13) % 5
-			room_under.draw_texture_rect_region(tex, Rect2(x, y, 16, 16), Rect2(16 + (v % 4) * 16, 128 + (v / 4) * 16, 16, 16), Color(0.7, 0.66, 0.78))
+			room_under.draw_texture_rect_region(tex, Rect2(x, y, 16, 16), Rect2(16 + (v % 4) * 16, 128 + (v / 4) * 16, 16, 16), Color(0.85, 0.8, 0.95))
 	var c := CARPET
 	room_under.draw_rect(c.grow(2), Color("0e0818"))
 	room_under.draw_rect(c, Color("1c1034"))
@@ -125,7 +125,7 @@ func _draw_walls() -> void:
 	var r := room_rect()
 	var x0 := r.position.x
 	var x1 := r.end.x
-	Kit.bricks(room_walls, Rect2(x0, -80, r.size.x, 48), Color(0.4, 0.34, 0.5))
+	Kit.bricks(room_walls, Rect2(x0, -80, r.size.x, 48), Color(0.62, 0.52, 0.78))
 	room_walls.draw_rect(Rect2(x0, -96, r.size.x, 16), Color("0c0812"))
 	for i in 18:
 		room_walls.draw_rect(Rect2(x0, -80 + i, r.size.x, 1), Color(0.02, 0.0, 0.04, 0.55 * (1.0 - i / 18.0)))

@@ -40,7 +40,7 @@ const SEATS: Array = [
 const FOLK: Array[String] = ["Villager", "Woman", "OldMan", "Villager2", "Boy", "Monk", "Hunter", "Princess", "Villager3", "OldWoman"]
 const STONE := Color("3a3040")
 ## The back wall's stone, warm and dark so the hearth and the string lights pool on it.
-const WALL_TINT := Color(0.32, 0.26, 0.28)
+const WALL_TINT := Color(0.86, 0.7, 0.72)
 const WOOD := Color("4a2a20")
 const BULBS: Array[Color] = [Color("ffb26b"), Color("ff7fa0"), Color("7fe8c8"), Color("ffe08a")]
 const SND_CLINK := "kenney-impact-sounds/Audio/impactGlass_light_00%d.ogg"
