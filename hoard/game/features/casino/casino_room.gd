@@ -153,7 +153,7 @@ func _paint_floor() -> void:
 			src.create_tile(c)
 	set_.add_source(src, 0)
 	_floor.tile_set = set_
-	_floor.modulate = Color(0.56, 0.5, 0.7)
+	_floor.modulate = Color(0.4, 0.35, 0.52)
 	for y in map.size():
 		for x in map[0].length():
 			var cell := Vector2i(x, y)
@@ -207,18 +207,27 @@ func _place_things() -> void:
 	var odds := Props.Odds.new()
 	odds.position = ODDS_AT
 	_wall.add_child(odds)
-	_add_machine(shelf, SHELF_AT, Art.LAMP, 40, 0.10)
-	_add_machine(wheel, WHEEL_AT, Palette.TEAL, 38, 0.13)
-	_add_machine(booth, BOOTH_AT, Palette.PINK, 40, 0.12)
-	_add_machine(claw, CLAW_AT, Palette.PINK, 42, 0.14)
-	_add_machine(drum, DRUM_AT, Palette.TEAL, 40, 0.12)
-	_add_machine(book, BOOK_AT, Art.LAMP, 30, 0.12)
-	for c: Array in CANDLES:
+	# Each machine stands in its own pool of colored light; the floor between them is dark.
+	_add_machine(shelf, SHELF_AT, Art.LAMP, 70, 0.20)
+	_add_machine(wheel, WHEEL_AT, Palette.TEAL, 80, 0.22)
+	_add_machine(booth, BOOTH_AT, Palette.PINK, 76, 0.22)
+	_add_machine(claw, CLAW_AT, Palette.PINK, 90, 0.25)
+	_add_machine(drum, DRUM_AT, Palette.TEAL, 72, 0.20)
+	_add_machine(book, BOOK_AT, Art.LAMP, 64, 0.20)
+	for i in CANDLES.size():
+		var c: Array = CANDLES[i]
 		var candle := Props.Candle.new(int(c[1]))
 		candle.position = c[0]
 		candle.watch = leader
 		props.add_child(candle)
-		Art.glow(_under, c[0] + Vector2(0, -2), Art.CANDLE, 22, 0.10, 0.5)
+		# A warm pool on the floor that flickers with the flame (the candle drives it).
+		candle.pool = Art.pool(_under, c[0] + Vector2(0, -2), Art.CANDLE, 40.0 + (i * 5) % 17, 0.16, 0.5)
+	# Haze: two banks of fog drifting slowly across the floor in opposite directions.
+	var haze := Props.Haze.new()
+	_air.add_child(haze)
+	# The runner catches a slow pink sheen from the sign.
+	var sheen := Props.Sheen.new()
+	_under.add_child(sheen)
 	var door := Props.Door.new()
 	door.position = Vector2(240, 256)
 	props.add_child(door)
@@ -238,7 +247,7 @@ func _place_light() -> void:
 	var v := Sprite2D.new()
 	var g := Gradient.new()
 	g.offsets = PackedFloat32Array([0.0, 0.55, 1.0])
-	g.colors = PackedColorArray([Color(0, 0, 0, 0), Color(0.02, 0.0, 0.04, 0.32), Color(0.02, 0.0, 0.04, 0.8)])
+	g.colors = PackedColorArray([Color(0, 0, 0, 0), Color(0.02, 0.0, 0.04, 0.42), Color(0.01, 0.0, 0.03, 0.92)])
 	var gt := GradientTexture2D.new()
 	gt.gradient = g
 	gt.fill = GradientTexture2D.FILL_RADIAL

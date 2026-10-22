@@ -16,6 +16,7 @@ var pool_alpha := 0.16
 var t := 0.0
 var _want := 0.0
 var _poke: Tween
+var _breath := randf() * TAU  # pools breathe out of phase with each other
 
 
 func add_spot(id: String, hit: Rect2, stand: Vector2, action: Callable) -> void:
@@ -25,9 +26,10 @@ func add_spot(id: String, hit: Rect2, stand: Vector2, action: Callable) -> void:
 ## A soft pool of light on the floor under the machine (drawn on the room's floor layer).
 func make_pool(floor_layer: Node2D, at: Vector2, color: Color, radius: float, alpha := 0.16) -> void:
 	pool_alpha = alpha
-	pool = Art.glow(floor_layer, position + at, color, radius, alpha, 0.55)
+	pool = Art.pool(floor_layer, position + at, color, radius, alpha, 0.55)
 	# A faint halo of the same light over the machine itself, brighter in reach.
-	halo = Art.glow(self, Vector2(0, -radius * 0.9), color, radius * 1.1, 0.0)
+	var r := minf(radius, 44.0)
+	halo = Art.glow(self, Vector2(0, -r * 0.9), color, r * 1.1, 0.0)
 	halo.z_index = 3
 
 
@@ -39,7 +41,7 @@ func _process(delta: float) -> void:
 	t += delta
 	focus = move_toward(focus, _want, delta * 5.0)
 	if pool:
-		pool.modulate.a = pool_alpha * (1.0 + focus * 1.4) + sin(t * 2.1) * 0.015
+		pool.modulate.a = pool_alpha * (1.0 + focus * 0.9) * (0.86 + 0.14 * sin(t * 1.3 + _breath))
 	if halo:
 		halo.modulate.a = 0.04 + focus * 0.10 + sin(t * 1.7) * 0.01
 	idle(delta)

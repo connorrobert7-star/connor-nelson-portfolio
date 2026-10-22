@@ -113,6 +113,24 @@ static func glow(parent: Node, pos: Vector2, color: Color, radius: float, alpha 
 	return s
 
 
+## A pool of light on the floor: flatter than a glow, with a soft but readable edge, so a
+## machine or a candle stands in its own circle of color.
+static func pool(parent: Node, pos: Vector2, color: Color, radius: float, alpha := 0.3, squash := 0.55) -> Sprite2D:
+	var s := glow(parent, pos, color, radius, alpha, squash)
+	var g := Gradient.new()
+	g.offsets = PackedFloat32Array([0.0, 0.45, 0.78, 1.0])
+	g.colors = PackedColorArray([Color(1, 1, 1, 1), Color(1, 1, 1, 0.82), Color(1, 1, 1, 0.3), Color(1, 1, 1, 0)])
+	var t := GradientTexture2D.new()
+	t.gradient = g
+	t.fill = GradientTexture2D.FILL_RADIAL
+	t.fill_from = Vector2(0.5, 0.5)
+	t.fill_to = Vector2(1.0, 0.5)
+	t.width = 64
+	t.height = 64
+	s.texture = t
+	return s
+
+
 ## A cone of lamp light, `top` wide at the shade and `bottom` wide at the floor.
 static func cone(top: float, bottom: float, height: float) -> ImageTexture:
 	var w := int(bottom) + 8

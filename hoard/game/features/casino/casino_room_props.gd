@@ -12,6 +12,7 @@ class Candle:
 
 	var column := 0
 	var watch: Node2D  # the leader, for the eye
+	var pool: Sprite2D  # its light on the floor (the room makes it), flickering with the flame
 	var _glow: Sprite2D
 	var _halo: Sprite2D
 	var _eye: Sprite2D
@@ -39,6 +40,11 @@ class Candle:
 	func _process(delta: float) -> void:
 		_t += delta
 		var flick := 0.85 + 0.15 * sin(_t * 13.0 + _seed) * sin(_t * 7.3 + _seed * 2.0)
+		if pool:
+			# Two frequencies: a slow sway of the flame and a quick shiver.
+			var sway := 0.12 * sin(_t * 2.3 + _seed) + 0.07 * sin(_t * 17.0 + _seed * 3.0)
+			pool.modulate.a = 0.15 * (0.85 + sway)
+			pool.scale.x = pool.scale.y * 2.0 * (1.0 + sway * 0.25)
 		if _halo:
 			_glow.modulate.a = 0.5 * flick
 			_halo.modulate.a = 0.11 * flick
@@ -66,9 +72,12 @@ class Neon:
 	var _bright: Array[float] = []
 	var _sprite := Sprite2D.new()
 	var _glow: Sprite2D
+	var _wall: Sprite2D  # pink spilling over the bricks
+	var _floor: Sprite2D  # and down onto the risers and the floor below
 	var _t := 0.0
 	var _i := 0
 	var _hold := 0.0
+	var _lit := 1.0
 
 	func _ready() -> void:
 		_frames = Art.strip(Art.NEON, Rect2(Vector2.ZERO, FRAME), COUNT)
@@ -88,6 +97,9 @@ class Neon:
 		_glow = Art.glow(self, Vector2(0, 2), Palette.PINK, 30, 0.0)
 		_glow.z_index = 3
 		_sprite.z_index = 3
+		_wall = Art.glow(self, Vector2(0, 4), Palette.PINK, 100, 0.0, 0.8)
+		_floor = Art.glow(self, Vector2(4, 70), Palette.PINK, 84, 0.0, 0.45)
+		_floor.z_index = 3
 
 	func _process(delta: float) -> void:
 		_t += delta
@@ -96,8 +108,15 @@ class Neon:
 			_i = (_i + 1) % COUNT
 			# Mostly lit, with the sign's own stutter, and now and then a long buzz on.
 			_hold = 0.09 if _bright[_i] < 0.6 else randf_range(0.09, 0.7)
+			# The tube drops out with a buzz.
+			if _bright[_i] < 0.45 and _lit >= 0.45:
+				Art.play("kenney-interface-sounds/Audio/glitch_00%d.ogg" % (1 + randi() % 4), randf_range(0.8, 1.2), -30.0)
+			_lit = _bright[_i]
 		_sprite.texture = _frames[_i]
-		_glow.modulate.a = 0.28 * _bright[_i] + 0.02 * sin(_t * 40.0)
+		var hum := 0.02 * sin(_t * 40.0)
+		_glow.modulate.a = 0.34 * _bright[_i] + hum
+		_wall.modulate.a = 0.20 * _bright[_i] + hum * 0.5
+		_floor.modulate.a = 0.07 * _bright[_i]
 
 
 ## The one hanging lamp over the table: a brass shade, a cone of light that sways a little,
@@ -124,11 +143,11 @@ class Lamp:
 		_cone.position = Vector2(-_cone.texture.get_width() / 2.0, SHADE_Y + 5)
 		_cone.z_index = 2
 		add_child(_cone)
-		_pool = Art.glow(self, Vector2(0, SHADE_Y + 82), Art.LAMP, 70, 0.10, 0.45)
+		_pool = Art.glow(self, Vector2(0, SHADE_Y + 84), Art.LAMP, 86, 0.16, 0.45)
 		_pool.z_index = 2
 		_bulb = Art.glow(self, Vector2(0, SHADE_Y + 5), Art.LAMP, 12, 0.8)
 		_bulb.z_index = 4
-		_dust.amount = 26
+		_dust.amount = 38
 		_dust.lifetime = 5.0
 		_dust.preprocess = 5.0
 		_dust.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
@@ -141,7 +160,9 @@ class Lamp:
 		_dust.initial_velocity_max = 4.0
 		_dust.scale_amount_min = 1.0
 		_dust.scale_amount_max = 1.0
-		_dust.color = Color(Art.LAMP, 0.35)
+		# Motes twinkle in and out as they turn through the light.
+		_dust.color_ramp = _twinkle()
+		_dust.color = Color(Art.LAMP, 0.8)
 		_dust.material = Art.additive()
 		_dust.z_index = 2
 		add_child(_dust)
@@ -153,11 +174,17 @@ class Lamp:
 		_color = _color.lerp(want, minf(1.0, delta * 2.0))
 		var flick := 1.0 + 0.04 * sin(_t * 23.0) * sin(_t * 3.1)
 		var hot := 1.0 if tint.a == 0.0 else 1.5
-		_cone.modulate = Color(_color, 0.19 * flick * hot)
-		_pool.modulate = Color(_color, 0.09 * flick * hot)
-		_bulb.modulate = Color(_color, 0.85)
-		_dust.color = Color(_color, 0.35)
+		_cone.modulate = Color(_color, 0.30 * flick * hot)
+		_pool.modulate = Color(_color, 0.16 * flick * hot)
+		_bulb.modulate = Color(_color, 0.95)
+		_dust.color = Color(_color, 0.8)
 		queue_redraw()
+
+	static func _twinkle() -> Gradient:
+		var g := Gradient.new()
+		g.offsets = PackedFloat32Array([0.0, 0.2, 0.45, 0.6, 0.8, 1.0])
+		g.colors = PackedColorArray([Color(1, 1, 1, 0), Color(1, 1, 1, 0.9), Color(1, 1, 1, 0.3), Color(1, 1, 1, 1), Color(1, 1, 1, 0.4), Color(1, 1, 1, 0)])
+		return g
 
 	func _draw() -> void:
 		# The cord fades up into the dark; the shade is a brass dish.
@@ -250,3 +277,68 @@ class Odds:
 			# Drips under the paint, a little wrong.
 			if i % 2 == 1:
 				draw_rect(Rect2(p + Vector2(14 + i * 2, 4), Vector2(1, 2 + i)), Color(Art.PAINT, 0.35))
+
+
+## A low haze: two banks of fog drifting across the floor in opposite directions, so the
+## light pools have air to hang in.
+class Haze:
+	extends Node2D
+
+	const FOG := "ninja-adventure/FX/Environment/Fog.png"
+	var _banks: Array[Sprite2D] = []
+	var _t := 0.0
+
+	func _ready() -> void:
+		for i in 2:
+			var s := Sprite2D.new()
+			s.texture = Art.tex(FOG)
+			s.centered = false
+			s.scale = Vector2(2, 1)
+			s.material = Art.additive()
+			s.modulate = Color(Art.MOON, 0.04)
+			s.flip_h = i == 1
+			s.z_index = 2
+			add_child(s)
+			_banks.append(s)
+
+	func _process(delta: float) -> void:
+		_t += delta
+		var w := 640.0
+		for i in _banks.size():
+			var dir := 1.0 if i == 0 else -1.0
+			var x := fposmod(_t * (5.0 + i * 2.0) * dir + i * 220.0, w) - w / 2.0
+			_banks[i].position = Vector2(roundf(x), 92.0 + i * 46.0 + roundf(sin(_t * 0.3 + i) * 4.0))
+			_banks[i].modulate.a = 0.035 + 0.01 * sin(_t * 0.5 + i * 2.0)
+
+
+## A slow pink sheen sliding down the oxblood runner: the sign's light on the pile.
+class Sheen:
+	extends Node2D
+
+	const RUNNER := Rect2(224, 160, 32, 96)
+	var _t := 0.0
+
+	func _init() -> void:
+		material = Art.additive()
+
+	func _process(delta: float) -> void:
+		_t += delta
+		queue_redraw()
+
+	func _draw() -> void:
+		# A diagonal streak a few pixels wide, one pass every 6 s, fading at both ends.
+		var k := fmod(_t, 6.0) / 6.0
+		var head := RUNNER.position.y - 20.0 + k * (RUNNER.size.y + 60.0)
+		for row in int(RUNNER.size.y):
+			var y := RUNNER.position.y + row
+			var x := RUNNER.position.x + (head - y) * 1.6
+			var fade := sin(clampf((y - RUNNER.position.y) / RUNNER.size.y, 0.0, 1.0) * PI)
+			var lo := maxf(x, RUNNER.position.x)
+			var hi := minf(x + 6.0, RUNNER.end.x)
+			if hi > lo:
+				draw_rect(Rect2(lo, y, hi - lo, 1), Color(Palette.PINK, 0.10 * fade))
+			# A fainter second line just behind it.
+			var lo2 := maxf(x - 9.0, RUNNER.position.x)
+			var hi2 := minf(x - 7.0, RUNNER.end.x)
+			if hi2 > lo2:
+				draw_rect(Rect2(lo2, y, hi2 - lo2, 1), Color(Palette.PINK, 0.06 * fade))
