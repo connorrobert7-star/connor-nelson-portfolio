@@ -133,3 +133,24 @@ the game for me. Build it now."
 - Rules that don't change: money is never random, only cosmetics are. The game never lowers a
   balance, never sells, never picks a stock. Coins and money never convert either way. Penalties
   never touch money.
+
+## October 22, 2026: a helper, gold, silver, bitcoin, and a portfolio that keeps moving
+
+The owner, after the look pass: "Let's do these" (finish the look pass, the first five minutes,
+speed, the pot, the counter with real data, the newspaper, talking villagers, history, the crypt
+tower, going real). Plus, in their words:
+
+- "Let's add a character that's kind of like a helper in a way. Like, he explains stuff for me.
+  Explains why it's good to put my money in these certain things, or why it's good to do this or
+  that."
+- "I also want to be able to like maybe buy gold and buy silver and maybe buy Bitcoin also."
+- "I want the stocks to change with my income and how they're doing. So it's a diverse portfolio
+  throughout the whole thing. And we're not just buying the same stuff over and over again. But
+  that way I can keep moving it and keep growing with it. And adapts to what's happening outside.
+  So that way it never will feel like it's stuck or not I'm not buying something right."
+
+Note for whoever builds this: the October 21 notes say "The game never picks a stock", "No
+momentum signals. Nothing that says a stock is going up or might be worth buying ... If I ask for
+this later, point me back to this line." The last ask above was pointed back to that line and a
+rule-keeping version (a target mix the owner sets, new money going to whatever is furthest below
+its target) was put to the owner. Build whatever they chose, recorded below.
